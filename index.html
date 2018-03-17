@@ -1,38 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
- <script>
-	[
-		,'/scripts/ChecksimsRunner.js'
-		,'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js'
-		,'/scripts/algorithm/AlgorithmRegistry.js'
-		,'/scripts/algorithm/linesimilarity/LineSimilarityChecker.js'
-		,'/scripts/algorithm/preprocessor/CommonCodeLineRemovalPreprocessor.js'
-		,'/scripts/algorithm/preprocessor/PreprocessorRegistry.js'
-		,'/scripts/algorithm/preprocessor/PreprocessSubmissions.js'
-		,'/scripts/algorithm/PreprocessSubmissions.js'
-		,'/scripts/algorithm/similaritymatrix/output/MatrixPrinterRegistry.js'
-		,'/scripts/algorithm/similaritymatrix/SimilarityMatrix.js'
-		,'/scripts/submission/Submission.js'
-		,'/scripts/token/tokenizer/Tokenizer.js'
-		,'/scripts/token/TokenType.js'
-		,'/scripts/util/reflection/RegistryWithDefault.js'
-		,'/scripts/util/PairGenerator.js'
-		,'/scripts/util/misc.js'
-		,'/scripts/ChecksimsException.js'
-	].forEach(function(s){
-		let elem = document.createElement('script');
-		elem.type='text/javascript';
-		elem.src = s;
-		elem.async = true;
-		try{
-			document.head.append(elem);
-		}
-		catch(e){
-			console.error('Failed to load: ' + e.message);
-		}
-	});
- </script>
+ <script type="text/javascript" src="./scripts/allLibs.js" async></script>
  <script type="text/javascript" src="./scripts/ChecksimsCommandLine.js" async></script>
  <script>
 	/* global ChecksimsCommandLine, */

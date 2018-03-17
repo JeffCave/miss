@@ -15,22 +15,29 @@
 
 'use strict';
 
-//import net.lldp.checksims.algorithm.AlgorithmResults;
-//import net.lldp.checksims.algorithm.InternalAlgorithmError;
-//import net.lldp.checksims.algorithm.SimilarityDetector;
+/*
 import {LineSimilarityChecker} from '/scripts/algorithm/linesimilarity/LineSimilarityChecker.js';
-//import net.lldp.checksims.submission.ConcreteSubmission;
 import {Submission} from '/scripts/submission/Submission.js';
 import {ValidityIgnoringSubmission} from '/scripts/submission/ValidityIgnoringSubmission.js';
 import {TokenList} from '/scripts/token/TokenList.js';
 import {TokenType} from '/scripts/token/TokenType.js';
-//import net.lldp.checksims.token.TokenTypeMismatchException;
 import {Tokenizer} from '/scripts/token/tokenizer/Tokenizer.js';
 import {SubmissionPreprocessor} from '/scripts/algorithm/preprocessor/SubmissionPreprocessor.js';
-
-
 import { ChecksimsException } from '/scripts/ChecksimsException.js';
 import { checkNotNull,checkArgument } from '/scripts/util/misc.js';
+*/
+
+/*
+global LineSimilarityChecker
+global Submission
+global ValidityIgnoringSubmission
+global TokenList
+global TokenType
+global Tokenizer
+global SubmissionPreprocessor
+global  ChecksimsException
+global  checkNotNull,checkArgument
+*/
 
 /**
  * Common Code Removal via Line Comparison.
