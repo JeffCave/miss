@@ -38,7 +38,7 @@ import { checkNotNull,checkArgument } from '/scripts/util/misc.js';
  *
  * TODO: Consider changing from a  class? Having the CommandLine as an instance variable would greatly simplify
  */
-export class ChecksimsCommandLine {
+class ChecksimsCommandLine {
 	constructor() {
 		this.files = {};
 	}

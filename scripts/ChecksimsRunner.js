@@ -13,6 +13,15 @@
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
 
+/*
+global AlgorithmRunner
+global PreprocessSubmissions
+global SimilarityMatrix
+global PairGenerator
+global ChecksimsException
+global checkNotNull
+*/
+/*
 import {AlgorithmRunner} from '/scripts/algorithm/PreprocessSubmissions.js';
 import {PreprocessSubmissions} from '/scripts/algorithm/preprocessor/PreprocessSubmissions.js';
 import {SimilarityMatrix} from '/scripts/algorithm/similaritymatrix/SimilarityMatrix.js';
@@ -20,11 +29,13 @@ import {PairGenerator} from '/scripts/util/PairGenerator.js';
 
 import { ChecksimsException } from '/scripts/ChecksimsException.js';
 import { checkNotNull } from '/scripts/util/misc.js';
+*/
+
 
 /**
  * CLI Entry point and main public API endpoint for Checksims.
  */
-export class ChecksimsRunner {
+class ChecksimsRunner {
 
 	constructor() {
 
