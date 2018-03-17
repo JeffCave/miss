@@ -36,7 +36,6 @@ const loader = {
 			,'/scripts/algorithm/preprocessor/SubmissionPreprocessor.js'
 			,'/scripts/algorithm/similaritymatrix/output/MatrixPrinterRegistry.js'
 			,'/scripts/algorithm/similaritymatrix/SimilarityMatrix.js'
-			,'/scripts/algorithm/linesimilarity/LineSimilarityChecker.js'
 			,'/scripts/algorithm/AlgorithmRegistry.js'
 			,'/scripts/submission/Submission.js'
 			,'/scripts/submission/ValidityIgnoringSubmission.js'
