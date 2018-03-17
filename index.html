@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <script>
+	[
+		,'/scripts/ChecksimsRunner.js'
+		,'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js'
+		,'/scripts/algorithm/AlgorithmRegistry.js'
+		,'/scripts/algorithm/linesimilarity/LineSimilarityChecker.js'
+		,'/scripts/algorithm/preprocessor/CommonCodeLineRemovalPreprocessor.js'
+		,'/scripts/algorithm/preprocessor/PreprocessorRegistry.js'
+		,'/scripts/algorithm/similaritymatrix/output/MatrixPrinterRegistry.js'
+		,'/scripts/submission/Submission.js'
+		,'/scripts/token/tokenizer/Tokenizer.js'
+		,'/scripts/token/TokenType.js'
+		,'/scripts/util/reflection/RegistryWithDefault.js'
+	].forEach(function(s){
+		let elem = document.createElement('script');
+		elem.type='text/javascript';
+		elem.src = s;
+		elem.async = true;
+		try{
+			document.head.append(elem);
+		}
+		catch(e){
+			console.error('Failed to load: ' + e.message);
+		}
+	});
+ </script>
+ <script type="text/javascript" src="./scripts/ChecksimsCommandLine.js" async></script>
+ <script>
+	/* global ChecksimsCommandLine, */
+	'use strict';
+
+	window.addEventListener('load',function(){
+		let checker = new ChecksimsCommandLine();
+		let button = document.querySelector('button');
+		let upload = document.querySelector("input[name='zip']");
+
+		button.addEventListener('click',function(e){
+			checker.runHtml({});
+		});
+
+		upload.addEventListener('change',function(e){
+			e.dataTransfer.files.forEach(function(file){
+				if (!file.type.startsWith('image/')){
+					return;
+				}
+
+				let reader = new FileReader();
+				reader.addEventListener('load', function(zip) {
+						if(zip.slice(0,2) === 'PK'){
+							checker.loadFile(zip);
+						}
+					});
+				reader.readAsDataURL(file);
+			});
+		});
+	});
+ </script>
+</head>
+<body>
+ <fieldset>
+  <input name='zip' type="file" multiple />
+  <button name='run' disabled>Run</button>
+ </fieldset>
+</body>
+</html>

@@ -14,11 +14,11 @@
  */
 'use strict';
 
+/*
 import {AlgorithmRegistry} from '/scripts/algorithm/AlgorithmRegistry.js';
+
 import {CommonCodeLineRemovalPreprocessor} from '/scripts/algorithm/preprocessor/CommonCodeLineRemovalPreprocessor.js';
 import {PreprocessorRegistry} from '/scripts/algorithm/preprocessor/PreprocessorRegistry.js';
-//import net.lldp.checksims.algorithm.preprocessor.SubmissionPreprocessor;
-//import net.lldp.checksims.algorithm.similaritymatrix.output.MatrixPrinter;
 import {MatrixPrinterRegistry} from '/scripts/algorithm/similaritymatrix/output/MatrixPrinterRegistry.js';
 import {Submission} from '/scripts/submission/Submission.js';
 import {TokenType} from '/scripts/token/TokenType.js';
@@ -31,7 +31,7 @@ import {ChecksimsConfig} from '/scripts/ChecksimsConfig.js';
 
 import {ChecksimsException} from '/scripts/ChecksimsException.js';
 import { checkNotNull,checkArgument } from '/scripts/util/misc.js';
-
+*/
 
 /**
  * Parses Checksims' command-line options.
@@ -40,6 +40,11 @@ import { checkNotNull,checkArgument } from '/scripts/util/misc.js';
  */
 export class ChecksimsCommandLine {
 	constructor() {
+		this.files = {};
+	}
+
+	loadZip(zip){
+
 	}
 
 
@@ -407,36 +412,11 @@ export class ChecksimsCommandLine {
 	 *
 	 * @param args CLI arguments to parse
 	 */
-	runCLI(args){
+	runHtml(args){
 		checkNotNull(args);
 
-		// Parse options, first round: nothing required, so we can check for --help and --version
-		let cli = parseOpts(args, false);
-
-		// Print CLI Help
-		if(cli.hasOption("h")) {
-			this.printHelp();
-		}
-
-		// Print version
-		if(cli.hasOption("version")) {
-			console.log("Checksims version " + ChecksimsRunner.getChecksimsVersion());
-			return;
-		}
-
 		// Parse options, second round: required arguments are required
-		cli = parseOpts(args, true);
-
-		// Parse verbose setting
-		if(cli.hasOption("vv")) {
-			logs = startLogger(2);
-		}
-		else if(cli.hasOption("v")) {
-			logs = startLogger(1);
-		}
-		else {
-			logs = startLogger(0);
-		}
+		let cli = this.parseOpts(args, true);
 
 		// First, parse basic flags
 		let config = this.parseBaseFlags(cli);

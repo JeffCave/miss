@@ -14,14 +14,19 @@
  */
  'use strict';
 
+/*
+global RegistryWithDefault
+global LineSimilarityChecker
+*/
+/*
 import {LineSimilarityChecker} from '/scripts/algorithm/linesimilarity/LineSimilarityChecker';
 import {RegistryWithDefault} from '/scripts/util/reflection/RegistryWithDefault';
-
+*/
 
 /**
  * Registry for all supported similarity detection algorithms.
  */
-export class AlgorithmRegistry extends RegistryWithDefault {
+class AlgorithmRegistry extends RegistryWithDefault {
 
 	constructor(){
 		if("instance" in AlgorithmRegistry){
