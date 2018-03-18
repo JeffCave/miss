@@ -14,8 +14,9 @@ const loader = {
 			let elem = document.createElement('script');
 			elem.type='text/javascript';
 			elem.src = lib;
-			elem.async = true;
+			elem.defer = true;
 			try{
+				console.log('Loading Library: ' + lib);
 				document.head.append(elem);
 				loader.loaded.push(lib);
 			}
@@ -29,6 +30,12 @@ const loader = {
 (function(){
 	loader.load([
 			,'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js'
+			/**
+			 * Order of loading is significant. Ensure that the libraries load
+			 * in dependant order
+			 */
+			,'/scripts/algorithm/SimilarityDetector.js'
+			,'/scripts/util/reflection/NamedInstantiable.js'
 			,'/scripts/algorithm/linesimilarity/LineSimilarityChecker.js'
 			,'/scripts/algorithm/preprocessor/CommonCodeLineRemovalPreprocessor.js'
 			,'/scripts/algorithm/preprocessor/PreprocessorRegistry.js'

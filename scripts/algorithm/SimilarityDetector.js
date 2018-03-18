@@ -8,11 +8,6 @@
  * See LICENSE.txt included in this distribution for the specific
  * language governing permissions and limitations under the License.
  *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at LICENSE.txt.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
  *
  * CDDL HEADER END
  *
@@ -20,7 +15,14 @@
  */
 'use strict';
 
-import {NamedInstantiable} from '/scripts/util/reflection/NamedInstantiable.js';
+/*
+global loader
+global NamedInstantiable
+*/
+loader.load([
+	'/scripts/util/reflection/NamedInstantiable.js',
+]);
+
 
 /**
  * Detect similarities between two submissions.
@@ -35,14 +37,14 @@ class SimilarityDetector extends NamedInstantiable {
 	constructor(){
 		throw new Error("Implementation of abstract class");
 	}
-	
+
 	/**
 	 * @return Default token type to be used for this similarity detector
 	 */
 	getDefaultTokenType(){
-		
+
 	}
-	
+
 	/**
 	 * Apply a pairwise similarity detection algorithm.
 	 *
@@ -55,6 +57,6 @@ class SimilarityDetector extends NamedInstantiable {
 	 * @throws InternalAlgorithmError Thrown on error detecting similarities
 	 */
 	detectSimilarity(a, b){
-		
+
 	}
 }

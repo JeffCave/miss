@@ -16,23 +16,19 @@
 'use strict';
 
 /*
-import net.lldp.checksims.algorithm.AlgorithmResults;
-import net.lldp.checksims.algorithm.InternalAlgorithmError;
-import net.lldp.checksims.algorithm.SimilarityDetector;
-import net.lldp.checksims.submission.Submission;
-import net.lldp.checksims.token.Token;
-import net.lldp.checksims.token.TokenList;
-import net.lldp.checksims.token.TokenType;
-import net.lldp.checksims.token.TokenTypeMismatchException;
-import org.apache.commons.codec.binary.Hex;
-
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.*;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+global loader
 */
-
+loader.load([
+	,'scripts/algorithm/AlgorithmResults.js'
+	,'scripts/algorithm/InternalAlgorithmError.js'
+	,'scripts/algorithm/SimilarityDetector.js'
+	,'scripts/submission/Submission.js'
+	,'scripts/token/Token.js'
+	,'scripts/token/TokenList.js'
+	,'scripts/token/TokenType.js'
+	,'scripts/token/TokenTypeMismatchException.js'
+	,'scripts/util/misc.js'
+]);
 
 /**
  * Internal class for record-keeping - used to record a line at a specific location in a submission.
