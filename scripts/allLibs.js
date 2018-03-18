@@ -34,8 +34,8 @@ const loader = {
 			 * Order of loading is significant. Ensure that the libraries load
 			 * in dependant order
 			 */
-			,'/scripts/algorithm/SimilarityDetector.js'
 			,'/scripts/util/reflection/NamedInstantiable.js'
+			,'/scripts/algorithm/SimilarityDetector.js'
 			,'/scripts/algorithm/linesimilarity/LineSimilarityChecker.js'
 			,'/scripts/algorithm/preprocessor/CommonCodeLineRemovalPreprocessor.js'
 			,'/scripts/algorithm/preprocessor/PreprocessorRegistry.js'
