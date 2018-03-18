@@ -14,23 +14,9 @@
  */
 'use strict';
 
+
 /*
-import {AlgorithmRegistry} from '/scripts/algorithm/AlgorithmRegistry.js';
-
-import {CommonCodeLineRemovalPreprocessor} from '/scripts/algorithm/preprocessor/CommonCodeLineRemovalPreprocessor.js';
-import {PreprocessorRegistry} from '/scripts/algorithm/preprocessor/PreprocessorRegistry.js';
-import {MatrixPrinterRegistry} from '/scripts/algorithm/similaritymatrix/output/MatrixPrinterRegistry.js';
-import {Submission} from '/scripts/submission/Submission.js';
-import {TokenType} from '/scripts/token/TokenType.js';
-import {Tokenizer} from '/scripts/token/tokenizer/Tokenizer.js';
-
-import {ChecksimsRunner} from './ChecksimsRunner.js';
-import {JSZip} from 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js';
-
-import {ChecksimsConfig} from '/scripts/ChecksimsConfig.js';
-
-import {ChecksimsException} from '/scripts/ChecksimsException.js';
-import { checkNotNull,checkArgument } from '/scripts/util/misc.js';
+global JSZip
 */
 
 /**
@@ -40,11 +26,31 @@ import { checkNotNull,checkArgument } from '/scripts/util/misc.js';
  */
 class ChecksimsCommandLine {
 	constructor() {
-		this.files = {};
 	}
 
-	loadZip(zip){
-
+	loadZip(blob){
+		let parent = this;
+		this.zip = null;
+		// 1) read the Blob
+		return JSZip
+			.loadAsync(blob)
+			.then(function(zip) {
+				parent.zip = zip;
+				//zip.forEach(function (relativePath, zipEntry) {
+				//	// 2) print entries
+				//	console.log(zipEntry.name);
+				//	zipEntry
+				//		.async("string")
+				//		.on("data", function (data) { })
+				//		.on("error", function (e) { })
+				//		.on("end", function () { })
+				//		;
+				//});
+			})
+			.catch(function (e) {
+				console.error("Error reading " + blob.name + ": " + e.message);
+			})
+			;
 	}
 
 

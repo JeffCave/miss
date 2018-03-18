@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
- <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.5/require.min.js"></script>
+ <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js'></script>
  <script type="text/javascript" src="./scripts/allLibs.js"></script>
  <script type="text/javascript" src="./scripts/ChecksimsCommandLine.js"></script>
  <script>
-	/* global ChecksimsCommandLine, */
+	/*
+	global ChecksimsCommandLine
+	global JSZip
+	*/
 	'use strict';
 
 	window.addEventListener('load',function(){
@@ -18,18 +21,21 @@
 		});
 
 		upload.addEventListener('change',function(e){
-			e.dataTransfer.files.forEach(function(file){
-				if (!file.type.startsWith('image/')){
+			Array.from(e.target.files).forEach(function(file){
+				if (!file.type === 'application/x-zip-compressed'){
 					return;
 				}
-
-				let reader = new FileReader();
-				reader.addEventListener('load', function(zip) {
-						if(zip.slice(0,2) === 'PK'){
-							checker.loadFile(zip);
-						}
-					});
-				reader.readAsDataURL(file);
+				checker
+					.loadZip(file)
+					.then(function(){
+						button.disabled = false;
+						let ul = document.querySelector("ul");
+						ul.innerHTML = '';
+						checker.zip.forEach(function(path,entry) {
+							ul.innerHTML += '<li>'+entry.name+'</li>';
+						});
+					})
+					;
 			});
 		});
 	});
@@ -40,5 +46,7 @@
   <input name='zip' type="file" multiple />
   <button name='run' disabled>Run</button>
  </fieldset>
+ <ul>
+ </ul>
 </body>
 </html>

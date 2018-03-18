@@ -23,7 +23,6 @@ global TokenList
 global TokenType
 global checkNotNull
 global CryptoJS
-global btoa
 */
 loader.load([
 	,'https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.min.js'
@@ -41,13 +40,13 @@ loader.load([
  * Internal class for record-keeping - used to record a line at a specific location in a submission.
  */
 class SubmissionLine {
-    constructor(lineNum, submission) {
-        this.lineNum = lineNum;
-        this.submission = submission;
-    }
-    toString() {
-        return "Line " + this.lineNum + " from submission with name " + this.submission.getName();
-    }
+	constructor(lineNum, submission) {
+		this.lineNum = lineNum;
+		this.submission = submission;
+	}
+	toString() {
+		return "Line " + this.lineNum + " from submission with name " + this.submission.getName();
+	}
 }
 
 
@@ -64,13 +63,13 @@ class LineSimilarityChecker extends SimilarityDetector {
 		return LineSimilarityChecker.instance;
 	}
 
-    getName() {
-        return "linecompare";
-    }
+	getName() {
+		return "linecompare";
+	}
 
-    getDefaultTokenType() {
-        return TokenType.LINE;
-    }
+	getDefaultTokenType() {
+		return TokenType.LINE;
+	}
 
 	/**
 	 * Detect similarities using line similarity comparator.
@@ -116,49 +115,49 @@ class LineSimilarityChecker extends SimilarityDetector {
 		let identicalLinesA = 0;
 		let identicalLinesB = 0;
 
-        // Check all the keys
-        Object.keys(lineDatabase).forEach(function(key){
+		// Check all the keys
+		Object.keys(lineDatabase).forEach(function(key){
 
-            // If more than 1 line has the hash...
-            if(lineDatabase[key].length !== 1) {
-                let numLinesA = 0;
-                let numLinesB = 0;
+			// If more than 1 line has the hash...
+			if(lineDatabase[key].length !== 1) {
+				let numLinesA = 0;
+				let numLinesB = 0;
 
-                // Count the number of that line in each submission
-                lineDatabase[key].forEach(function(s){
-                    if(s.submission.equals(a)) {
-                        numLinesA++;
-                    }
-                    else if(s.submission.equals(b)) {
-                        numLinesB++;
-                    }
-                    else {
-                        throw new Error("Unreachable code!");
-                    }
-                });
+				// Count the number of that line in each submission
+				lineDatabase[key].forEach(function(s){
+					if(s.submission.equals(a)) {
+						numLinesA++;
+					}
+					else if(s.submission.equals(b)) {
+						numLinesB++;
+					}
+					else {
+						throw new Error("Unreachable code!");
+					}
+				});
 
-                if(numLinesA == 0 || numLinesB == 0) {
-                    // Only one of the submissions includes the line - no plagiarism here
-                    return;
-                }
+				if(numLinesA == 0 || numLinesB == 0) {
+					// Only one of the submissions includes the line - no plagiarism here
+					return;
+				}
 
-                // Set matches invalid
-                lineDatabase[key].forEach(function(s){
-                    if(s.submission.equals(a)) {
-                        finalA.get(s.lineNum).setValid(false);
-                    }
-                    else if(s.submission.equals(b)) {
-                        finalB.get(s.lineNum).setValid(false);
-                    }
-                    else {
-                        throw new Error("Unreachable code!");
-                    }
-                });
+				// Set matches invalid
+				lineDatabase[key].forEach(function(s){
+					if(s.submission.equals(a)) {
+						finalA.get(s.lineNum).setValid(false);
+					}
+					else if(s.submission.equals(b)) {
+						finalB.get(s.lineNum).setValid(false);
+					}
+					else {
+						throw new Error("Unreachable code!");
+					}
+				});
 
-                identicalLinesA += numLinesA;
-                identicalLinesB += numLinesB;
-            }
-        });
+				identicalLinesA += numLinesA;
+				identicalLinesB += numLinesB;
+			}
+		});
 
 		let invalTokensA = finalA.filter((token) => !token.isValid()).length;
 		let invalTokensB = finalB.filter((token) => !token.isValid()).length;
@@ -193,15 +192,15 @@ class LineSimilarityChecker extends SimilarityDetector {
 		}
 	}
 
-    toString() {
-        return "Sole instance of the Line Similarity Counter algorithm";
-    }
+	toString() {
+		return "Sole instance of the Line Similarity Counter algorithm";
+	}
 
-    hashCode() {
-        return this.getName().hashCode();
-    }
+	hashCode() {
+		return this.getName().hashCode();
+	}
 
-    equals(other) {
-        return (other instanceof LineSimilarityChecker);
-    }
+	equals(other) {
+		return (other instanceof LineSimilarityChecker);
+	}
 }

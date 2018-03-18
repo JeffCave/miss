@@ -16,7 +16,7 @@ const loader = {
 			elem.src = lib;
 			elem.defer = true;
 			try{
-				console.log('Loading Library: ' + lib);
+				//console.log('Loading Library: ' + lib);
 				document.head.append(elem);
 				loader.loaded.push(lib);
 			}
@@ -32,7 +32,7 @@ const loader = {
 	loader.load = function(){};
 	loader.realLoad([
 			,'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.5/require.min.js'
-			,'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js'
+			//,'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js'
 			,'https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.min.js'
 			,'https://cdnjs.cloudflare.com/ajax/libs/Base64/1.0.1/base64.min.js'
 			,'https://cdnjs.cloudflare.com/ajax/libs/mustache.js/2.3.0/mustache.min.js'
