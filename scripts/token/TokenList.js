@@ -15,15 +15,20 @@
 
 'use strict';
 
-
-import { TokenType } from '/scripts/token/TokenType.js';
-import { checkNotNull, checkArgument, assert } from '/scripts/util/misc.js';
-
+/*
+global loader
+global TokenType
+global checkNotNull
+*/
+loader.load([
+	,'/scripts/token/TokenType.js'
+	,'/scripts/util/misc.js'
+]);
 
 /**
  * A list of tokens of a specific type.
  */
-export class TokenList extends Array{
+class TokenList extends Array{
 	/**
 	 * Create a TokenList accepting a specific type of token.
 	 *

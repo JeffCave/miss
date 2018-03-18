@@ -8,12 +8,6 @@
  * See LICENSE.txt included in this distribution for the specific
  * language governing permissions and limitations under the License.
  *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at LICENSE.txt.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
  * CDDL HEADER END
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
@@ -21,22 +15,22 @@
 
 'use strict';
 
-//import net.lldp.checksims.algorithm.AlgorithmResults;
-//import net.lldp.checksims.algorithm.InternalAlgorithmError;
-//import net.lldp.checksims.submission.NoSuchSubmissionException;
-//import net.lldp.checksims.submission.Submission;
-//import org.apache.commons.lang3.tuple.Pair;
-import {MatrixEntry} from 'MatrixEntry.js';
-
-import {ChecksimsException} from '/scripts/ChecksimsException.js';
-import { checkNotNull, checkArgument } from '/scripts/util/misc.js';
+/*
+global loader
+global MatrixEntry
+global checkNotNull, checkArgument
+*/
+loader.load([
+	,'/scripts/algorithm/similaritymatrix/MatrixEntry.js'
+	,'/scripts/util/misc.js'
+]);
 
 /**
  * A Similarity Matrix represents the similarities between a given group of submissions.
  *
  * TODO consider offering Iterators for the entire similarity matrix, and for individual submissions on the X axis
  */
-export class SimilarityMatrix {
+class SimilarityMatrix {
     /**
      * Create a Similarity Matrix with given parameters. Internal constructor used by factory methods.
      *
@@ -98,10 +92,10 @@ export class SimilarityMatrix {
 		checkArgument(xIndex < this.xSubmissions.size(), "X index must be less than X submissions size ("+ this.xSubmissions.size() + ")!");
 		checkArgument(yIndex >= 0, "Y index must be greater than 0!");
 		checkArgument(yIndex < this.ySubmissions.size(), "Y index must be less than Y submissions size ("+ this.ySubmissions.size() + ")!");
-		
+
 		return this.entries[xIndex][yIndex];
 	}
-	
+
     /**
      * Get similarity of X submission to Y submission.
      *
@@ -117,7 +111,7 @@ export class SimilarityMatrix {
         if (!this.xSubmissions.contains(xSubmission)) {
             throw new Error("X Submission with name " + xSubmission.getName()
                     + " not found in similarity matrix!");
-        } 
+        }
         else if (!this.ySubmissions.contains(ySubmission)) {
             throw new Error("Y Submission with name " + ySubmission.getName()
                     + " not found in similarity matrix!");
@@ -148,11 +142,11 @@ export class SimilarityMatrix {
 		if (!(other instanceof 'SimilarityMatrix')) {
 			return false;
 		}
-		
-		let areEqual = 
-			other.builtFrom.equals(this.builtFrom) && 
-			other.xSubmissions.equals(this.xSubmissions) && 
-			other.ySubmissions.equals(this.ySubmissions) && 
+
+		let areEqual =
+			other.builtFrom.equals(this.builtFrom) &&
+			other.xSubmissions.equals(this.xSubmissions) &&
+			other.ySubmissions.equals(this.ySubmissions) &&
 			JSON.stringify(other.entries) === JSON.stringify(this.entries)
 			;
 		return areEqual;
@@ -171,22 +165,22 @@ export class SimilarityMatrix {
         checkNotNull(results);
         checkArgument(!inputSubmissions.isEmpty(), "Must provide at least 1 submission to build matrix from");
         checkArgument(!results.isEmpty(), "Must provide at least 1 AlgorithmResults to build matrix from!");
-        
+
 		if(archive){
 			return SimilarityMatrix.generateMatrixArchive(inputSubmissions, results, archive);
 		}
-		
+
 		// Generate the matrix we'll use
 		let matrix = new Array(inputSubmissions.size)
 			.map(function(arr){
 				return new Array(inputSubmissions.size).fill(null);
 			});
-		
+
 		// Order the submissions
 		let orderedSubmissions = inputSubmissions.sort(function(a,b){
 				return a.hashcode() - b.hashcode();
 			});
-		
+
 		// Generate the matrix
 
 		// Start with the diagonal, filling with 100% similarity
@@ -194,19 +188,19 @@ export class SimilarityMatrix {
 			let s = orderedSubmissions[i];
 			matrix[i][i] = new MatrixEntry(s, s, s.getNumTokens());
 		}
-		
+
 		// Now go through all the results, and build appropriate two MatrixEntry objects for each
 		results.forEach(function(result){
 			let aIndex = orderedSubmissions.indexOf(result.a);
 			let bIndex = orderedSubmissions.indexOf(result.b);
-			
+
 			if (aIndex === -1) {
 				throw new Error("Processed Algorithm Result with submission not in given input submissions with name \"" + result.a.getName() + "\"");
-			} 
+			}
 			else if (bIndex === -1) {
 				throw new Error("Processed Algorithm Result with submission not in given input submissions with name \"" + result.b.getName() + "\"");
 			}
-			
+
 			matrix[aIndex][bIndex] = new MatrixEntry(result.a, result.b, result.identicalTokensA);
 			matrix[bIndex][aIndex] = new MatrixEntry(result.b, result.a, result.identicalTokensB);
 		});
@@ -254,22 +248,22 @@ export class SimilarityMatrix {
 		if(archiveSubmissions.isEmpty()) {
 			return SimilarityMatrix.generateMatrix(inputSubmissions, results, null);
 		}
-		
+
 		let xSubmissions = inputSubmissions.sort();
 		let ySubmissions = [];
 		ySubmissions = ySubmissions.concat(inputSubmissions.sort());
 		ySubmissions = ySubmissions.concat(archiveSubmissions.sort());
-		
+
 		let matrix = new MatrixEntry[xSubmissions.size][ySubmissions.size];
-		
+
 		// Generate the matrix
-		
+
 		// First, handle identical submissions
 		xSubmissions.forEach(function(xSub){
 			// Get the X index
 			let xIndex = xSubmissions.indexOf(xSub);
 			let yIndex = ySubmissions.indexOf(xSub);
-			
+
 			matrix[xIndex][yIndex] = new MatrixEntry(xSub, xSub, xSub.getNumTokens());
 		});
 

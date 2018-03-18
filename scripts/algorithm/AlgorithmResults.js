@@ -8,12 +8,6 @@
  * See LICENSE.txt included in this distribution for the specific
  * language governing permissions and limitations under the License.
  *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at LICENSE.txt.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
  * CDDL HEADER END
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
@@ -21,15 +15,17 @@
 
 'use strict';
 
-//import net.lldp.checksims.submission.Submission;
-//import net.lldp.checksims.token.TokenList;
+/*
+global loader
+global checkNotNull, checkArgument
+*/
+loader.load([
 
-import { checkNotNull, checkArgument } from '/scripts/util/misc.js';
-
+]);
 /**
  * Results for a pairwise comparison algorithm.
  */
-export class AlgorithmResults {
+class AlgorithmResults {
 
 	/**
 	 * Construct results for a pairwise similarity detection algorithm.

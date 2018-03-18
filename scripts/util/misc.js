@@ -1,4 +1,4 @@
-export function checkNotNull(value = null){
+function checkNotNull(value = null){
 	if(value === null){
 		throw "Null Exception";
 	}
@@ -8,7 +8,7 @@ export function checkNotNull(value = null){
 	}
 }
 
-export function checkArgument(value = null, msg = ""){
+function checkArgument(value = null, msg = ""){
 	checkNotNull(value);
 	checkNotNull(msg);
 
@@ -17,13 +17,13 @@ export function checkArgument(value = null, msg = ""){
 	}
 }
 
-export class Pair extends Set{
+class Pair extends Set{
 	constructor(vals){
 		super(vals);
 	}
 }
 
-export function assert(check, msg = "no message"){
+function assert(check, msg = "no message"){
 	check = !(check === false);
 	if(!check){
 		throw new Error('Assertion failure: ' + msg);

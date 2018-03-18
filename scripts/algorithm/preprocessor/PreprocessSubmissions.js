@@ -13,13 +13,18 @@
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
  'use strict';
-
-import { checkNotNull, checkArgument } from '/scripts/util/misc.js';
+/*
+global loader
+global checkNotNull, checkArgument
+*/
+loader.load([
+	'/scripts/util/misc.js'
+]);
 
 /**
  * Apply a preprocessor (maps Submission to Submission) to a given list of submissions.
  */
-export class PreprocessSubmissions {
+class PreprocessSubmissions {
 	constructor() {
 
 	}

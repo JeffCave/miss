@@ -20,9 +20,13 @@
  */
 
 'use strict';
-
-import {Token} from '/scripts/token/Token.js';
-
+/*
+global loader
+global Token
+*/
+loader.load([
+	'/scripts/token/Token.js'
+]);
 
 /**
  * Concrete implementation of comparable tokens with varying type and validity.
@@ -31,4 +35,4 @@ import {Token} from '/scripts/token/Token.js';
  * Character tokens, this should be a Character. This is not enforced for performance reasons, but the invariant is
  * maintained throughout the program.
  */
-export class ConcreteToken extends Token {}
+class ConcreteToken extends Token {}

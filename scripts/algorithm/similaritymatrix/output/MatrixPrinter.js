@@ -15,15 +15,18 @@
 
 'use strict';
 
-//import net.lldp.checksims.algorithm.similaritymatrix.SimilarityMatrix;
-//import net.lldp.checksims.util.reflection.NamedInstantiable;
-import { NamedInstantiable } from '/scripts/util/reflection.NamedInstantiable/js';
-
+/*
+global loader
+global NamedInstantiable
+*/
+loader.load([
+	'/scripts/util/reflection/NamedInstantiable.js'
+]);
 
 /**
  * Output a Similarity Matrix in human-readable or machine-readable format.
  */
-export class MatrixPrinter extends NamedInstantiable {
+class MatrixPrinter extends NamedInstantiable {
     /**
      * Print a Similarity Matrix to string.
      *

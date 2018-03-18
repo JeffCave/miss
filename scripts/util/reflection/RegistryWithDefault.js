@@ -13,13 +13,20 @@
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
 
-import { Registry } from '/scripts/util/reflection/Registry.js';
-import { checkNotNull } from '/scripts/util/misc.js';
+/*
+global loader
+global Registry
+global checkNotNull
+*/
+loader.load([
+	,'/scripts/util/reflection/Registry.js'
+	,'/scripts/util/misc.js'
+]);
 
 /**
  * Extension of a Registry with the ability to retrieve a default implementation.
  */
-export class RegistryWithDefault extends Registry {
+class RegistryWithDefault extends Registry {
 	/**
 	* Create a Registry instance for implementations of a given base class in the given package and subpackages.
 	*
@@ -29,7 +36,7 @@ export class RegistryWithDefault extends Registry {
 	* @param ignoredImplementations Names of implementations which will not be included in the registry
 	* @throws NoSuchImplementationException Thrown if no implementation with the name of the requested default exists
 	*/
-	RegistryWithDefault(classList, baseClazz, ignoredImplementations, defaultImplementation){
+	constructor(classList, baseClazz, ignoredImplementations, defaultImplementation){
 		super(classList, baseClazz, ignoredImplementations);
 
 		checkNotNull(defaultImplementation);

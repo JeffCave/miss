@@ -8,22 +8,18 @@
  * See LICENSE.txt included in this distribution for the specific
  * language governing permissions and limitations under the License.
  *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at LICENSE.txt.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
  * CDDL HEADER END
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
 'use strict';
-
-import { 
-	checkNotNull, 
-	checkArgument 
-} from '/scripts/util/misc.js';
+/*
+global loader
+global checkNotNull, checkArgument
+*/
+loader.load([
+	,'/scripts/util/misc.js'
+]);
 
 /**
  * Parent class for all registry implementations.
@@ -46,21 +42,21 @@ class Registry {
 		checkNotNull(baseClazz);
 		checkNotNull(ignores);
 		checkNotNull(include);
-		
+
 		this.ignored = new Set(ignores);
 		this.baseClass = baseClazz;
-		
+
 		// The final list should never change at runtime
 		this.registeredHandlers = this.registerAll(include);
 	}
-	
+
 	/**
 	 * @return Names of all supported implementations in this registry
 	 */
 	getSupportedImplementationNames() {
 		return this.registeredHandlers.keys();
 	}
-	
+
 	/**
 	 * Get an instance of an implementation with given name.
 	 *
@@ -70,14 +66,14 @@ class Registry {
 	 */
 	getImplementationInstance(name){
 		checkNotNull(name);
-		
+
 		if(!this.registeredHandlers.containsKey(name.toLowerCase())) {
 			throw new Error("No implementation available with name " + name);
 		}
-		
+
 		return this.registeredHandlers.get(name.toLowerCase());
 	}
-	
+
 	/**
 	 * Instantiate all subclasses of a class in a given package.
 	 *
@@ -93,7 +89,7 @@ class Registry {
 	 */
 	registerAll(types) {
 		checkNotNull(types);
-		
+
 		let allInstances = types.map(function(type){
 				// Invoke the method to get an instance
 				let instance = type.getInstance(null);
@@ -103,7 +99,7 @@ class Registry {
 			.filter(function(instance){
 				this.ignoredImplementations.forEach(function(ignore){
 					if(instance instanceof ignore){
-						return false
+						return false;
 					}
 				});
 				return true;

@@ -17,17 +17,24 @@
 
 /*
 global loader
+global AlgorithmResults
+global SimilarityDetector
+global TokenList
+global TokenType
+global checkNotNull
+global CryptoJS
+global btoa
 */
 loader.load([
-	,'scripts/algorithm/AlgorithmResults.js'
-	,'scripts/algorithm/InternalAlgorithmError.js'
-	,'scripts/algorithm/SimilarityDetector.js'
-	,'scripts/submission/Submission.js'
-	,'scripts/token/Token.js'
-	,'scripts/token/TokenList.js'
-	,'scripts/token/TokenType.js'
-	,'scripts/token/TokenTypeMismatchException.js'
-	,'scripts/util/misc.js'
+	,'https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.min.js'
+	,'/scripts/algorithm/AlgorithmResults.js'
+	,'/scripts/algorithm/SimilarityDetector.js'
+	,'/scripts/submission/Submission.js'
+	,'/scripts/token/Token.js'
+	,'/scripts/token/TokenList.js'
+	,'/scripts/token/TokenType.js'
+	,'/scripts/util/misc.js'
+
 ]);
 
 /**
@@ -39,7 +46,7 @@ class SubmissionLine {
         this.submission = submission;
     }
     toString() {
-        return "Line " + lineNum + " from submission with name " + submission.getName();
+        return "Line " + this.lineNum + " from submission with name " + this.submission.getName();
     }
 }
 
@@ -84,7 +91,7 @@ class LineSimilarityChecker extends SimilarityDetector {
 		let finalB = TokenList.cloneTokenList(linesB);
 
 		if(!a.getTokenType().equals(b.getTokenType())) {
-			throw new TokenTypeMismatchException("Token list type mismatch: submission " + a.getName() + " has type " +
+			throw new Error("Token list type mismatch: submission " + a.getName() + " has type " +
 			        linesA.type.toString() + ", while submission " + b.getName() + " has type "
 			        + linesB.type.toString());
 		}
@@ -94,16 +101,16 @@ class LineSimilarityChecker extends SimilarityDetector {
 			return new AlgorithmResults(a, b, finalA, finalB);
 		}
 
-		let hasher = MessageDigest.getInstance("SHA-512");
+		let hasher = CryptoJS.SHA512;
 		// Create a line database map
 		// Per-method basis to ensure we have no mutable state in the class
 		let lineDatabase = new Map();
 
 		// Hash all lines in A, and put them in the lines database
-		addLinesToMap(linesA, lineDatabase, a, hasher);
+		this.addLinesToMap(linesA, lineDatabase, a, hasher);
 
 		// Hash all lines in B, and put them in the lines database
-		addLinesToMap(linesB, lineDatabase, b, hasher);
+		this.addLinesToMap(linesB, lineDatabase, b, hasher);
 
 		// Number of matched lines contained in both
 		let identicalLinesA = 0;
@@ -144,7 +151,7 @@ class LineSimilarityChecker extends SimilarityDetector {
                         finalB.get(s.lineNum).setValid(false);
                     }
                     else {
-                        throw new RuntimeException("Unreachable code!");
+                        throw new Error("Unreachable code!");
                     }
                 });
 
@@ -157,13 +164,13 @@ class LineSimilarityChecker extends SimilarityDetector {
 		let invalTokensB = finalB.filter((token) => !token.isValid()).length;
 
 		if(invalTokensA != identicalLinesA) {
-			throw new InternalAlgorithmError(
+			throw new Error(
 				"Internal error: number of identical tokens (" + identicalLinesA
 				+ ") does not match number of invalid tokens (" + invalTokensA + ")"
 			);
 		}
 		else if(invalTokensB != identicalLinesB) {
-			throw new InternalAlgorithmError(
+			throw new Error(
 				"Internal error: number of identical tokens (" + identicalLinesB
 				+ ") does not match number of invalid tokens (" + invalTokensB + ")"
 				);
@@ -175,7 +182,7 @@ class LineSimilarityChecker extends SimilarityDetector {
 	addLinesToMap(lines, lineDatabase, submitter, hasher) {
 		for(let i = 0; i < lines.size(); i++) {
 			let token = lines[i];
-			let hash = Hex.encodeHexString(hasher.digest(token.getTokenAsString().getBytes()));
+			let hash = window.btoa(hasher(token.getTokenAsString().getBytes()));
 
 			if(!(hash in lineDatabase)) {
 				lineDatabase[hash] = [];

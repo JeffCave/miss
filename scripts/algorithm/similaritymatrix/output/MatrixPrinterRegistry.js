@@ -15,14 +15,20 @@
 
 'use strict';
 
-import {RegistryWithDefault} from '/scripts/util/reflection/RegistryWithDefault.js';
-import {MatrixToHTMLPrinter} from '/scripts/similaritymatrix/output/MatrixToHTMLPrinter.js';
-
+/*
+global loader
+global RegistryWithDefault
+global MatrixToHTMLPrinter
+*/
+loader.load([
+	,'/scripts/util/reflection/RegistryWithDefault.js'
+	,'/scripts/algorithm/similaritymatrix/output/MatrixToHTMLPrinter.js'
+]);
 
 /**
  * Registry for Matrix Printers.
  */
-export class MatrixPrinterRegistry extends RegistryWithDefault {
+class MatrixPrinterRegistry extends RegistryWithDefault {
 	constructor() {
 		let printers = [
 				'MatrixToCSVPrinter',

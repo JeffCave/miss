@@ -15,10 +15,16 @@
 
 'use strict';
 
-import {TokenList} from '/scripts/token/TokenList.js';
-import {Minimatch} from '/scripts/util/minimatch.js'
-
-import { checkNotNull, checkArgument, assert } from '/scripts/util/misc.js';
+/*
+global loader
+global TokenList
+global MiniMatch
+global checkNotNull, checkArgument, assert
+*/
+loader.load([
+	,'/scripts/token/TokenList.js'
+	,'/scripts/util/misc.js'
+]);
 
 /**
  * Interface for Submissions.
@@ -28,7 +34,7 @@ import { checkNotNull, checkArgument, assert } from '/scripts/util/misc.js';
  *
  * Also contains factory methods for submissions
  */
-export class Submission {
+class Submission {
 	/**
 	 * Generate a list of all student submissions from a directory.
 	 *

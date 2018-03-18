@@ -42,7 +42,7 @@ class SimilarityDetector extends NamedInstantiable {
 	 * @return Default token type to be used for this similarity detector
 	 */
 	getDefaultTokenType(){
-
+		throw new Error("Implement this class");
 	}
 
 	/**
@@ -57,6 +57,6 @@ class SimilarityDetector extends NamedInstantiable {
 	 * @throws InternalAlgorithmError Thrown on error detecting similarities
 	 */
 	detectSimilarity(a, b){
-
+		throw new Error("Implement this class");
 	}
 }

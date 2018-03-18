@@ -14,8 +14,13 @@
  */
 
 'use strict';
-
-import {AbstractTokenDecorator} from '/scripts/token/AbstractTokenDecorator.js';
+/*
+global loader
+global AbstractTokenDecorator
+*/
+loader.load([
+	'/scripts/token/AbstractTokenDecorator.js'
+]);
 
 
 /**
@@ -23,7 +28,7 @@ import {AbstractTokenDecorator} from '/scripts/token/AbstractTokenDecorator.js';
  *
  * Decorates other tokens to override their equals() method
  */
-export class ValidityIgnoringToken extends AbstractTokenDecorator {
+class ValidityIgnoringToken extends AbstractTokenDecorator {
 	constructor(wrappedToken) {
 		super(wrappedToken);
 	}

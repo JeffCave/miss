@@ -15,8 +15,15 @@
 
 'use strict';
 
-import { checkNotNull,checkArgument } from '/scripts/util/misc.js';
-
+/*
+global loader
+global ConcreteToken
+global checkNotNull
+*/
+loader.load([
+	,'/scripts/util/misc.js'
+	,'/scripts/token/Token.js'
+]);
 
 /**
  * Interface for Tokens.
@@ -28,7 +35,7 @@ import { checkNotNull,checkArgument } from '/scripts/util/misc.js';
  *
  * This interface enables easy use of Decorators for tokens.
  */
-export class Token {
+class Token {
 	/**
 	 * @param token Token to clone
 	 * @return Clone of token

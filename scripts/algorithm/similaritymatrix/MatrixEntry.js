@@ -8,12 +8,6 @@
  * See LICENSE.txt included in this distribution for the specific
  * language governing permissions and limitations under the License.
  *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at LICENSE.txt.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
  * CDDL HEADER END
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
@@ -21,10 +15,16 @@
 
 'use strict';
 
-import {Submission} from '/submission/Submission.js';
+/*
+global loader
+global checkNotNull, checkArgument
+*/
 
-import {ChecksimsException} from '/scripts/ChecksimsException.js';
-import { checkNotNull, checkArgument } from '/scripts/util/misc.js';
+loader.load([
+	,'/scripts/submission/Submission.js'
+	,'/scripts/ChecksimsException.js'
+	,'/scripts/util/misc.js'
+]);
 
 /**
  * An entry in the Similarity Matrix.
@@ -49,7 +49,7 @@ class MatrixEntry {
         this.similarTokens = +similarTokens;
         this.totalTokens = +base.getNumTokens();
         this.similarityPercent = 0.0;
-        
+
         if(this.totalTokens > 0) {
             this.similarityPercent = similarTokens / this.totalTokens;
         }
@@ -92,15 +92,15 @@ class MatrixEntry {
     }
 
     toString() {
-        return "Similarity Matrix Entry comparing " + base.getName() + " and " + comparedTo.getName();
+        return "Similarity Matrix Entry comparing " + this.base.getName() + " and " + this.comparedTo.getName();
     }
 
-    equals(Object other) {
+    equals(other) {
         if(!(other instanceof MatrixEntry)) {
             return false;
         }
 
-        return other.getBase().equals(base) && other.getComparedTo().equals(comparedTo)
+        return other.getBase().equals(this.base) && other.getComparedTo().equals(this.comparedTo)
                 && other.getSimilarTokens() === this.similarTokens;
     }
 

@@ -8,31 +8,34 @@
  * See LICENSE.txt included in this distribution for the specific
  * language governing permissions and limitations under the License.
  *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at LICENSE.txt.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
  * CDDL HEADER END
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
 
 'use strict';
+/*
+global loader
+global Submission
+global Submission
+global SubmissionPreprocessor
+global Tokenizer
+global checkNotNull
+*/
+loader.load([
+	,'/scripts/submission/Submission.js'
+	,'/scripts/algorithm/preprocessor/SubmissionPreprocessor.js'
+	,'/scripts/token/tokenizer/Tokenizer.js'
+	,'/scripts/ChecksimsConfig.js'
+	,'/scripts/ChecksimsException.js'
+	,'/scripts/util/misc.js'
+]);
 
-import { Submission } from '/scripts/submission/Submission.js';
-import { SubmissionPreprocessor } from '/scripts/algorithm/preprocessor/SubmissionPreprocessor.js';
-import { Tokenizer } from '/scripts/token.tokenizer.Tokenizer.js';
-
-import {ChecksimsConfig} from '/scripts/ChecksimsConfig.js';
-import {ChecksimsException} from '/scripts/ChecksimsException.js';
-import { checkNotNull,checkArgument } from '/scripts/util/misc.js';
 
 /**
  * Remove duplicated whitespace characters.
  */
-export class WhitespaceDeduplicationPreprocessor extends SubmissionPreprocessor {
+class WhitespaceDeduplicationPreprocessor extends SubmissionPreprocessor {
 	constructor() {
 
 	}

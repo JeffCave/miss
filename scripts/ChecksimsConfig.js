@@ -20,25 +20,13 @@
  */
 'use strict';
 
-
-//import com.google.common.collect.ImmutableList;
-//import com.google.common.collect.ImmutableSet;
-//import net.lldp.checksims.algorithm.AlgorithmRegistry;
-//import net.lldp.checksims.algorithm.SimilarityDetector;
-//import net.lldp.checksims.algorithm.preprocessor.SubmissionPreprocessor;
-//import net.lldp.checksims.algorithm.similaritymatrix.output.MatrixPrinter;
-//import net.lldp.checksims.algorithm.similaritymatrix.output.MatrixPrinterRegistry;
-//import net.lldp.checksims.submission.Submission;
-//import net.lldp.checksims.token.TokenType;
-
-//import java.util.*;
-//import java.util.stream.Collectors;
-
-import { 
-	checkNotNull, 
-	checkArgument 
-} from '/scripts/util/misc.js';
-
+/*
+global loader
+global checkNotNull, checkArgument
+*/
+loader.load([
+	'/scripts/util/misc.js'
+]);
 
 /**
  * Per-run configuration of Checksims.
@@ -78,7 +66,7 @@ class ChecksimsConfig {
 			this.numThreads = old.getNumThreads();
 		}
 	}
-	
+
 	/**
 	 * @param newAlgorithm New similarity detection algorithm to use
 	 * @return This configuration
@@ -88,7 +76,7 @@ class ChecksimsConfig {
 		this.algorithm = newAlgorithm;
 		return this;
 	}
-	
+
 	/**
 	 * @param newTokenization New tokenization algorithm to use
 	 * @return This configuration
@@ -98,14 +86,14 @@ class ChecksimsConfig {
 		this.tokenization = newTokenization;
 		return this;
 	}
-	
+
 	/**
 	 * @param newPreprocessors New list of preprocessors to apply. Can be empty.
 	 * @return This configuration
 	 */
 	setPreprocessors(newPreprocessors) {
 		checkNotNull(newPreprocessors);
-		
+
 		// Ensure that preprocessors are unique
 		// Can't use a set, we don't require preprocessors to implement equals() or hashCode() in sane ways
 		let names = newPreprocessors
@@ -120,12 +108,12 @@ class ChecksimsConfig {
 		if(names.length !== newPreprocessors.length) {
 			throw new Error("Preprocessors must be unique!");
 		}
-		
+
 		this.preprocessors = newPreprocessors;
-		
+
 		return this;
 	}
-	
+
 	/**
 	 * @param newSubmissions New set of submissions to work on. Must contain at least 1 submission.
 	 * @return This configuration
@@ -136,7 +124,7 @@ class ChecksimsConfig {
 		this.submissions = newSubmissions;
 		return this;
 	}
-	
+
 	/**
 	 * @param newArchiveSubmissions New set of archive submissions to use. May be empty.
 	 * @return This configuration
@@ -147,7 +135,7 @@ class ChecksimsConfig {
 		this.archiveSubmissions = newArchiveSubmissions;
 		return this;
 	}
-	
+
 	/**
 	 * @param newOutputPrinters Set of output strategies to use. Cannot be empty.
 	 * @return This configuration
@@ -158,7 +146,7 @@ class ChecksimsConfig {
 		this.outputPrinters = newOutputPrinters;
 		return this;
 	}
-	
+
 	/**
 	 * @param newNumThreads Number of threads to be used for parallel operations. Must be greater than 0.
 	 * @return Copy of configuration with new number of threads set
@@ -171,71 +159,71 @@ class ChecksimsConfig {
 		this.numThreads = newNumThreads;
 		return this;
 	}
-	
+
 	/**
 	 * @return Similarity detection algorithm to use
 	 */
 	getAlgorithm() {
 		return this.algorithm;
 	}
-	
+
 	/**
 	 * @return Tokenization algorithm to use
 	 */
 	getTokenization() {
 		return this.tokenization;
 	}
-	
+
 	/**
 	 * @return List of preprocessors to use
 	 */
 	getPreprocessors() {
 		return this.preprocessors;
 	}
-	
+
 	/**
 	 * @return Set of submissions to run on
 	 */
 	getSubmissions() {
 		return this.submissions;
 	}
-	
+
 	/**
 	 * @return Set of archive submissions to run on
 	 */
 	getArchiveSubmissions() {
 		return this.archiveSubmissions;
 	}
-	
+
 	/**
 	 * @return List of output methods requested
 	 */
 	getOutputPrinters() {
 		return this.outputPrinters;
 	}
-	
+
 	/**
 	 * @return Number of threads that will be used for parallel operations
 	 */
 	getNumThreads() {
 		return this.numThreads;
 	}
-	
+
 	toString() {
 		return "ChecksimConfig with algorithm " + this.algorithm.getName();
 	}
-	
+
 	hashCode() {
 		return this.submissions.hashCode() ^ this.archiveSubmissions.hashCode();
 	}
-	
+
 	equals(other) {
 		if(!(other instanceof ChecksimsConfig)) {
 			return false;
 		}
-		
+
 		let otherConfig = other;
-		
+
 		return this.algorithm.equals(otherConfig.getAlgorithm())
 			&& this.archiveSubmissions.equals(otherConfig.getArchiveSubmissions())
 			&& this.numThreads == otherConfig.getNumThreads()

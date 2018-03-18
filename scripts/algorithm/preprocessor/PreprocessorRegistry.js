@@ -21,14 +21,21 @@
 
 'use strict';
 
-import {WhitespaceDeduplicationPreprocessor} from '/scripts/algorithm/preprocessor/WhitespaceDeduplicationPreprocessor.js';
+/*
+global loader
+global WhitespaceDeduplicationPreprocessor
+global Registry
+*/
+loader.load([
+	,'/scripts/algorithm/preprocessor/WhitespaceDeduplicationPreprocessor.js'
+	,'/scripts/util/reflection/Registry.js'
+]);
 
-import {Registry} from '/scripts/util/reflection/Registry.js';
 
 /**
  * Registry to obtain valid preprocessors.
  */
-export class PreprocessorRegistry extends Registry {
+class PreprocessorRegistry extends Registry {
 	constructor() {
 		let detectors = [
 				'CommonCodeLineRemovalPreprocessor',

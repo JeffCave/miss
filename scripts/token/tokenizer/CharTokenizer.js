@@ -8,45 +8,43 @@
  * See LICENSE.txt included in this distribution for the specific
  * language governing permissions and limitations under the License.
  *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at LICENSE.txt.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
  * CDDL HEADER END
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
 
-package net.lldp.checksims.token.tokenizer;
+'use strict';
 
-import net.lldp.checksims.token.ConcreteToken;
-import net.lldp.checksims.token.TokenList;
-import net.lldp.checksims.token.TokenType;
-import org.apache.commons.lang3.ArrayUtils;
+/*
+global loader
+global TokenType
+global ConcreteToken
+global TokenList
+global Tokenizer
+global checkNotNull
+*/
+loader.load([
+	,'/scripts/token/TokenType.js'
+	,'/scripts/token/ConcreteToken.js'
+	,'/scripts/token/TokenList.js'
+	,'/scripts/token/tokenizer/Tokenizer.js'
+	,'/scripts/util/misc.js'
+]);
 
-import java.util.Arrays;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Split a file into a list of character tokens.
  */
-public final class CharTokenizer implements Tokenizer {
-    private static CharTokenizer instance;
-
-    private CharTokenizer() {}
-
+class CharTokenizer extends Tokenizer {
     /**
      * @return Singleton instance of CharTokenizer
      */
-    public static CharTokenizer getInstance() {
-        if(instance == null) {
-            instance = new CharTokenizer();
+    static getInstance() {
+        if(!('instance' in CharTokenizer)) {
+            CharTokenizer.instance = new CharTokenizer();
         }
 
-        return instance;
+        return CharTokenizer.instance;
     }
 
     /**
@@ -55,28 +53,25 @@ public final class CharTokenizer implements Tokenizer {
      * @param string String to split
      * @return Input string, with a single token representing each character
      */
-    @Override
-    public TokenList splitString(String string) {
+    splitString(string) {
         checkNotNull(string);
 
-        TokenList toReturn = new TokenList(this.getType());
+        let toReturn = new TokenList(this.getType());
 
-        char[] chars = string.toCharArray();
+		string.split('')
+			.map((character) => {return new ConcreteToken(character, TokenType.CHARACTER);})
+			.forEachOrdered(function(token){
+				toReturn.add(token);
+			});
 
-        Arrays.stream(ArrayUtils.toObject(chars))
-                .map((character) -> new ConcreteToken(character, TokenType.CHARACTER))
-                .forEachOrdered(toReturn::add);
+			return toReturn;
+		}
 
-        return toReturn;
-    }
-
-    @Override
-    public TokenType getType() {
+    getType() {
         return TokenType.CHARACTER;
     }
 
-    @Override
-    public String toString() {
+    toString() {
         return "Singleton instance of FileCharSplitter";
     }
 }

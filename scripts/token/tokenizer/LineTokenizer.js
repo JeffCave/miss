@@ -8,44 +8,43 @@
  * See LICENSE.txt included in this distribution for the specific
  * language governing permissions and limitations under the License.
  *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at LICENSE.txt.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
  * CDDL HEADER END
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
 
-package net.lldp.checksims.token.tokenizer;
 
-import net.lldp.checksims.token.ConcreteToken;
-import net.lldp.checksims.token.TokenList;
-import net.lldp.checksims.token.TokenType;
+'use strict';
 
-import java.util.Arrays;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+/*
+global loader
+global TokenType
+global ConcreteToken
+global TokenList
+global Tokenizer
+global checkNotNull
+*/
+loader.load([
+	,'/scripts/token/TokenType.js'
+	,'/scripts/token/ConcreteToken.js'
+	,'/scripts/token/TokenList.js'
+	,'/scripts/token/tokenizer/Tokenizer.js'
+	,'/scripts/util/misc.js'
+]);
 
 /**
  * Splits a file on a line-by-line basis.
  */
-public final class LineTokenizer implements Tokenizer {
-    private static LineTokenizer instance;
-
-    private LineTokenizer() {}
-
+class LineTokenizer extends Tokenizer {
     /**
      * @return Singleton instance of LineTokenizer
      */
-    public static LineTokenizer getInstance() {
-        if(instance == null) {
-            instance = new LineTokenizer();
+    static getInstance() {
+        if(!('instance' in LineTokenizer)) {
+            LineTokenizer.instance = new LineTokenizer();
         }
 
-        return instance;
+        return LineTokenizer.instance;
     }
 
     /**
@@ -54,30 +53,22 @@ public final class LineTokenizer implements Tokenizer {
      * @param string String to split
      * @return List of LINE tokens representing the input string
      */
-    @Override
-    public TokenList splitString(String string) {
+    splitString(string) {
         checkNotNull(string);
 
-        TokenList toReturn = new TokenList(this.getType());
-
-        if(string.isEmpty()) {
-            return toReturn;
-        }
-
-        Arrays.stream(string.split("\n"))
-                .map((str) -> new ConcreteToken(str, TokenType.LINE))
-                .forEachOrdered(toReturn::add);
+        let toReturn = string
+            .split("\n")
+            .map((str) => {return new ConcreteToken(str, TokenType.LINE);})
+            ;
 
         return toReturn;
     }
 
-    @Override
-    public TokenType getType() {
+    getType() {
         return TokenType.LINE;
     }
 
-    @Override
-    public String toString() {
+    toString() {
         return "Singleton FileLineSplitter instance";
     }
 }

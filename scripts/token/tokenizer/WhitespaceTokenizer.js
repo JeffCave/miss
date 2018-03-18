@@ -8,44 +8,42 @@
  * See LICENSE.txt included in this distribution for the specific
  * language governing permissions and limitations under the License.
  *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at LICENSE.txt.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
  * CDDL HEADER END
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
 
-package net.lldp.checksims.token.tokenizer;
+'use strict';
 
-import net.lldp.checksims.token.ConcreteToken;
-import net.lldp.checksims.token.TokenList;
-import net.lldp.checksims.token.TokenType;
-
-import java.util.Arrays;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+/*
+global loader
+global TokenType
+global ConcreteToken
+global TokenList
+global Tokenizer
+global checkNotNull
+*/
+loader.load([
+	,'/scripts/token/TokenType.js'
+	,'/scripts/token/ConcreteToken.js'
+	,'/scripts/token/TokenList.js'
+	,'/scripts/token/tokenizer/Tokenizer.js'
+	,'/scripts/util/misc.js'
+]);
 
 /**
  * Split a file into tokens based on spaces.
  */
-public final class WhitespaceTokenizer implements Tokenizer {
-    private static WhitespaceTokenizer instance;
-
-    private WhitespaceTokenizer() {}
-
+class WhitespaceTokenizer extends Tokenizer {
     /**
      * @return Singleton instance of WhitespaceTokenizer
      */
-    public static WhitespaceTokenizer getInstance() {
-        if(instance == null) {
-            instance = new WhitespaceTokenizer();
+    static getInstance() {
+        if(!('instance' in WhitespaceTokenizer)){
+            WhitespaceTokenizer.instance = new WhitespaceTokenizer();
         }
 
-        return instance;
+        return WhitespaceTokenizer.instance;
     }
 
     /**
@@ -54,29 +52,25 @@ public final class WhitespaceTokenizer implements Tokenizer {
      * @param string Input string
      * @return List of WHITESPACE tokens representing the input submission
      */
-    @Override
-    public TokenList splitString(String string) {
+	splitString(string) {
         checkNotNull(string);
 
-        TokenList toReturn = new TokenList(this.getType());
+		let toReturn = string
+			.split("\\s+")
+			.filter((str) => {return str === "";})
+			.map((str) => {
+				return new ConcreteToken(str, TokenType.WHITESPACE);
+			})
+			;
 
-        String[] split = string.split("\\s+");
+		return toReturn;
+	}
 
-        Arrays.stream(split)
-                .filter((str) -> !str.isEmpty())
-                .map((str) -> new ConcreteToken(str, TokenType.WHITESPACE))
-                .forEachOrdered(toReturn::add);
-
-        return toReturn;
-    }
-
-    @Override
-    public TokenType getType() {
+    getType() {
         return TokenType.WHITESPACE;
     }
 
-    @Override
-    public String toString() {
+    toString() {
         return "Singleton instance of FileSpaceSplitter";
     }
 }

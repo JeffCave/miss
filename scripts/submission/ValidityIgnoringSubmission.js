@@ -19,52 +19,52 @@
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
 
-package net.lldp.checksims.submission;
+'use strict';
 
-import net.lldp.checksims.token.TokenList;
-import net.lldp.checksims.token.ValidityIgnoringToken;
-
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
+/*
+global loader
+global TokenList
+global ValidityIgnoringToken
+global AbstractSubmissionDecorator
+*/
+loader.load([
+	,'/scripts/token/TokenList.js'
+	,'/scripts/token/ValidityIgnoringToken.js'
+	,'/scripts/submission/AbstractSubmissionDecorator.js'
+]);
 
 /**
  * Submission which ignores validity - tokens are compared ignoring their validity.
  *
  * Decorates another submission and overrides equals()
  */
-public final class ValidityIgnoringSubmission extends AbstractSubmissionDecorator {
-    public ValidityIgnoringSubmission(Submission wrappedSubmission) {
+class ValidityIgnoringSubmission extends AbstractSubmissionDecorator {
+    constructor(wrappedSubmission) {
         super(wrappedSubmission);
     }
 
-    @Override
-    public boolean equals(Object other) {
-        if(!(other instanceof Submission)) {
+    equals(other) {
+        if(!(other instanceof 'Submission')) {
+            return false;
+        }
+        if(!other.getTokenType().equals(this.getTokenType())
+                || !other.getName().equals(this.getName())
+                || !(other.getNumTokens() == this.getNumTokens())
+                || !(other.getContentAsString().equals(this.getContentAsString()))) {
             return false;
         }
 
-        Submission otherSubmission = (Submission)other;
-
-        if(!otherSubmission.getTokenType().equals(this.getTokenType())
-                || !otherSubmission.getName().equals(this.getName())
-                || !(otherSubmission.getNumTokens() == this.getNumTokens())
-                || !(otherSubmission.getContentAsString().equals(this.getContentAsString()))) {
-            return false;
-        }
-
-        Supplier<TokenList> tokenListSupplier = () -> new TokenList(this.getTokenType());
-        TokenList thisList = this.getContentAsTokens().stream()
-                .map(ValidityIgnoringToken::new)
-                .collect(Collectors.toCollection(tokenListSupplier));
-        TokenList otherList = otherSubmission.getContentAsTokens().stream()
-                .map(ValidityIgnoringToken::new)
-                .collect(Collectors.toCollection(tokenListSupplier));
+        let thisList = this.getContentAsTokens()
+                .map(function(d){return new ValidityIgnoringToken(d);})
+                ;
+        let otherList = other.getContentAsTokens()
+                .map(function(d){return new ValidityIgnoringToken(d);})
+                ;
 
         return thisList.equals(otherList);
     }
 
-    @Override
-    public int hashCode() {
+    hashCode() {
         return super.hashCode();
     }
 }
