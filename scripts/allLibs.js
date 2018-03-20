@@ -58,6 +58,10 @@ const loader = {
 			,'/scripts/algorithm/similaritymatrix/output/MatrixToCSVPrinter.js'
 			,'/scripts/algorithm/similaritymatrix/output/MatrixPrinterRegistry.js'
 			,'/scripts/algorithm/similaritymatrix/SimilarityMatrix.js'
+			,'/scripts/algorithm/smithwaterman/ArraySubset.js'
+			,'/scripts/algorithm/smithwaterman/Coordinate.js'
+			,'/scripts/algorithm/smithwaterman/SmithWatermanAlgorithm.js'
+			,'/scripts/algorithm/smithwaterman/SmithWaterman.js'
 			,'/scripts/algorithm/AlgorithmRegistry.js'
 			,'/scripts/submission/AbstractSubmissionDecorator.js'
 			,'/scripts/submission/ValidityIgnoringSubmission.js'
@@ -71,6 +75,7 @@ const loader = {
 			,'/scripts/util/PairGenerator.js'
 			,'/scripts/util/misc.js'
 			,'/scripts/ChecksimsException.js'
+			,'/scripts/ChecksimsConfig.js'
 			,'/scripts/ChecksimsRunner.js'
 		]);
 })();

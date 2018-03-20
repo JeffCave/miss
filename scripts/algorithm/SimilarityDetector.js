@@ -34,10 +34,6 @@ loader.load([
  * present at runtime.
  */
 class SimilarityDetector extends NamedInstantiable {
-	constructor(){
-		throw new Error("Implementation of abstract class");
-	}
-
 	/**
 	 * @return Default token type to be used for this similarity detector
 	 */

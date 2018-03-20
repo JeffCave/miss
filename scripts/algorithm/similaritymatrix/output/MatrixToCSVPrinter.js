@@ -29,11 +29,21 @@ loader.load([
  * Print a Similarity Matrix as machine-readable CSV.
  */
 class MatrixToCSVPrinter extends MatrixPrinter {
+	constructor(){
+		if('instance' in MatrixToCSVPrinter){
+			throw Error('Meant to be a singleton. Use "getInstance"');
+		}
+		super();
+
+
+		MatrixToCSVPrinter.instance = this;
+	}
+
 	/**
 	 * @return Singleton instance of MatrixToCSVPrinter
 	 */
 	static getInstance() {
-		if('instance' in MatrixToCSVPrinter) {
+		if(!('instance' in MatrixToCSVPrinter)) {
 			MatrixToCSVPrinter.instance = new MatrixToCSVPrinter();
 		}
 		return MatrixToCSVPrinter.instance;

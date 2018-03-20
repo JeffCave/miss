@@ -32,7 +32,6 @@ class AlgorithmRegistry extends RegistryWithDefault {
 		if("instance" in AlgorithmRegistry){
 			throw new Error("Singleton generation errro");
 		}
-		AlgorithmRegistry.instance = this;
 
 		let detectors = [
 				'SmithWaterman',
@@ -40,6 +39,8 @@ class AlgorithmRegistry extends RegistryWithDefault {
 			];
 		let def = LineSimilarityChecker.getInstance().getName();
 		super( detectors, "SimilarityDetector", [], def);
+
+		AlgorithmRegistry.instance = this;
 	}
 
 	/**

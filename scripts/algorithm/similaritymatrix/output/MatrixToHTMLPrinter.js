@@ -37,10 +37,6 @@ loader.load([
  * Print a Similarity Matrix to HTML.
  */
 class MatrixToHTMLPrinter extends MatrixPrinter {
-
-	constructor(){
-	}
-
 	static get templateLocation(){
 		return "/scripts/algorithm/similaritymatrix/output/htmlOutput.tmpl.html";
 	}

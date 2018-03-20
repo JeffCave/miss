@@ -14,14 +14,20 @@
  */
 
 'use strict';
-
-import { Coordinate } from './Coordinate.js';
-import { checkNotNull, checkArgument } from '/scripts/util/misc.js';
+/*
+global loader
+global Coordinate
+global checkNotNull, checkArgument
+*/
+loader.load([
+	,'/scripts/algorithm/smithwaterman/Coordinate.js'
+	,'/scripts/util/misc.js'
+]);
 
 /**
  * An immutable subset of a 2-Dimensional Array.
  */
-export class ArraySubset {
+class ArraySubset {
 	/**
 	 * Construct a new array subset.
 	 *

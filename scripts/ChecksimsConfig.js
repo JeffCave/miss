@@ -22,10 +22,12 @@
 
 /*
 global loader
+global AlgorithmRegistry
 global checkNotNull, checkArgument
 */
 loader.load([
-	'/scripts/util/misc.js'
+	,'/scripts/algorithm/AlgoritmRegistry.js'
+	,'/scripts/util/misc.js'
 ]);
 
 /**

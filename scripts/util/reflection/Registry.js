@@ -66,12 +66,13 @@ class Registry {
 	 */
 	getImplementationInstance(name){
 		checkNotNull(name);
+		name = name.toLowerCase();
 
-		if(!this.registeredHandlers.containsKey(name.toLowerCase())) {
+		if(!this.registeredHandlers.has(name)) {
 			throw new Error("No implementation available with name " + name);
 		}
 
-		return this.registeredHandlers.get(name.toLowerCase());
+		return this.registeredHandlers.get(name);
 	}
 
 	/**
@@ -90,25 +91,34 @@ class Registry {
 	registerAll(types) {
 		checkNotNull(types);
 
+		let registry = this;
+
 		let allInstances = types.map(function(type){
 				// Invoke the method to get an instance
-				let instance = type.getInstance(null);
+				let instance = eval(type).getInstance();
+				if(!instance){
+					throw new Error('Attempt to register unknown type: ' + type);
+				}
 				let name = instance.getName().toLowerCase();
 				return instance;
 			})
 			.filter(function(instance){
-				this.ignoredImplementations.forEach(function(ignore){
-					if(instance instanceof ignore){
+				registry.ignored.forEach(function(ignore){
+					if(instance instanceof 'ignore'){
 						return false;
 					}
 				});
 				return true;
 			})
 			.reduce(function(a,instance){
-				a.add(instance.getName().toLowerCase,instance);
+				let key = instance.getName().toLowerCase();
+				a[key] = instance;
+				return a;
 			},{})
 			;
 
-		return new Map(allInstances);
+		allInstances = Object.entries(allInstances);
+		allInstances = new Map(allInstances);
+		return allInstances;
 	}
 }

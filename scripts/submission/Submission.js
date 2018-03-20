@@ -29,60 +29,13 @@ loader.load([
 /**
  * Interface for Submissions.
  *
- * Submissions are considered Comparable so they can be ordered for output. Generally, we only expect that their names,
- * and not their contents, will be compared.
+ * Submissions are considered Comparable so they can be ordered for
+ * output. Generally, we only expect that their names, and not their
+ * contents, will be compared.
  *
  * Also contains factory methods for submissions
  */
 class Submission {
-	/**
-	 * Generate a list of all student submissions from a directory.
-	 *
-	 * The directory is assumed to hold a number of subdirectories, each containing one student or group's submission
-	 * The student/group directories may contain subdirectories with files
-	 *
-	 * @param directory Directory containing student submission directories
-	 * @param glob Match pattern used to identify files to include in submission
-	 * @param splitter Tokenizes files to produce Token Lists for a submission
-	 * @return Set of submissions including all unique nonempty submissions in the given directory
-	 * @throws java.io.IOException Thrown on error interacting with file or filesystem
-	 */
-	static submissionListFromDir(/*File*/ directory, /*String*/ glob, /*Tokenizer*/ splitter, /*boolean*/ recursive){
-		checkNotNull(directory);
-		checkNotNull(glob);
-		checkArgument(!glob.isEmpty(), "Glob pattern cannot be empty!");
-		checkNotNull(splitter);
-
-		if(!directory.exists()) {
-			throw new Error("Does not exist: " + directory.getAbsolutePath());
-		}
-		else if(!directory.isDirectory()) {
-			throw new Error("Not a directory: " + directory.getAbsolutePath());
-		}
-
-		// List all the subdirectories we find
-		let contents = directory.listFiles().filter(function(f){return f.isDirectory});
-
-		let submissions = new Set();
-		contents.forEach(function(f){
-			try {
-				let s = Submission.submissionFromDir(f, glob, splitter, recursive);
-				submissions.add(s);
-				if(s.getContentAsString().isEmpty()) {
-					console.warn("Warning: Submission " + s.getName() + " is empty!");
-				}
-				else {
-					console.debug("Created submission with name " + s.getName());
-				}
-			}
-			catch (e) {
-				console.warn("Could not create submission from directory " + f.getName() + " - no files matching pattern found!");
-			}
-		});
-
-		return submissions;
-	}
-
 	/**
 	 * Get a single submission from a directory.
 	 *
@@ -95,14 +48,10 @@ class Submission {
 	static submissionFromDir(directory, glob, splitter, isRecursive){
 		checkNotNull(directory);
 		checkNotNull(glob);
-		checkArgument(!glob.isEmpty(), "Glob pattern cannot be empty!");
 		checkNotNull(splitter);
 
-		if(!directory.exists()) {
-			throw new Error("Does not exist: " + directory.getAbsolutePath());
-		}
-		else if(!directory.isDirectory()) {
-			throw new Error("Not a directory: " + directory.getAbsolutePath());
+		if(!Array.isArray(directory)) {
+			throw new Error("File list is not a list.");
 		}
 
 		// TODO consider verbose logging of which files we're adding to the submission?
@@ -122,39 +71,20 @@ class Submission {
 	static getAllMatchingFiles(directory, glob, recursive){
 		checkNotNull(directory);
 		checkNotNull(glob);
-		checkArgument(!glob.isEmpty(), "Glob pattern cannot be empty");
 
-		if(!directory.exists()) {
-			throw new Error("Does not exist: " + directory.getAbsolutePath());
+		if(!Array.isArray(directory)) {
+			throw new Error("File list is not a list.");
 		}
-		else if(!directory.isDirectory()) {
-			throw new Error("Not a directory: " + directory.getAbsolutePath());
-		}
-
-		let matcher = new Minimatch(glob);
-		let allFiles = [];
 
 		if(recursive) {
 			console.trace("Recursively traversing directory " + directory.getName());
 		}
 
 		// Get files in this directory
-		let contents = directory.listFiles((f) => matcher.match(f.getAbsolutePath().getFileName()));
-
-		// TODO consider mapping to absolute paths?
-
-		// Add this directory
-		allFiles = allFiles.concat(contents);
-
-		// Get subdirectories
-		let subdirs = directory.listFiles().filter(function(d){ return d.isDirectory();});
-
-		// Recursively call on all subdirectories if specified
-		if(recursive) {
-			subdirs.forEach(function(subdir){
-				allFiles.addAll(Submission.getAllMatchingFiles(subdir, glob, true));
-			});
-		}
+		let allFiles = directory.filter(function(f){
+			let result = glob.test(f.name);
+			return result;
+		});
 
 		return allFiles;
 	}
@@ -162,7 +92,8 @@ class Submission {
 	/**
 	 * Turn a list of files and a name into a Submission.
 	 *
-	 * The contents of a submission are built deterministically by reading in files in alphabetical order and appending
+	 * The contents of a submission are built deterministically by
+	 * reading in files in alphabetical order and appending
 	 * their contents.
 	 *
 	 * @param name Name of the new submission
@@ -217,10 +148,13 @@ class Submission {
 	/**
 	 * Construct a new Concrete Submission with given name and contents.
 	 *
-	 * Token content should be the result of tokenizing the string content of the submission with some tokenizer. This
-	 * invariant is maintained throughout the project, but not enforced here for performance reasons. It is thus
-	 * possible to create a ConcreteSubmission with Token contents not equal to tokenized String contents. This is not
-	 * recommended and will most likely break, at the very least, Preprocessors.
+	 * Token content should be the result of tokenizing the string
+	 * content of the submission with some tokenizer. This invariant is
+	 * maintained throughout the project, but not enforced here for
+	 * performance reasons. It is thus possible to create a
+	 * ConcreteSubmission with Token contents not equal to tokenized
+	 * String contents. This is not recommended and will most likely
+	 * break, at the very least, Preprocessors.
 	 *
 	 * @param name Name of new submission
 	 * @param content Content of submission, as string
@@ -286,9 +220,10 @@ class Submission {
 	/**
 	 * Compare two Submissions, using natural ordering by name.
 	 *
-	 * Note that the natural ordering of ConcreteSubmission is inconsistent with equality. Ordering is based solely on
-	 * the name of a submission; two submissions with the same name, but different contents, will have compareTo()
-	 * return 0, but equals() return false
+	 * Note that the natural ordering of ConcreteSubmission is
+	 * inconsistent with equality. Ordering is based solely on the name
+	 * of a submission; two submissions with the same name, but different
+	 * contents, will have compareTo() return 0, but equals() return false
 	 *
 	 * @param other Submission to compare to
 	 * @return Integer indicating relative ordering of the submissions

@@ -26,12 +26,12 @@
 					return;
 				}
 				checker
-					.loadZip(file)
+					.attachSubmissions(file)
 					.then(function(){
 						button.disabled = false;
 						let ul = document.querySelector("ul");
 						ul.innerHTML = '';
-						checker.zip.forEach(function(path,entry) {
+						checker.submissions.forEach(function(path,entry) {
 							ul.innerHTML += '<li>'+entry.name+'</li>';
 						});
 					})

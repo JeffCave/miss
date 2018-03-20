@@ -17,6 +17,20 @@
 
 /*
 global JSZip
+
+global AlgorithmRegistry
+global ChecksimsConfig
+global ChecksimsException
+global ChecksimsRunner
+global CommonCodeLineRemovalPreprocessor
+global MatrixPrinterRegistry
+global PreprocessorRegistry
+global Submission
+global Tokenizer
+global TokenType
+
+global checkArgument
+global checkNotNull
 */
 
 /**
@@ -28,14 +42,14 @@ class ChecksimsCommandLine {
 	constructor() {
 	}
 
-	loadZip(blob){
+	attachSubmissions(blob){
 		let parent = this;
-		this.zip = null;
+		this.submissions = null;
 		// 1) read the Blob
 		return JSZip
 			.loadAsync(blob)
 			.then(function(zip) {
-				parent.zip = zip;
+				parent.submissions = zip;
 				//zip.forEach(function (relativePath, zipEntry) {
 				//	// 2) print entries
 				//	console.log(zipEntry.name);
@@ -53,135 +67,65 @@ class ChecksimsCommandLine {
 			;
 	}
 
+	attachArchive(blob){
+		let parent = this;
+		this.archive = null;
+		// 1) read the Blob
+		return JSZip
+			.loadAsync(blob)
+			.then(function(zip) {
+				parent.archive = zip;
+			})
+			.catch(function (e) {
+				console.error("Error reading " + blob.name + ": " + e.message);
+			})
+			;
+	}
+
+	attachCommon(blob){
+		let parent = this;
+		this.common = null;
+		// 1) read the Blob
+		return JSZip
+			.loadAsync(blob)
+			.then(function(zip) {
+				parent.common = zip;
+			})
+			.catch(function (e) {
+				console.error("Error reading " + blob.name + ": " + e.message);
+			})
+			;
+	}
+
 
 	/**
 	 * @param anyRequired Whether any arguments are required
 	 * @return CLI options used in Checksims
 	 */
-	getOpts(anyRequired) {
+	getOpts() {
 		let opts = {
-
-			"a" : {
-				opt: "a",
-				longOpt: "algorithm",
-				hasArg:true,
-				argName:"name",
-				desc: ("algorithm to compare with")
-			},
-
-			"t" : {
-				opt:"t",
-				longOpt:("token"),
-				hasArg:true,
-				argName:("type"),
-				desc:("tokenization to use for submissions"),
-			},
-
-			"o" : {
-				opt:"o",
-				longOpt:("output"),
-				hasArgs:true,
-				argName:("name1[,name2,...]"),
-				valueSeparator:(','),
-				desc:("output format(s) to use, comma-separated if multiple given")
-			},
-
-			"f":{
-				opt:("f"),
-				longOpt:("file"),
-				hasArg:true,
-				argName:("filename"),
-				desc:("print output to given file")
-			},
-
-			"p" : {
-				opt:("p"),
-				longOpt:("preprocess"),
-				hasArgs:true,
-				argName:("name1[,name2,...]"),
-				valueSeparator:(','),
-				desc:("preprocessor(s) to apply, comma-separated if multiple given")
-			},
-
-			"j" : {
-				opt:("j"),
-				longOpt:("jobs"),
-				hasArg:true,
-				argName:("num"),
-				desc:("number of threads to use")
-			},
-
-			"g" : {
-				opt:("g"),
-				longOpt:("glob"),
-				hasArg:true,
-				argName:("matchpattern"),
-				desc:("match pattern to determine files included in submissions")
-			},
-
-			"v" : {
-				opt:("v"),
-				longOpt:"verbosity",
-				hasArg:true,
-				argName:("verbosity"),
-				desc:("Number of verbose ")
-			},
-
-			"h": {
-				opt:"h",
-				longOpt:"help",
-				hasArg:false,
-				desc:"show usage information"
-			},
-			"e": {opt:"e", longOpt:"empty", hasArg:false, desc:"retain empty submissions"},
-			"c" : {
-				opt:("c")
-				,longOpt:("common")
-				,hasArg:true
-				,argName:("path")
-				,desc:("directory containing common code which will be removed from all submissions")
-			},
-
-			"r":{opt:"r", longOpt:"recursive", hasArg:false,desc:"recursively traverse subdirectories to generate submissions"},
-			"ver": {opt:"ver",longOpt:"version", hasArg:false, desc:"print version of Checksims"},
-
-			"archive": {
-				opt:("archive")
-				,longOpt:("archivedir")
-				,desc:("archive submissions - compared to main submissions but not each other")
-				,argName:("path")
-				,hasArgs:true,
-				valueSeparator:('*')
-			},
-
-			"s": {
-				opt:("s")
-				,longOpt:("submissiondir")
-				,desc:("directory or directories containing submissions to compare - mandatory!")
-				,argName:("path")
-				,hasArgs:true
-				,valueSeparator:('*')
-				,required:(anyRequired === true)
-			},
+			"algorithm" : "smithwaterman",
+			"tokenizer" :TokenType.WHITESPACE,
+			"preproc" : ['commoncodeline','lowercase','deduplicate'],
+			"threads" : 1,
+			"regex" : /.*/,
+			"verbosity" : 1,
+			// retain empty folders
+			"empty": true,
+			// recurse folder structure
+			"recurse":true,
+			// common code to be ignored (instructor code)
+			"commDir" : null,
+			// use archive (old student assignments)
+			"archDir": null,
+			// submissions (current student assignemnts)
+			"subDir": null,
 		};
 
 		return opts;
 	}
 
-	/**
-	 * Parse a given set of CLI arguments into a Commons CLI CommandLine.
-	 *
-	 * @param args Arguments to parse
-	 * @param anyRequired Whether arguments should be required
-	 * @return CommandLine from parsed arguments
-	 * @throws ParseException Thrown on error parsing arguments
-	 */
-	parseOpts(args, anyRequired = false) {
-		checkNotNull(args);
-		// Parse the CLI args
-		let opts = this.getOpts(anyRequired);
-		return JSON.merge([opts, args]);
-	}
+
 
 	/**
 	 * Parse basic CLI flags and produce a ChecksimsConfig.
@@ -190,40 +134,39 @@ class ChecksimsCommandLine {
 	 * @return Config derived from parsed CLI
 	 * @throws ChecksimsException Thrown on invalid user input or internal error
 	 */
-	parseBaseFlags(cli = null){
-		checkNotNull(cli);
+	parseBaseFlags(cli = {}){
+		cli = JSON.merge([{},this.getOpts(),cli]);
 
 		// Create a base config to work from
 		let config = new ChecksimsConfig();
 
 		// Parse plagiarism detection algorithm
-		if(cli.hasOption("a")) {
-			config = config.setAlgorithm(AlgorithmRegistry.getInstance().getImplementationInstance(cli.getOptionValue("a")));
-			config = config.setTokenization(config.getAlgorithm().getDefaultTokenType());
+		if('algo' in cli){
+			let algo = AlgorithmRegistry.getInstance().getImplementationInstance(cli['algo']);
+			config = config.setAlgorithm(algo);
+			config = config.setTokenization(algo.getDefaultTokenType());
 		}
 
 		// Parse tokenization
-		if(cli.hasOption("t")) {
-			config = config.setTokenization(TokenType.fromString(cli.getOptionValue("t")));
+		if('t' in cli) {
+			config = config.setTokenization(TokenType.fromString(cli['t']));
 		}
 
 		// Parse number of threads to use
-		if(cli.hasOption("j")) {
-			let numThreads = Number.parseInt(cli.getOptionValue("j"),10);
-
+		if('j' in cli) {
+			let numThreads = Number.parseInt(cli["j"],10);
 			if(numThreads < 1) {
 				throw new ChecksimsException("Thread count must be positive!");
 			}
-
 			config = config.setNumThreads(numThreads);
 		}
 
 		// Parse preprocessors
 		// Ensure no duplicates
-		if(cli.hasOption("p")) {
+		if('p' in cli) {
 			let preprocessors = [];
 
-			let preprocessorsToUse = cli.getOptionValues("p");
+			let preprocessorsToUse = cli["p"];
 			preprocessorsToUse.forEach(function(s){
 				let p = PreprocessorRegistry.getInstance().getImplementationInstance(s);
 				preprocessors.add(p);
@@ -233,8 +176,8 @@ class ChecksimsCommandLine {
 
 		// Parse output strategies
 		// Ensure no duplicates
-		if(cli.hasOption("o")) {
-			let desiredStrategies = cli.getOptionValues("o");
+		if('o' in cli) {
+			let desiredStrategies = cli["o"];
 			let deduplicatedStrategies = new Set(desiredStrategies);
 
 			if(deduplicatedStrategies.size === 0) {
@@ -263,7 +206,7 @@ class ChecksimsCommandLine {
 	 * @throws ChecksimsException Thrown on bad argument
 	 * @throws IOException Thrown on error building submissions
 	 */
-	parseFileFlags(cli, baseConfig) {
+	loadFiles(cli, baseConfig) {
 		checkNotNull(cli);
 		checkNotNull(baseConfig);
 
@@ -271,98 +214,81 @@ class ChecksimsCommandLine {
 
 		// Get glob match pattern
 		// Default to *
-		let globPattern = cli.getOptionValue("g", "*");
+		let globPattern = cli.regex || /.*/;
 
 		// Check if we are recursively building
-		let recursive = cli.hasOption("r");
+		let recursive = !(cli.recurse !== false);
 
 		// Check if we are retaining empty submissions
-		let retainEmpty = cli.hasOption("e");
+		let retainEmpty = cli.empty;
 
 		// Get the tokenizer specified by base config
 		let tokenizer = Tokenizer.getTokenizer(baseConfig.getTokenization());
 
-		// Get submission directories
-		if(!cli.hasOption("s")) {
-			throw new ChecksimsException("Must provide at least one submission directory!");
-		}
-
-		let submissionDirsString = cli.getOptionValues("s");
-
-		// Make a Set<File> from those submission directories
-		// Map to absolute file, to ensure no dups
-		let submissionDirs = new Set(submissionDirsString);
-		if(submissionDirs.size === 0) {
-			throw new ChecksimsException("Must provide at least one submission directory!");
-		}
-
 		// Generate submissions
-		let submissions = this.getSubmissions(submissionDirs, globPattern, tokenizer, recursive, retainEmpty);
-
+		let submissions = this.getSubmissions(this.submissions, globPattern, tokenizer, recursive, retainEmpty);
 		console.log.debug("Generated " + submissions.size() + " submissions to process.");
-
 		if(submissions.isEmpty()) {
-			throw new ChecksimsException("Could build any submissions to operate on!");
+			throw new ChecksimsException("Could not build any submissions to operate on!");
 		}
-
 		toReturn = toReturn.setSubmissions(submissions);
 
-		// Check if we need to perform common code removal
-		if(cli.hasOption("c")) {
-			// Get the directory containing the common code
-			let commonCodeDirString = cli.getOptionValue("c");
+		// // Check if we need to perform common code removal
+		// if(cli.commDir) {
+		// 	// Get the directory containing the common code
+		// 	let commonCodeDirString = cli.getOptionValue("c");
 
-			// Make a file from it
-			let commonCodeDir = new File(commonCodeDirString).getAbsoluteFile();
+		// 	// Make a file from it
+		// 	let commonCodeDir = new File(commonCodeDirString).getAbsoluteFile();
 
-			console.debug("Creating common code submission " + commonCodeDir.getName());
+		// 	console.debug("Creating common code submission " + commonCodeDir.getName());
 
-			// Verify that it's not a submission dir
-			if(submissionDirs.contains(commonCodeDir)) {
-				throw new ChecksimsException("Common code directory cannot be a submission directory!");
-			}
+		// 	// Verify that it's not a submission dir
+		// 	if(submissionDirs.contains(commonCodeDir)) {
+		// 		throw new ChecksimsException("Common code directory cannot be a submission directory!");
+		// 	}
 
-			// All right, parse common code
-			let commonCodeSubmission = Submission.submissionFromDir(commonCodeDir, globPattern, tokenizer, recursive);
-			if(commonCodeSubmission.getContentAsString().isEmpty()) {
-				console.warn("Common code is empty --- cowardly refusing to perform common code removal!");
-			}
-			else {
-				let commonCodeRemover = new CommonCodeLineRemovalPreprocessor(commonCodeSubmission);
+		// 	// All right, parse common code
+		// 	let commonCodeSubmission = Submission.submissionFromDir(commonCodeDir, globPattern, tokenizer, recursive);
+		// 	if(commonCodeSubmission.getContentAsString().isEmpty()) {
+		// 		console.warn("Common code is empty --- cowardly refusing to perform common code removal!");
+		// 	}
+		// 	else {
+		// 		let commonCodeRemover = new CommonCodeLineRemovalPreprocessor(commonCodeSubmission);
 
-				// Common code removal first, always
-				let oldPreprocessors = toReturn.getPreprocessors().splice(0);
-				oldPreprocessors.add(0, commonCodeRemover);
+		// 		// Common code removal first, always
+		// 		let oldPreprocessors = toReturn.getPreprocessors().splice(0);
+		// 		oldPreprocessors.add(0, commonCodeRemover);
 
-				toReturn = toReturn.setPreprocessors(oldPreprocessors);
-			}
-		}
+		// 		toReturn = toReturn.setPreprocessors(oldPreprocessors);
+		// 	}
+		// }
 
-		// Check if we need to add archive directories
-		if(cli.hasOption("archive")) {
-			let archiveDirsString = cli.getOptionValues("archive");
+		// // Check if we need to add archive directories
+		// if(cli.hasOption("archive")) {
+		// 	let archiveDirsString = cli.getOptionValues("archive");
 
-			// Convert them into a set of files, again using getAbsoluteFile
-			let archiveDirs = archiveDirsString;
+		// 	// Convert them into a set of files, again using getAbsoluteFile
+		// 	let archiveDirs = archiveDirsString;
 
-			// Ensure that none of them are also submission directories
-			archiveDirs.forEach(function(archiveDir){
-				if(submissionDirs.contains(archiveDir)) {
-					throw new ChecksimsException("Directory is both an archive directory and submission directory: " + archiveDir.getAbsolutePath());
-				}
-			});
+		// 	// Ensure that none of them are also submission directories
+		// 	archiveDirs.forEach(function(archiveDir){
+		// 		if(submissionDirs.contains(archiveDir)) {
+		// 			throw new ChecksimsException("Directory is both an archive directory and submission directory: " + archiveDir.getAbsolutePath());
+		// 		}
+		// 	});
 
-			// Get set of archive submissions
-			let archiveSubmissions = this.getSubmissions(archiveDirs, globPattern, tokenizer, recursive, retainEmpty);
+		// 	// Get set of archive submissions
+		// 	let archiveSubmissions = this.getSubmissions(archiveDirs, globPattern, tokenizer, recursive, retainEmpty);
 
-			console.debug("Generated " + archiveSubmissions.size() + " archive submissions to process");
+		// 	console.debug("Generated " + archiveSubmissions.size() + " archive submissions to process");
 
-			if(archiveSubmissions.size === 0) {
-				console.warn("Did not find any archive submissions to test with!");
-			}
+		// 	if(archiveSubmissions.size === 0) {
+		// 		console.warn("Did not find any archive submissions to test with!");
+		// 	}
 
-			toReturn = toReturn.setArchiveSubmissions(archiveSubmissions);
-		}
+		// 	toReturn = toReturn.setArchiveSubmissions(archiveSubmissions);
+		// }
 
 		return toReturn;
 	}
@@ -381,15 +307,31 @@ class ChecksimsCommandLine {
 	 */
 	getSubmissions(submissionDirs, glob, tokenizer, recursive, retainEmpty){
 		checkNotNull(submissionDirs);
-		checkArgument(!submissionDirs.isEmpty(), "Must provide at least one submission directory!");
+		checkArgument(submissionDirs.files.length > 0, "Must provide at least one submission directory!");
 		checkNotNull(glob);
 		checkNotNull(tokenizer);
 
+		// Divide entries by student
+		let studentSubs = {};
+		submissionDirs.forEach(function(name,entry){
+			let key = name.split('/')
+			key.shift();
+			let student = key.shift();
+			if(!(student in studentSubs)){
+				studentSubs[student] = [];
+			}
+			if(!entry.dir){
+				studentSubs[student].push(entry);
+			}
+		});
+
 		// Generate submissions to work on
 		let submissions = new Set();
-		submissionDirs.forEach(function(dir){
-			console.debug("Adding directory " + dir.getName());
-			submissions.addAll(Submission.submissionListFromDir(dir, glob, tokenizer, recursive));
+		Object.entries(studentSubs).forEach(function(entry){
+			let student = entry[0];
+			let files = entry[1];
+			console.debug("Adding student " + student);
+			submissions.addAll(Submission.submissionFromDir(files, glob, tokenizer, recursive));
 		});
 
 		// If not retaining empty submissions, filter the empty ones out
@@ -422,13 +364,13 @@ class ChecksimsCommandLine {
 		checkNotNull(args);
 
 		// Parse options, second round: required arguments are required
-		let cli = this.parseOpts(args, true);
+		let cli = JSON.merge([this.getOpts(),args]);
 
 		// First, parse basic flags
 		let config = this.parseBaseFlags(cli);
 
 		// Parse file flags
-		let finalConfig = this.parseFileFlags(cli, config);
+		let finalConfig = this.loadFiles(cli, config);
 
 		// Run Checksims with this config
 		let output = ChecksimsRunner.runChecksims(finalConfig);

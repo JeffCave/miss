@@ -40,6 +40,7 @@ JSON.merge = function(a){
 	}
 	let obj = a.reduce(function(a,d){
 		Object.entries(d).forEach(function(pair){
+			pair = JSON.clone(pair);
 			a[pair[0]] = pair[1];
 		});
 		return a;

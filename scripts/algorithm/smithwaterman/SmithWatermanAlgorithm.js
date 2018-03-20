@@ -14,23 +14,26 @@
  */
 
 'use strict';
-
-//import net.lldp.checksims.algorithm.leternalAlgorithmError;
-//import net.lldp.checksims.token.Token;
-//import net.lldp.checksims.token.TokenList;
-import { TokenList } from '/scripts/token/TokenList.js';
-import { ValidityEnsuringToken } from '/scripts/token/ValidityEnsuringToken.js';
-
-import { checkNotNull, checkArgument } from '/scripts/util/misc.js';
-
-import { ArraySubset } from './ArraySubset.js';
-import { Coordinate } from './Coordinate.js';
-
+/*
+global loader
+global TokenList
+global ValidityEnsuringToken
+global ArraySubset
+global Coordinate
+global checkNotNull, checkArgument
+*/
+loader.load([
+	,'/scripts/token/TokenList.js'
+	,'/scripts/token/ValidityEnsuringToken.js'
+	,'/scripts/util/misc.js'
+	,'/scripts/algorithm/smithwaterman/ArraySubset.js'
+	,'/scripts/algorithm/smithwaterman/Coordinate.js'
+]);
 
 /**
  * Actual implementation of the Smith-Waterman algorithm.
  */
-export class SmithWatermanAlgorithm {
+class SmithWatermanAlgorithm {
 	static get threshold(){
 		return 5;
 	}
