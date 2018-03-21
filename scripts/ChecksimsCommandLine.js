@@ -17,12 +17,12 @@
 
 /*
 global JSZip
+global RegExp
 
 global AlgorithmRegistry
 global ChecksimsConfig
 global ChecksimsException
 global ChecksimsRunner
-global CommonCodeLineRemovalPreprocessor
 global MatrixPrinterRegistry
 global PreprocessorRegistry
 global Submission
@@ -108,7 +108,7 @@ class ChecksimsCommandLine {
 			"tokenizer" :TokenType.WHITESPACE,
 			"preproc" : ['commoncodeline','lowercase','deduplicate'],
 			"threads" : 1,
-			"regex" : /.*/,
+			"regex" : '.*',
 			"verbosity" : 1,
 			// retain empty folders
 			"empty": true,
@@ -121,7 +121,6 @@ class ChecksimsCommandLine {
 			// submissions (current student assignemnts)
 			"subDir": null,
 		};
-
 		return opts;
 	}
 
@@ -214,10 +213,10 @@ class ChecksimsCommandLine {
 
 		// Get glob match pattern
 		// Default to *
-		let globPattern = cli.regex || /.*/;
+		let globPattern = new RegExp(cli.regex,'ig') || /.*/;
 
 		// Check if we are recursively building
-		let recursive = !(cli.recurse !== false);
+		let recursive = !(cli.recurse != false);
 
 		// Check if we are retaining empty submissions
 		let retainEmpty = cli.empty;
@@ -226,13 +225,14 @@ class ChecksimsCommandLine {
 		let tokenizer = Tokenizer.getTokenizer(baseConfig.getTokenization());
 
 		// Generate submissions
-		let submissions = this.getSubmissions(this.submissions, globPattern, tokenizer, recursive, retainEmpty);
-		console.log.debug("Generated " + submissions.size() + " submissions to process.");
-		if(submissions.isEmpty()) {
-			throw new ChecksimsException("Could not build any submissions to operate on!");
-		}
-		toReturn = toReturn.setSubmissions(submissions);
-
+		this.getSubmissions(this.submissions, globPattern, tokenizer, recursive, retainEmpty)
+			.then(function(submissions){
+				console.log("Generated " + submissions.length + " submissions to process.");
+				if(submissions.length === 0) {
+					throw new ChecksimsException("Could not build any submissions to operate on!");
+				}
+				toReturn = toReturn.setSubmissions(submissions);
+			});
 		// // Check if we need to perform common code removal
 		// if(cli.commDir) {
 		// 	// Get the directory containing the common code
@@ -307,48 +307,53 @@ class ChecksimsCommandLine {
 	 */
 	getSubmissions(submissionDirs, glob, tokenizer, recursive, retainEmpty){
 		checkNotNull(submissionDirs);
-		checkArgument(submissionDirs.files.length > 0, "Must provide at least one submission directory!");
+		checkArgument(Object.keys(submissionDirs.files).length > 0, "Must provide at least one submission directory!");
 		checkNotNull(glob);
 		checkNotNull(tokenizer);
 
 		// Divide entries by student
 		let studentSubs = {};
 		submissionDirs.forEach(function(name,entry){
-			let key = name.split('/')
+			let key = name.split('/');
 			key.shift();
 			let student = key.shift();
-			if(!(student in studentSubs)){
-				studentSubs[student] = [];
-			}
 			if(!entry.dir){
+				if(!(student in studentSubs)){
+					studentSubs[student] = [];
+				}
 				studentSubs[student].push(entry);
 			}
 		});
 
 		// Generate submissions to work on
-		let submissions = new Set();
-		Object.entries(studentSubs).forEach(function(entry){
+		let submissions = Object.entries(studentSubs).map(function(entry){
 			let student = entry[0];
-			let files = entry[1];
-			console.debug("Adding student " + student);
-			submissions.addAll(Submission.submissionFromDir(files, glob, tokenizer, recursive));
+			let files = entry[1].filter(function(f){
+					let result = glob.test(f.name);
+					return result;
+				});
+			console.debug("Adding student: " + student);
+			let submission = Submission.submissionFromFiles(student, files, tokenizer);
+			return submission;
 		});
 
-		// If not retaining empty submissions, filter the empty ones out
-		if(!retainEmpty) {
-			let submissionsNoEmpty = new Set();
-
-			submissions.forEach(function(s) {
-				if(s.getContentAsString().isEmpty()) {
-					console.warn("Discarding empty submission " + s.getName());
-				}
-				else {
-					submissionsNoEmpty.add(s);
-				}
+		submissions = Promise.all(submissions)
+			.then(function(submissions){
+				submissions = submissions.filter(function(s){
+					if(!retainEmpty) {
+						if(s.getContentAsString() === '') {
+							console.warn("Discarding empty submission " + s.getName());
+						}
+						else {
+							return s;
+						}
+					}
+					else{
+						return s;
+					}
+				});
+				return submissions;
 			});
-
-			return submissionsNoEmpty;
-		}
 
 		return submissions;
 	}
@@ -373,33 +378,19 @@ class ChecksimsCommandLine {
 		let finalConfig = this.loadFiles(cli, config);
 
 		// Run Checksims with this config
-		let output = ChecksimsRunner.runChecksims(finalConfig);
+		ChecksimsRunner
+			.runChecksims(finalConfig)
+			.then(function(output){
+				// Output for all specified strategies
+				Object.keys(output).forEach(function(strategy){
+					// Final filename is the basename specified through CLI, with the strategy name as its extension.
+					let outfile = new File(outfileBaseName + "." + strategy);
+					console.log("Writing " + strategy + " output to " + outfile.getName());
+					FileUtils.writeStringToFile(outfile, output.get(strategy), 'utf-8');
+					console.log("CLI parsing complete!");
+				})
+			})
+			;
 
-		// Check if file output specified
-		if(cli.hasOption("f")) {
-			// Writing to a file
-			// Get the filename
-			let outfileBaseName = cli.getOptionValue("f");
-
-			// Output for all specified strategies
-			Object.keys(output).forEach(function(strategy){
-				// Final filename is the basename specified through CLI, with the strategy name as its extension.
-				let outfile = new File(outfileBaseName + "." + strategy);
-
-				console.log("Writing " + strategy + " output to " + outfile.getName());
-
-				FileUtils.writeStringToFile(outfile, output.get(strategy), 'utf-8');
-			});
-		}
-		else {
-			// Just outputting to STDOUT
-			Object.keys(output).forEach(function(strategy){
-				System.out.println("\n\n");
-				System.out.println("Output from " + strategy + "\n");
-				System.out.println(output.get(strategy));
-			});
-		}
-
-		console.log("CLI parsing complete!");
 	}
 }

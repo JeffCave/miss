@@ -70,8 +70,11 @@ const loader = {
 			,'/scripts/token/tokenizer/WhitespaceTokenizer.js'
 			,'/scripts/token/tokenizer/LineTokenizer.js'
 			,'/scripts/token/AbstractTokenDecorator.js'
+			,'/scripts/token/LexemeMap.js'
 			,'/scripts/token/TokenType.js'
 			,'/scripts/token/TokenList.js'
+			,'/scripts/token/Token.js'
+
 			,'/scripts/util/PairGenerator.js'
 			,'/scripts/util/misc.js'
 			,'/scripts/ChecksimsException.js'

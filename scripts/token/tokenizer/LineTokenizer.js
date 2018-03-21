@@ -19,15 +19,13 @@
 /*
 global loader
 global TokenType
-global ConcreteToken
-global TokenList
+global Token
 global Tokenizer
 global checkNotNull
 */
 loader.load([
 	,'/scripts/token/TokenType.js'
-	,'/scripts/token/ConcreteToken.js'
-	,'/scripts/token/TokenList.js'
+	,'/scripts/token/Token.js'
 	,'/scripts/token/tokenizer/Tokenizer.js'
 	,'/scripts/util/misc.js'
 ]);
@@ -47,22 +45,22 @@ class LineTokenizer extends Tokenizer {
         return LineTokenizer.instance;
     }
 
-    /**
-     * Split string into newline-delineated tokens.
-     *
-     * @param string String to split
-     * @return List of LINE tokens representing the input string
-     */
-    splitString(string) {
-        checkNotNull(string);
-
-        let toReturn = string
-            .split("\n")
-            .map((str) => {return new ConcreteToken(str, TokenType.LINE);})
-            ;
-
-        return toReturn;
-    }
+	/**
+	 * Split string into newline-delineated tokens.
+	 *
+	 * @param string String to split
+	 * @return List of LINE tokens representing the input string
+	 */
+	splitString(content) {
+		checkNotNull(content);
+		let toReturn = content
+			.split("\n")
+			.map((str) => {
+				return new Token(str, TokenType.LINE);
+			})
+			;
+		return toReturn;
+	}
 
     getType() {
         return TokenType.LINE;

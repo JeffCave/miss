@@ -36,58 +36,6 @@ loader.load([
  * Also contains factory methods for submissions
  */
 class Submission {
-	/**
-	 * Get a single submission from a directory.
-	 *
-	 * @param directory Directory containing the student's submission
-	 * @param glob Match pattern used to identify files to include in submission
-	 * @param splitter Tokenizes files to produce Token List in this submission
-	 * @return Single submission from all files matching the glob in given directory
-	 * @throws IOException Thrown on error interacting with file
-	 */
-	static submissionFromDir(directory, glob, splitter, isRecursive){
-		checkNotNull(directory);
-		checkNotNull(glob);
-		checkNotNull(splitter);
-
-		if(!Array.isArray(directory)) {
-			throw new Error("File list is not a list.");
-		}
-
-		// TODO consider verbose logging of which files we're adding to the submission?
-
-		let files = Submission.getAllMatchingFiles(directory, glob, isRecursive);
-
-		return Submission.submissionFromFiles(directory.getName(), files, splitter);
-	}
-
-	/**
-	 * Recursively find all files matching in a directory.
-	 *
-	 * @param directory Directory to search in
-	 * @param glob Match pattern used to identify files to include
-	 * @return List of all matching files in this directory and subdirectories
-	 */
-	static getAllMatchingFiles(directory, glob, recursive){
-		checkNotNull(directory);
-		checkNotNull(glob);
-
-		if(!Array.isArray(directory)) {
-			throw new Error("File list is not a list.");
-		}
-
-		if(recursive) {
-			console.trace("Recursively traversing directory " + directory.getName());
-		}
-
-		// Get files in this directory
-		let allFiles = directory.filter(function(f){
-			let result = glob.test(f.name);
-			return result;
-		});
-
-		return allFiles;
-	}
 
 	/**
 	 * Turn a list of files and a name into a Submission.
@@ -103,40 +51,44 @@ class Submission {
 	 * @throws IOException Thrown on error reading from file
 	 * @throws NoMatchingFilesException Thrown if no files are given
 	 */
-	static submissionFromFiles(name, files, splitter){
+	static async submissionFromFiles(name, files, splitter){
 		checkNotNull(name);
-		checkArgument(!name.isEmpty(), "Submission name cannot be empty");
+		checkArgument(name.length, "Submission name cannot be empty");
 		checkNotNull(files);
+		checkArgument(Array.isArray(files), "Submission files must be an array");
 		checkNotNull(splitter);
 
-		if(files.size() == 0) {
-			throw new Error("No matching files found, cannot create submission named \"" + name + "\"");
+		if(files.length === 0) {
+			throw new Error("No matching files found, cannot create submission named '" + name + "'");
 		}
 
 		// To ensure submission generation is deterministic, sort files by name, and read them in that order
 		let orderedFiles = files.sort(function(file1, file2){
-			return file1.getName().compareTo(file2.getName());
+			return file1.name.localeCompare(file2.name);
 		});
 
 		let tokenList = new TokenList(splitter.getType());
 
 		// Could do this with a .stream().forEach(...) but we'd have to handle the IOException inside
-		let fileContent = orderedFiles
+		let fileContent = await Promise.all(orderedFiles
 			.map(function(f) {
-				let content = f.content;
-				if(!content.endsWith("\n") && !content.isEmpty()) {
-					content = content + "\n";
-				}
-				return content;
-			})
-			;
+					return f.async("string")
+						.then(function (data) {
+							let content = data;
+							if(!content.endsWith("\n") && content != '') {
+								content += "\n";
+							}
+							return content;
+						});
+			}));
 
 		let contentString = fileContent.join('\n');
 
 		// Split the content
-		tokenList.addAll(splitter.splitString(contentString));
+		let tokens = splitter.splitString(contentString);
+		tokenList.concat(tokens);
 
-		if(tokenList.size() > 7500) {
+		if(tokenList.length > 7500) {
 			console.warn("Warning: Submission " + name + " has very large token count (" + tokenList.size() + ")");
 		}
 

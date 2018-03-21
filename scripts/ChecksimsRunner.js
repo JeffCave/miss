@@ -60,55 +60,54 @@ class ChecksimsRunner {
 	static runChecksims(config){
 		checkNotNull(config);
 
-		//TODO: do this with web workers
-		// Set parallelism
-		//let threads = config.getNumThreads();
-		//ParallelAlgorithm.setThreadCount(threads);
-
-		let submissions = config.getSubmissions();
-
-		console.log("Got " + submissions.size() + " submissions to test.");
-
-		let archiveSubmissions = config.getArchiveSubmissions();
-
-		if(!archiveSubmissions.isEmpty()) {
-			console.log("Got " + archiveSubmissions.size + " archive submissions to test.");
-		}
-
-		if(submissions.size === 0) {
-			throw new ChecksimsException("No student submissions were found - cannot run Checksims!");
-		}
-
-		// Apply all preprocessors
-		config.getPreprocessors().forEach(function(p){
-			submissions = new Set(PreprocessSubmissions.process(p, submissions));
-
-			if(!archiveSubmissions.isEmpty()) {
-				archiveSubmissions = new Set(PreprocessSubmissions.process(p, archiveSubmissions));
+		let submissions = new Promise((resolve,reject)=>{
+			let submissions = config.getSubmissions();
+			console.log("Got " + submissions.length + " submissions to test.");
+			if(submissions.length === 0) {
+				reject(new ChecksimsException("No student submissions were found - cannot run Checksims!"));
 			}
+			resolve(submissions);
 		});
 
-		if(submissions.size < 2) {
-			throw new ChecksimsException("Did not get at least 2 student submissions! Cannot run Checksims!");
-		}
+		let archiveSubmissions = new Promise((resolve,reject)=>{
+			let archive = config.getArchiveSubmissions();
+			console.log("Got " + archive.length + " archive submissions to test.");
+			resolve(archive);
+		});
 
-		// Apply algorithm to submissions
-		let allPairs = PairGenerator.generatePairsWithArchive(submissions, archiveSubmissions);
-		let results = AlgorithmRunner.runAlgorithm(allPairs, config.getAlgorithm());
-		let resultsMatrix = SimilarityMatrix.generateMatrix(submissions, archiveSubmissions, results);
+		return Promise
+			.all([submissions,archiveSubmissions])
+			.then(function(allSubmissions){
+				let submissions = allSubmissions[0];
+				let archiveSubmissions = allSubmissions[1];
+				// Apply all preprocessors
+				config.getPreprocessors().forEach(function(p){
+					submissions = new Set(PreprocessSubmissions.process(p, submissions));
+					archiveSubmissions = new Set(PreprocessSubmissions.process(p, archiveSubmissions));
+					if(submissions.length + archiveSubmissions.length < 2) {
+						throw new ChecksimsException("Did not get at least 2 student submissions! Cannot run Checksims!");
+					}
+				});
+				// Apply algorithm to submissions
+				let allPairs = PairGenerator.generatePairsWithArchive(submissions, archiveSubmissions);
+				let results = AlgorithmRunner.runAlgorithm(allPairs, config.getAlgorithm());
+				let resultsMatrix = SimilarityMatrix.generateMatrix(submissions, archiveSubmissions, results);
 
-		//TODO: do this with web workers
-		// All parallel jobs are done, shut down the parallel executor
-		//ParallelAlgorithm.shutdownExecutor();
+				//TODO: do this with web workers
+				// All parallel jobs are done, shut down the parallel executor
+				//ParallelAlgorithm.shutdownExecutor();
 
-		// Output using all output printers
-		let outputMap = config.getOutputPrinters()
-			.reduce(function(a,p){
-				console.log("Generating " + p.getName() + " output");
-				a[p.getName()] = p.printMatrix(resultsMatrix);
-				return a;
-			},{});
+				// Output using all output printers
+				let outputMap = config.getOutputPrinters()
+					.reduce(function(a,p){
+						console.log("Generating " + p.getName() + " output");
+						a[p.getName()] = p.printMatrix(resultsMatrix);
+						return a;
+					},{});
 
-		return outputMap;
+				return new Promise((resolve)=>{resolve(outputMap);});
+			})
+			;
+
 	}
 }

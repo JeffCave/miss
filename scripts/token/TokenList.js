@@ -38,6 +38,7 @@ class TokenList extends Array{
 		if(Array.isArray(baseList)){
 			super(baseList);
 		}
+		super();
 		this.type = type;
 	}
 
@@ -47,28 +48,19 @@ class TokenList extends Array{
 	 * @param onlyValid If true, ignore invalid tokens when joining
 	 * @return String composed of each element in the token list, in order, separated by appropriate character
 	 */
-	join(onlyValid) {
+	join(sepChar = null, onlyValid = false) {
 		if(this.length == 0) {
 			return "";
 		}
 
-		let sepChar;
-
-		switch(this.type) {
-			case TokenType.CHARACTER:
-				sepChar = "";
-				break;
-			case TokenType.WHITESPACE:
-				sepChar = " ";
-				break;
-			case TokenType.LINE:
-				sepChar = "\n";
-				break;
-			default:
-				sepChar = "";
-				break;
+		if(sepChar === null){
+			switch(this.type) {
+				case TokenType.CHARACTER: sepChar = ""; break;
+				case TokenType.WHITESPACE: sepChar = " "; break;
+				case TokenType.LINE: sepChar = "\n"; break;
+				default: sepChar = ""; break;
+			}
 		}
-
 		let b = this
 			.sort()
 			.forEach(function(token){
@@ -136,5 +128,9 @@ class TokenList extends Array{
 
 	numValid() {
 		return Number.parseInt(this.filter(function(d){ return d.isValid();}).length,10);
+	}
+
+	size(){
+		return this.length;
 	}
 }
