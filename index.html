@@ -2,6 +2,8 @@
 <html>
 <head>
  <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js'></script>
+ <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/jsSHA/2.3.1/sha.js'></script>
+ <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/mustache.js/2.3.0/mustache.min.js'></script>
  <script type="text/javascript" src="./scripts/allLibs.js"></script>
  <script type="text/javascript" src="./scripts/ChecksimsCommandLine.js"></script>
  <script>
@@ -15,9 +17,17 @@
 		let checker = new ChecksimsCommandLine();
 		let button = document.querySelector('button');
 		let upload = document.querySelector("input[name='zip']");
+		let outputFlds = Array.from(document.querySelectorAll('#results > details'))
+			.reduce(function(a,d){
+				if(d.dataset.type){
+					a[d.dataset.type] = d;
+				}
+				return a;
+			},{})
+			;
 
 		button.addEventListener('click',function(e){
-			checker.runHtml({});
+			checker.runHtml({},outputFlds);
 		});
 
 		upload.addEventListener('change',function(e){
@@ -46,7 +56,19 @@
   <input name='zip' type="file" multiple />
   <button name='run' disabled>Run</button>
  </fieldset>
- <ul>
- </ul>
+ <details open>
+  <summary>Files</summary>
+  <ul></ul>
+ </details>
+ <section id='results'>
+  <details data-type='html' open>
+   <summary>HTML</summary>
+   <div class='result'></div>
+  </details>
+  <details data-type='csv' open>
+   <summary>CSV</summary>
+   <textarea class='result'></textarea>
+  </details>
+ </section>
 </body>
 </html>

@@ -19,6 +19,7 @@
 global loader
 global TokenType
 global checkNotNull
+global checkArgument
 */
 loader.load([
 	,'/scripts/token/TokenType.js'
@@ -35,10 +36,13 @@ class TokenList extends Array{
 	 * @param type Type of token which will be allowed in the list
 	 */
 	constructor(type, baseList=null) {
-		if(Array.isArray(baseList)){
-			super(baseList);
-		}
 		super();
+		if(Array.isArray(baseList)){
+			let the = this;
+			baseList.forEach(function(d){
+				the.push(d);
+			});
+		}
 		this.type = type;
 	}
 
@@ -78,6 +82,14 @@ class TokenList extends Array{
 		return b.toString();
 	}
 
+	concat(tokenList){
+		checkArgument(tokenList instanceof Array,"Token list can only accept token lists");
+		let list = new TokenList(this.type);
+		this.forEach(function(d){list.push(d);});
+		tokenList.forEach(function(d){list.push(d);});
+		return list;
+	}
+
 	/**
 	 * Peforms a deep copy of a TokenList, returning an immutable version of the initial list with immutable tokens.
 	 *
@@ -86,6 +98,7 @@ class TokenList extends Array{
 	 */
 	static immutableCopy(cloneFrom) {
 		checkNotNull(cloneFrom);
+		checkArgument(cloneFrom instanceof TokenList,'Parameter `cloneFrom` must be instance of type `TokeList`');
 		let tmp = cloneFrom.slice(0);
 		return new TokenList(cloneFrom.type, tmp);
 	}
@@ -102,20 +115,45 @@ class TokenList extends Array{
 		checkNotNull(cloneFrom);
 		let newList = cloneFrom
 			.map(function(token){
-				return token.cloneToken;
+				return token.clone();
 			});
 		newList = new TokenList(cloneFrom.type, newList);
 		return newList;
 	}
 
+	/**
+	 * TODO: This depth of equality checking seems superfluous to me. Check to see that it is required by the algorithm.
+	 */
 	equals(other) {
-		if(!(other instanceof 'TokenList')) {
+		if(!(other instanceof TokenList)) {
+			return false;
+		}
+		if(other.type !== this.type){
+			return false;
+		}
+		if(other.length !== this.length){
+			return false;
+		}
+
+		other = other.map(function(token){
+			return token.getLexeme();
+		});
+		let areSame = this.every(function(token){
+			let lexeme = token.getLexeme();
+			let index = other.indexOf(lexeme);
+			if(0 > index){
+				return false;
+			}
+			other.splice(index,1);
+			return true;
+		});
+		if(!areSame || other.length > 0){
 			return false;
 		}
 
 		// The super.equals() call here is bad practice because we can't *guarantee* it's a PredicatedList<Token>
 		// However, the instanceof TokenList should ensure that invariant is met
-		return other.type.equals(this.type) && super.equals(other);
+		return true;
 	}
 
 	toString() {

@@ -18,8 +18,7 @@
 /*
 global loader
 global TokenList
-global MiniMatch
-global checkNotNull, checkArgument, assert
+global checkNotNull, checkArgument, hasher
 */
 loader.load([
 	,'/scripts/token/TokenList.js'
@@ -36,6 +35,35 @@ loader.load([
  * Also contains factory methods for submissions
  */
 class Submission {
+
+	/**
+	 * Construct a new Concrete Submission with given name and contents.
+	 *
+	 * Token content should be the result of tokenizing the string
+	 * content of the submission with some tokenizer. This invariant is
+	 * maintained throughout the project, but not enforced here for
+	 * performance reasons. It is thus possible to create a
+	 * ConcreteSubmission with Token contents not equal to tokenized
+	 * String contents. This is not recommended and will most likely
+	 * break, at the very least, Preprocessors.
+	 *
+	 * @param name Name of new submission
+	 * @param content Content of submission, as string
+	 * @param tokens Content of submission, as token
+	 */
+	constructor(name, content, tokens) {
+		checkNotNull(name);
+		checkArgument(typeof name === 'string','name expected to be string');
+		checkArgument(name !== '', "Submission name cannot be empty");
+		checkNotNull(content);
+		checkArgument(typeof content === 'string' ,'content expected to be string');
+		checkNotNull(tokens);
+		checkArgument(tokens instanceof Array,'tokens expected to be an array');
+
+		this.name = name;
+		this.content = content;
+		this.tokenList = TokenList.immutableCopy(tokens);
+	}
 
 	/**
 	 * Turn a list of files and a name into a Submission.
@@ -86,46 +114,17 @@ class Submission {
 
 		// Split the content
 		let tokens = splitter.splitString(contentString);
-		tokenList.concat(tokens);
+		tokenList = tokenList.concat(tokens);
 
 		if(tokenList.length > 7500) {
 			console.warn("Warning: Submission " + name + " has very large token count (" + tokenList.size() + ")");
 		}
 
-		return new Submission(name, contentString, tokenList);
+		let submission = new Submission(name, contentString, tokenList);
+		return submission;
 	}
 
 
-
-	/**
-	 * Construct a new Concrete Submission with given name and contents.
-	 *
-	 * Token content should be the result of tokenizing the string
-	 * content of the submission with some tokenizer. This invariant is
-	 * maintained throughout the project, but not enforced here for
-	 * performance reasons. It is thus possible to create a
-	 * ConcreteSubmission with Token contents not equal to tokenized
-	 * String contents. This is not recommended and will most likely
-	 * break, at the very least, Preprocessors.
-	 *
-	 * @param name Name of new submission
-	 * @param content Content of submission, as string
-	 * @param tokens Content of submission, as token
-	 */
-	ConcreteSubmission(name, content, tokens) {
-		checkNotNull(name);
-		checkArgument(!name.isEmpty(), "Submission name cannot be empty");
-		checkNotNull(content);
-		checkNotNull(tokens);
-
-		assert(name instanceof 'String','name expected to be string');
-		assert(content instanceof 'String','content expected to be string');
-		assert(content instanceof 'Array','tokens expected to be an array');
-
-		this.name = name;
-		this.content = content;
-		this.tokenList = this.TokenList.immutableCopy(tokens);
-	}
 
 	getContentAsTokens() {
 		return this.tokenList;
@@ -152,21 +151,24 @@ class Submission {
 	}
 
 	equals(other) {
-		if(!(other instanceof 'ConcreteSubmission')) {
+		if(!(other instanceof Submission)) {
 			return false;
 		}
 
 		let isEqual =
-			other.getName().equals(this.name)
-			&& other.getNumTokens() == this.getNumTokens()
+			other.getName() === this.getName()
+			&& other.getNumTokens() === this.getNumTokens()
 			&& other.getContentAsTokens().equals(this.tokenList)
-			&& other.getContentAsString().equals(this.content)
+			&& other.getContentAsString() === this.content
 			;
 		return isEqual;
 	}
 
 	hashCode() {
-		return this.name.hashCode();
+		if(!('pHash' in this)){
+			this.pHash = hasher(this.name + this.content);
+		}
+		return this.pHash;
 	}
 
 	/**

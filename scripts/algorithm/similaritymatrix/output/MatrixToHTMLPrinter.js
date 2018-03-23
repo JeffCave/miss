@@ -69,24 +69,24 @@ class MatrixToHTMLPrinter extends MatrixPrinter {
 			"matrix": matrix
 		};
 		let output = Mustache.render (template, context);
-		return output.toString();
+		return output;
 	}
 
 	getName() {
 		return "html";
 	}
 
-    toString() {
-        return "Singleton instance of MatrixToHTMLPrinter";
-    }
+	toString() {
+		return "Singleton instance of MatrixToHTMLPrinter";
+	}
 
-    hashCode() {
-        return this.getName().hashCode();
-    }
+	hashCode() {
+		return this.getName().hashCode();
+	}
 
 	equals(other) {
-        return other instanceof MatrixToHTMLPrinter;
-    }
+		return (other instanceof MatrixToHTMLPrinter);
+	}
 }
 
 
@@ -106,7 +106,7 @@ var xhr = new XMLHttpRequest();
 xhr.open('GET', MatrixToHTMLPrinter.templateLocation, false);
 xhr.send();
 if (xhr.status === 200) {
-	MatrixToHTMLPrinter.prototype.template = xhr.responseText;
+	MatrixToHTMLPrinter.template = xhr.responseText;
 }
 else{
 	throw new Error("Could not resolve resource for HTML output template!");

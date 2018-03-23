@@ -43,7 +43,7 @@ class Registry {
 		checkNotNull(ignores);
 		checkNotNull(include);
 
-		this.ignored = new Set(ignores);
+		this.ignored = Array.from(new Set(ignores));
 		this.baseClass = baseClazz;
 
 		// The final list should never change at runtime

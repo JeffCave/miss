@@ -40,22 +40,21 @@ class PairGenerator {
 	 * @param submissions Submissions to generate pairs from
 	 * @return Set of all unique, unordered pairs of submissions
 	 */
-	static generatePairs(submissions) {
+	static async generatePairs(submissions) {
 		checkNotNull(submissions);
-		checkArgument(submissions.size >= 2, "Cannot generate pairs with less than 2 submissions!");
+		checkArgument(submissions.length >= 2, "Cannot generate pairs with less than 2 submissions!");
 
-		let pairs = new Set();
+		let pairs = [];
 
-		let remaining = [];
-		remaining.concat(submissions);
+		let remaining = [].concat(submissions);
 
-		while (remaining.length) {
+		while (remaining.length > 1) {
 			// Get the first submission in the list and remove it
 			let first = remaining.pop();
 			// Form a pair for every remaining submission by pairing with the first, removed submission
 			remaining.forEach(function(submission) {
 				// Add the newly-generated pair to our return
-				pairs.add([first, submission]);
+				pairs.push([first, submission]);
 			});
 		}
 
@@ -69,14 +68,14 @@ class PairGenerator {
 	 * @param archiveSubmissions Archive submissions - only compared to normal submissions, not each other
 	 * @return Set of all unordered pairs required for comparison with archive directory
 	 */
-	static generatePairsWithArchive(submissions, archiveSubmissions) {
+	static async generatePairsWithArchive(submissions, archiveSubmissions) {
 		checkNotNull(submissions);
 		checkNotNull(archiveSubmissions);
 
 		// TODO it may be desirable to allow comparison of a single submission to an archive
 		// However, generatePairs fails if only 1 submission is given
 		// (This would also require tweaks in the frontend)
-		let basePairs = PairGenerator.generatePairs(submissions);
+		let basePairs = await PairGenerator.generatePairs(submissions);
 
 		// Now we need to add pairs for the archive submissions
 		archiveSubmissions.forEach(function(first) {

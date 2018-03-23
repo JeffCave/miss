@@ -205,7 +205,7 @@ class ChecksimsCommandLine {
 	 * @throws ChecksimsException Thrown on bad argument
 	 * @throws IOException Thrown on error building submissions
 	 */
-	loadFiles(cli, baseConfig) {
+	async loadFiles(cli, baseConfig) {
 		checkNotNull(cli);
 		checkNotNull(baseConfig);
 
@@ -225,14 +225,12 @@ class ChecksimsCommandLine {
 		let tokenizer = Tokenizer.getTokenizer(baseConfig.getTokenization());
 
 		// Generate submissions
-		this.getSubmissions(this.submissions, globPattern, tokenizer, recursive, retainEmpty)
-			.then(function(submissions){
-				console.log("Generated " + submissions.length + " submissions to process.");
-				if(submissions.length === 0) {
-					throw new ChecksimsException("Could not build any submissions to operate on!");
-				}
-				toReturn = toReturn.setSubmissions(submissions);
-			});
+		let submissions = await this.getSubmissions(this.submissions, globPattern, tokenizer, recursive, retainEmpty)
+		console.log("Generated " + submissions.length + " submissions to process.");
+		if(submissions.length === 0) {
+			throw new ChecksimsException("Could not build any submissions to operate on!");
+		}
+		toReturn = toReturn.setSubmissions(submissions);
 		// // Check if we need to perform common code removal
 		// if(cli.commDir) {
 		// 	// Get the directory containing the common code
@@ -365,7 +363,7 @@ class ChecksimsCommandLine {
 	 *
 	 * @param args CLI arguments to parse
 	 */
-	runHtml(args){
+	async runHtml(args,htmlContainers){
 		checkNotNull(args);
 
 		// Parse options, second round: required arguments are required
@@ -378,19 +376,15 @@ class ChecksimsCommandLine {
 		let finalConfig = this.loadFiles(cli, config);
 
 		// Run Checksims with this config
-		ChecksimsRunner
-			.runChecksims(finalConfig)
-			.then(function(output){
-				// Output for all specified strategies
-				Object.keys(output).forEach(function(strategy){
-					// Final filename is the basename specified through CLI, with the strategy name as its extension.
-					let outfile = new File(outfileBaseName + "." + strategy);
-					console.log("Writing " + strategy + " output to " + outfile.getName());
-					FileUtils.writeStringToFile(outfile, output.get(strategy), 'utf-8');
-					console.log("CLI parsing complete!");
-				})
-			})
-			;
+		let output = await ChecksimsRunner.runChecksims(finalConfig);
+		// Output for all specified strategies
+		Object.entries(output).forEach(function(strategy){
+			let key = strategy[0];
+			let val = strategy[1];
+			if(key in htmlContainers){
+				htmlContainers[key].querySelector('.result').innerHTML = val;
+			}
+		});
 
 	}
 }

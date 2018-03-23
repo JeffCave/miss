@@ -21,8 +21,15 @@
 
 'use strict';
 
-
-import { checkNotNull, checkArgument} from '/scripts/util/misc.js';
+/*
+global loader
+global SimilarityDetector
+global checkNotNull, checkArgument
+*/
+loader.load([
+	,'/scripts/algorithm/SimilarityDetector.js'
+	,'/scripts/util/misc.js'
+]);
 
 /**
  * Run a pairwise similarity detection algorithm on a number of submission pairs.
@@ -39,25 +46,26 @@ class AlgorithmRunner {
 	 */
 	static runAlgorithm(submissions,algorithm) {
 		checkNotNull(submissions);
-		checkArgument(submissions.size() > 0, "Must provide at least one pair of submissions to run on!");
+		checkArgument(submissions instanceof Array, "`submissions` must be instance of `Array`");
+		checkArgument(submissions.length > 0, "Must provide at least one pair of submissions to run on!");
 		checkNotNull(algorithm);
-		checkArgument(algorithm instanceof 'SimilarityDetector', "algorithm must be a SimilarityDetector");
-		
+		checkArgument(algorithm instanceof SimilarityDetector, "algorithm must be a SimilarityDetector");
+
 		let startTime = Date.now();
-		
+
 		console.log("Performing similarity detection on " + submissions.size + " pairs using algorithm " + algorithm.getName());
-		
+
 		// Perform parallel analysis of all submission pairs to generate a results list
 		let results = submissions.map(function(pair){
 			return algorithm.detectSimilarity(pair[0], pair[1]);
 		})
 		;
-		
+
 		let endTime = Date.now();
 		let timeElapsed = endTime - startTime;
-		
+
 		console.log("Finished similarity detection in " + timeElapsed + " ms");
-		
+
 		return results;
 	}
 }

@@ -39,14 +39,6 @@ loader.load([
  */
 class Token {
 	/**
-	 * @param token Token to clone
-	 * @return Clone of token
-	 */
-	static cloneToken(token) {
-		return ConcreteToken.cloneToken(token);
-	}
-
-	/**
 	 * Construct a token with given type and validity.
 	 *
 	 * @param token Object the token represents
@@ -67,6 +59,15 @@ class Token {
 			this.type = type;
 			this.lexeme = LexemeMap.getLexemeForToken(token);
 		}
+	}
+
+	/**
+	 * @param token Token to clone
+	 * @return Clone of token
+	 */
+	clone() {
+		let clone = new Token(this.lexeme, this.type, this.valid);
+		return clone;
 	}
 
 	getLexeme() {

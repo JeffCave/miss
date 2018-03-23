@@ -31,40 +31,33 @@ loader.load([
  * TODO consider offering Iterators for the entire similarity matrix, and for individual submissions on the X axis
  */
 class SimilarityMatrix {
-    /**
-     * Create a Similarity Matrix with given parameters. Internal constructor used by factory methods.
-     *
-     * Lists, not sets, of submissions, to ensure we have an ordering. We maintain the invariant that there are no
-     * duplicates in the factories.
-     *
-     * @param entries      The matrix itself
-     * @param xSubmissions Submissions on the X axis
-     * @param ySubmissions Submissions on the Y axis
-     * @param builtFrom    Set of Algorithm Results used to build the matrix
-     */
-    constructor(/*MatrixEntry[][]*/ entries, xSubmissions, ySubmissions, builtFrom) {
-        checkNotNull(entries);
-        checkNotNull(xSubmissions);
-        checkNotNull(ySubmissions);
-        checkNotNull(builtFrom);
-        checkArgument(!xSubmissions.isEmpty(),
-                "Cannot make similarity matrix with empty list of submissions to be compared!");
-        checkArgument(!ySubmissions.isEmpty(),
-                "Cannot make similarity matrix with empty list of submissions to compare to!");
-        checkArgument(xSubmissions.size() == entries.length,
-                "Array size mismatch when creating Similarity Matrix - X direction, found " + xSubmissions.size()
-                        + ", expecting " + entries.length);
-        checkArgument(ySubmissions.size() == entries[0].length,
-                "Array size mismatch when creating Similarity Matrix - Y direction, found " + ySubmissions.size()
-                        + ", expecting " + entries[0].length);
-        checkArgument(!builtFrom.isEmpty(),
-                "Must provide Algorithm Results used to build similarity matrix - instead got empty set!");
+	/**
+	 * Create a Similarity Matrix with given parameters. Internal constructor used by factory methods.
+	 *
+	 * Lists, not sets, of submissions, to ensure we have an ordering. We maintain the invariant that there are no
+	 * duplicates in the factories.
+	 *
+	 * @param entries      The matrix itself
+	 * @param xSubmissions Submissions on the X axis
+	 * @param ySubmissions Submissions on the Y axis
+	 * @param builtFrom    Set of Algorithm Results used to build the matrix
+	 */
+	constructor(/*MatrixEntry[][]*/ entries, xSubmissions, ySubmissions, builtFrom) {
+		checkNotNull(entries);
+		checkNotNull(xSubmissions);
+		checkNotNull(ySubmissions);
+		checkNotNull(builtFrom);
+		checkArgument(xSubmissions.length !== 0, "Cannot make similarity matrix with empty list of submissions to be compared!");
+		checkArgument(ySubmissions.length !== 0, "Cannot make similarity matrix with empty list of submissions to compare to!");
+		checkArgument(xSubmissions.length === entries.length, "Array size mismatch when creating Similarity Matrix - X direction, found " + xSubmissions.length + ", expecting " + entries.length);
+		checkArgument(ySubmissions.length === entries[0].length, "Array size mismatch when creating Similarity Matrix - Y direction, found " + ySubmissions.length + ", expecting " + entries[0].length);
+		checkArgument(builtFrom.length !== 0, "Must provide Algorithm Results used to build similarity matrix - instead got empty set!");
 
-        this.entries = entries;
-        this.xSubmissions = xSubmissions;
-        this.ySubmissions = ySubmissions;
-        this.builtFrom = builtFrom;
-    }
+		this.entries = entries;
+		this.xSubmissions = xSubmissions;
+		this.ySubmissions = ySubmissions;
+		this.builtFrom = builtFrom;
+	}
 
     /**
      * @return Size of the Similarity Matrix
@@ -152,42 +145,46 @@ class SimilarityMatrix {
 		return areEqual;
 	}
 
-    /**
-     * Generate a similarity matrix from a given set of submissions.
-     *
-     * @param inputSubmissions Submissions to generate from
-     * @param results Results to build from. Must contain results for every possible unordered pair of input submissions
-     * @return Similarity Matrix built from given results
-     * @throws InternalAlgorithmError Thrown on missing results, or results containing a submission not in the input
-     */
-    static generateMatrix(inputSubmissions, results, archive =null){
-        checkNotNull(inputSubmissions);
-        checkNotNull(results);
-        checkArgument(!inputSubmissions.isEmpty(), "Must provide at least 1 submission to build matrix from");
-        checkArgument(!results.isEmpty(), "Must provide at least 1 AlgorithmResults to build matrix from!");
+	/**
+	 * Generate a similarity matrix from a given set of submissions.
+	 *
+	 * @param inputSubmissions Submissions to generate from
+	 * @param results Results to build from. Must contain results for every possible unordered pair of input submissions
+	 * @return Similarity Matrix built from given results
+	 * @throws InternalAlgorithmError Thrown on missing results, or results containing a submission not in the input
+	 */
+	static generateMatrix(results, inputSubmissions, archive = []){
+		checkNotNull(inputSubmissions);
+		checkNotNull(results);
+		checkArgument(inputSubmissions.length !== 0, "Must provide at least 1 submission to build matrix from");
+		checkArgument(results.length !== 0, "Must provide at least 1 AlgorithmResults to build matrix from!");
 
-		if(archive){
-			return SimilarityMatrix.generateMatrixArchive(inputSubmissions, results, archive);
+		if(archive.length > 0){
+			return SimilarityMatrix.generateMatrixArchive(results, inputSubmissions, archive);
 		}
 
 		// Generate the matrix we'll use
-		let matrix = new Array(inputSubmissions.size)
-			.map(function(arr){
-				return new Array(inputSubmissions.size).fill(null);
-			});
+		let matrix = [];
+		for(let i=0; i<inputSubmissions.length; i++){
+			matrix.push([]);
+			for(let j=0; j<inputSubmissions.length; j++){
+				matrix[i].push(null);
+			}
+		}
 
 		// Order the submissions
 		let orderedSubmissions = inputSubmissions.sort(function(a,b){
-				return a.hashcode() - b.hashcode();
+				if(a.getName() === b.getName()) return 0;
+				if(a.getName() < b.getName()) return -1;
+				return 1;
 			});
 
 		// Generate the matrix
 
 		// Start with the diagonal, filling with 100% similarity
-		for (let i = 0; i < orderedSubmissions.size; i++) {
-			let s = orderedSubmissions[i];
+		orderedSubmissions.forEach(function(s,i){
 			matrix[i][i] = new MatrixEntry(s, s, s.getNumTokens());
-		}
+		});
 
 		// Now go through all the results, and build appropriate two MatrixEntry objects for each
 		results.forEach(function(result){
@@ -206,37 +203,37 @@ class SimilarityMatrix {
 		});
 
 		// Verification pass: Go through and ensure that the entire array was populated
-		for (let x = 0; x < orderedSubmissions.size(); x++) {
-			for (let y = 0; y < orderedSubmissions.size(); y++) {
+		for (let x = 0; x < orderedSubmissions.length; x++) {
+			for (let y = 0; y < orderedSubmissions.length; y++) {
 				if (matrix[x][y] === null) {
-				    throw new Error("Missing Algorithm Results for comparison of submissions \""
-				            + orderedSubmissions.get(x).getName() + "\" and \"" + orderedSubmissions.get(y).getName()
-				            + "\"");
+					throw new Error("Missing Algorithm Results for comparison of submissions \""
+							+ orderedSubmissions.get(x).getName() + "\" and \"" + orderedSubmissions.get(y).getName()
+							+ "\"");
 				}
 			}
 		}
 
 		return new SimilarityMatrix(matrix, orderedSubmissions, orderedSubmissions, results);
-    }
+	}
 
-    /**
-     * Generate a Similarity Matrix with archive submissions.
-     *
-     * The result is not a square matrix. Only the input submissions are on the X axis, but the Y axis contains both
-     * input and archive submissions.
-     *
-     * @param inputSubmissions Submissions used to generate matrix
-     * @param archiveSubmissions Archive submissions - only compared to input submissions, not to each other
-     * @param results Results used to build matrix
-     * @return Similarity matrix built from given results
-     * @throws InternalAlgorithmError Thrown on missing results, or results containing a submission not in the input
-     */
+	/**
+	 * Generate a Similarity Matrix with archive submissions.
+	 *
+	 * The result is not a square matrix. Only the input submissions are on the X axis, but the Y axis contains both
+	 * input and archive submissions.
+	 *
+	 * @param inputSubmissions Submissions used to generate matrix
+	 * @param archiveSubmissions Archive submissions - only compared to input submissions, not to each other
+	 * @param results Results used to build matrix
+	 * @return Similarity matrix built from given results
+	 * @throws InternalAlgorithmError Thrown on missing results, or results containing a submission not in the input
+	 */
 	static generateMatrixArchive(inputSubmissions, results, archiveSubmissions){
-        checkNotNull(inputSubmissions);
-        checkNotNull(archiveSubmissions);
-        checkNotNull(results);
-        checkArgument(!inputSubmissions.isEmpty(), "Must provide at least 1 submission to build matrix from");
-        checkArgument(!results.isEmpty(), "Must provide at least 1 AlgorithmResults to build matrix from!");
+		checkNotNull(inputSubmissions);
+		checkNotNull(archiveSubmissions);
+		checkNotNull(results);
+		checkArgument(!inputSubmissions.isEmpty(), "Must provide at least 1 submission to build matrix from");
+		checkArgument(!results.isEmpty(), "Must provide at least 1 AlgorithmResults to build matrix from!");
 
         let setOfBoth = new Set();
         setOfBoth.addAll(inputSubmissions);

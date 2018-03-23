@@ -33,9 +33,8 @@ const loader = {
 	loader.realLoad([
 			,'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.5/require.min.js'
 			//,'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js'
-			,'https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.min.js'
-			,'https://cdnjs.cloudflare.com/ajax/libs/Base64/1.0.1/base64.min.js'
-			,'https://cdnjs.cloudflare.com/ajax/libs/mustache.js/2.3.0/mustache.min.js'
+			//,'https://cdnjs.cloudflare.com/ajax/libs/jsSHA/2.3.1/sha.js'
+			//,'https://cdnjs.cloudflare.com/ajax/libs/mustache.js/2.3.0/mustache.min.js'
 			/**
 			 * Order of loading is significant. Ensure that the libraries load
 			 * in dependant order
@@ -63,6 +62,8 @@ const loader = {
 			,'/scripts/algorithm/smithwaterman/SmithWatermanAlgorithm.js'
 			,'/scripts/algorithm/smithwaterman/SmithWaterman.js'
 			,'/scripts/algorithm/AlgorithmRegistry.js'
+			,'/scripts/algorithm/AlgorithmResults.js'
+			,'/scripts/algorithm/AlgorithmRunner.js'
 			,'/scripts/submission/AbstractSubmissionDecorator.js'
 			,'/scripts/submission/ValidityIgnoringSubmission.js'
 			,'/scripts/token/tokenizer/Tokenizer.js'

@@ -19,13 +19,16 @@
 global loader
 global AlgorithmResults
 global SimilarityDetector
+global Submission
 global TokenList
 global TokenType
+global checkArgument
 global checkNotNull
-global CryptoJS
+global hasher
 */
 loader.load([
-	,'https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.min.js'
+	,'https://cdnjs.cloudflare.com/ajax/libs/jsSHA/2.3.1/sha.js'
+
 	,'/scripts/algorithm/AlgorithmResults.js'
 	,'/scripts/algorithm/SimilarityDetector.js'
 	,'/scripts/submission/Submission.js'
@@ -83,27 +86,29 @@ class LineSimilarityChecker extends SimilarityDetector {
 	detectSimilarity(a, b){
 		checkNotNull(a);
 		checkNotNull(b);
+		checkArgument(a instanceof Submission, "Expecting to compare Submissions (a is " + (typeof a) + ")");
+		checkArgument(b instanceof Submission, "Expecting to compare Submissions (b is " + (typeof b) + ")");
 
 		let linesA = a.getContentAsTokens();
 		let linesB = b.getContentAsTokens();
 		let finalA = TokenList.cloneTokenList(linesA);
 		let finalB = TokenList.cloneTokenList(linesB);
 
-		if(!a.getTokenType().equals(b.getTokenType())) {
+		if(a.getTokenType() !== b.getTokenType()) {
 			throw new Error("Token list type mismatch: submission " + a.getName() + " has type " +
-			        linesA.type.toString() + ", while submission " + b.getName() + " has type "
-			        + linesB.type.toString());
+				linesA.type.toString() + ", while submission " + b.getName() + " has type "
+				+ linesB.type.toString());
 		}
 		else if(a.equals(b)) {
-			finalA.stream().forEach((token) => token.setValid(false));
-			finalB.stream().forEach((token) => token.setValid(false));
+			finalA.forEach((token) => token.setValid(false));
+			finalB.forEach((token) => token.setValid(false));
 			return new AlgorithmResults(a, b, finalA, finalB);
 		}
 
-		let hasher = CryptoJS.SHA512;
+
 		// Create a line database map
 		// Per-method basis to ensure we have no mutable state in the class
-		let lineDatabase = new Map();
+		let lineDatabase = {};
 
 		// Hash all lines in A, and put them in the lines database
 		this.addLinesToMap(linesA, lineDatabase, a, hasher);
@@ -144,10 +149,10 @@ class LineSimilarityChecker extends SimilarityDetector {
 				// Set matches invalid
 				lineDatabase[key].forEach(function(s){
 					if(s.submission.equals(a)) {
-						finalA.get(s.lineNum).setValid(false);
+						finalA[s.lineNum].setValid(false);
 					}
 					else if(s.submission.equals(b)) {
-						finalB.get(s.lineNum).setValid(false);
+						finalB[s.lineNum].setValid(false);
 					}
 					else {
 						throw new Error("Unreachable code!");
@@ -162,34 +167,33 @@ class LineSimilarityChecker extends SimilarityDetector {
 		let invalTokensA = finalA.filter((token) => !token.isValid()).length;
 		let invalTokensB = finalB.filter((token) => !token.isValid()).length;
 
-		if(invalTokensA != identicalLinesA) {
+		if(invalTokensA !== identicalLinesA) {
 			throw new Error(
 				"Internal error: number of identical tokens (" + identicalLinesA
 				+ ") does not match number of invalid tokens (" + invalTokensA + ")"
 			);
 		}
-		else if(invalTokensB != identicalLinesB) {
+		else if(invalTokensB !== identicalLinesB) {
 			throw new Error(
 				"Internal error: number of identical tokens (" + identicalLinesB
 				+ ") does not match number of invalid tokens (" + invalTokensB + ")"
 				);
 		}
 
-		return new AlgorithmResults(a, b, finalA, finalB);
+		let results =  new AlgorithmResults(a, b, finalA, finalB);
+		return results;
 	}
 
 	addLinesToMap(lines, lineDatabase, submitter, hasher) {
-		for(let i = 0; i < lines.size(); i++) {
-			let token = lines[i];
-			let hash = window.btoa(hasher(token.getTokenAsString().getBytes()));
-
+		lines.forEach(function(token,i){
+			let hash = hasher(token.getTokenAsString());
 			if(!(hash in lineDatabase)) {
 				lineDatabase[hash] = [];
 			}
 
 			let line = new SubmissionLine(i, submitter);
 			lineDatabase[hash].push(line);
-		}
+		});
 	}
 
 	toString() {

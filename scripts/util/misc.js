@@ -1,10 +1,14 @@
+/*
+global jsSHA
+*/
+
 function checkNotNull(value = null){
 	if(value === null){
-		throw "Null Exception";
+		throw "Null Exception (checkNotNull)";
 	}
 
 	if(typeof value === 'undefined'){
-		throw "Null Exception";
+		throw "Null Exception (checkNotNull)";
 	}
 }
 
@@ -13,7 +17,7 @@ function checkArgument(value = null, msg = ""){
 	checkNotNull(msg);
 
 	if(!value){
-		console.warn(msg);
+		throw new Error(msg);
 	}
 }
 
@@ -29,6 +33,13 @@ function assert(check, msg = "no message"){
 		throw new Error('Assertion failure: ' + msg);
 	}
 }
+
+function hasher(value){
+	let hasher = new jsSHA("SHA-512", "TEXT");
+	hasher.update(value);
+	let hashed = hasher.getHash('HEX');
+	return hashed;
+};
 
 JSON.clone = function(obj){
 	return JSON.parse(JSON.stringify(obj));

@@ -34,16 +34,15 @@ loader.load([
  * Splits a file on a line-by-line basis.
  */
 class LineTokenizer extends Tokenizer {
-    /**
-     * @return Singleton instance of LineTokenizer
-     */
-    static getInstance() {
-        if(!('instance' in LineTokenizer)) {
-            LineTokenizer.instance = new LineTokenizer();
-        }
-
-        return LineTokenizer.instance;
-    }
+	/**
+	 * @return Singleton instance of LineTokenizer
+	 */
+	static getInstance() {
+		if(!('instance' in LineTokenizer)) {
+			LineTokenizer.instance = new LineTokenizer();
+		}
+		return LineTokenizer.instance;
+	}
 
 	/**
 	 * Split string into newline-delineated tokens.
@@ -55,6 +54,9 @@ class LineTokenizer extends Tokenizer {
 		checkNotNull(content);
 		let toReturn = content
 			.split("\n")
+			.filter(function(str){
+				return str !== '';
+			})
 			.map((str) => {
 				return new Token(str, TokenType.LINE);
 			})
@@ -62,11 +64,11 @@ class LineTokenizer extends Tokenizer {
 		return toReturn;
 	}
 
-    getType() {
-        return TokenType.LINE;
-    }
+	getType() {
+		return TokenType.LINE;
+	}
 
-    toString() {
-        return "Singleton FileLineSplitter instance";
-    }
+	toString() {
+		return "Singleton FileLineSplitter instance";
+	}
 }

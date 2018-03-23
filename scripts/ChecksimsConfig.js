@@ -8,12 +8,6 @@
  * See LICENSE.txt included in this distribution for the specific
  * language governing permissions and limitations under the License.
  *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at LICENSE.txt.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
  * CDDL HEADER END
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
@@ -23,9 +17,12 @@
 /*
 global loader
 global AlgorithmRegistry
+global MatrixPrinterRegistry
+
 global checkNotNull, checkArgument
 */
 loader.load([
+	,'/scripts/algorithm/similaritymatrix/output/MatrixPrinterRegistry.js'
 	,'/scripts/algorithm/AlgoritmRegistry.js'
 	,'/scripts/util/misc.js'
 ]);
@@ -52,10 +49,10 @@ class ChecksimsConfig {
 		if(!old){
 			this.algorithm = AlgorithmRegistry.getInstance().getDefaultImplementation();
 			this.tokenization = this.algorithm.getDefaultTokenType();
-			this.submissions = new Set();
-			this.archiveSubmissions = new Set();
+			this.submissions = [];
+			this.archiveSubmissions = [];
 			this.preprocessors = [];
-			this.outputPrinters = MatrixPrinterRegistry.getInstance().getDefaultImplementation();
+			this.outputPrinters = [MatrixPrinterRegistry.getInstance().getDefaultImplementation()];
 			this.numThreads = 1;
 		}
 		else{
@@ -122,7 +119,7 @@ class ChecksimsConfig {
 	 */
 	setSubmissions(newSubmissions) {
 		checkNotNull(newSubmissions);
-		checkArgument(newSubmissions.size <= 0, "Must provide at least one valid submission to run on!");
+		checkArgument(newSubmissions.length > 0, "Must provide at least one valid submission to run on!");
 		this.submissions = newSubmissions;
 		return this;
 	}
@@ -144,7 +141,8 @@ class ChecksimsConfig {
 	 */
 	setOutputPrinters(newOutputPrinters) {
 		checkNotNull(newOutputPrinters);
-		checkArgument(newOutputPrinters === 0, "Must provide at least one valid output printer!");
+		checkArgument(Array.isArray(newOutputPrinters), "Must provide at least one valid output printer!");
+		checkArgument(newOutputPrinters.length < 1, "Must provide at least one valid output printer!");
 		this.outputPrinters = newOutputPrinters;
 		return this;
 	}

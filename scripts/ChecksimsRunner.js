@@ -14,6 +14,7 @@
  */
 
 /*
+global loader
 global AlgorithmRunner
 global PreprocessSubmissions
 global SimilarityMatrix
@@ -21,15 +22,14 @@ global PairGenerator
 global ChecksimsException
 global checkNotNull
 */
-/*
-import {AlgorithmRunner} from '/scripts/algorithm/PreprocessSubmissions.js';
-import {PreprocessSubmissions} from '/scripts/algorithm/preprocessor/PreprocessSubmissions.js';
-import {SimilarityMatrix} from '/scripts/algorithm/similaritymatrix/SimilarityMatrix.js';
-import {PairGenerator} from '/scripts/util/PairGenerator.js';
-
-import { ChecksimsException } from '/scripts/ChecksimsException.js';
-import { checkNotNull } from '/scripts/util/misc.js';
-*/
+loader.load([
+	,'/scripts/algorithm/AlgorithmRunner.js'
+	,'/scripts/algorithm/preprocessor/PreprocessSubmissions.js'
+	,'/scripts/algorithm/similaritymatrix/SimilarityMatrix.js'
+	,'/scripts/util/PairGenerator.js'
+	,'/scripts/ChecksimsException.js'
+	,'/scripts/util/misc.js'
+]);
 
 
 /**
@@ -57,8 +57,9 @@ class ChecksimsRunner {
 	 * @return Map containing output of all output printers requested. Keys are name of output printer.
 	 * @throws ChecksimsException Thrown on error performing similarity detection
 	 */
-	static runChecksims(config){
+	static async runChecksims(config){
 		checkNotNull(config);
+		config = await config;
 
 		let submissions = new Promise((resolve,reject)=>{
 			let submissions = config.getSubmissions();
@@ -68,46 +69,41 @@ class ChecksimsRunner {
 			}
 			resolve(submissions);
 		});
-
 		let archiveSubmissions = new Promise((resolve,reject)=>{
 			let archive = config.getArchiveSubmissions();
 			console.log("Got " + archive.length + " archive submissions to test.");
 			resolve(archive);
 		});
+		let allSubmissions = await Promise.all([submissions,archiveSubmissions]);
 
-		return Promise
-			.all([submissions,archiveSubmissions])
-			.then(function(allSubmissions){
-				let submissions = allSubmissions[0];
-				let archiveSubmissions = allSubmissions[1];
-				// Apply all preprocessors
-				config.getPreprocessors().forEach(function(p){
-					submissions = new Set(PreprocessSubmissions.process(p, submissions));
-					archiveSubmissions = new Set(PreprocessSubmissions.process(p, archiveSubmissions));
-					if(submissions.length + archiveSubmissions.length < 2) {
-						throw new ChecksimsException("Did not get at least 2 student submissions! Cannot run Checksims!");
-					}
-				});
-				// Apply algorithm to submissions
-				let allPairs = PairGenerator.generatePairsWithArchive(submissions, archiveSubmissions);
-				let results = AlgorithmRunner.runAlgorithm(allPairs, config.getAlgorithm());
-				let resultsMatrix = SimilarityMatrix.generateMatrix(submissions, archiveSubmissions, results);
+		submissions = allSubmissions[0];
+		archiveSubmissions = allSubmissions[1];
+		if(2 > submissions.length + archiveSubmissions.length) {
+			throw new ChecksimsException("Did not get at least 2 student submissions! Cannot run Checksims!");
+		}
+		// Apply all preprocessors
+		config.getPreprocessors().forEach(function(p){
+			submissions = Array.from(PreprocessSubmissions.process(p, submissions));
+			archiveSubmissions = Array.from(PreprocessSubmissions.process(p, archiveSubmissions));
+		});
+		// Apply algorithm to submissions
+		let allPairs = await PairGenerator.generatePairsWithArchive(submissions, archiveSubmissions);
+		let results = AlgorithmRunner.runAlgorithm(allPairs, config.getAlgorithm());
+		let resultsMatrix = SimilarityMatrix.generateMatrix(results, submissions, archiveSubmissions);
 
-				//TODO: do this with web workers
-				// All parallel jobs are done, shut down the parallel executor
-				//ParallelAlgorithm.shutdownExecutor();
+		//TODO: do this with web workers
+		// All parallel jobs are done, shut down the parallel executor
+		//ParallelAlgorithm.shutdownExecutor();
 
-				// Output using all output printers
-				let outputMap = config.getOutputPrinters()
-					.reduce(function(a,p){
-						console.log("Generating " + p.getName() + " output");
-						a[p.getName()] = p.printMatrix(resultsMatrix);
-						return a;
-					},{});
-
-				return new Promise((resolve)=>{resolve(outputMap);});
-			})
+		// Output using all output printers
+		let outputMap = config.getOutputPrinters().reduce(function(a,p){
+				console.log("Generating " + p.getName() + " output");
+				a[p.getName()] = p.printMatrix(resultsMatrix);
+				return a;
+			},{})
 			;
+
+		return outputMap;
 
 	}
 }

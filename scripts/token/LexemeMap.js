@@ -92,11 +92,16 @@ class LexemeMap {
 	 * @return Token of given type
 	 */
 	static getTokenForLexeme(lexeme) {
-		if(!this.lexemeMap.inverse().containsKey(lexeme)) {
+		let inverse = Array.from(this.lexemeMap.entries());
+		inverse = inverse.filter(function(d){
+				return d[1] === lexeme;
+			});
+		inverse = inverse.shift();
+		if(typeof inverse === 'undefined') {
 			throw new Error("Lexeme " + lexeme + " does not map to any value!");
 		}
 
-		return this.lexemeMap.inverse().get(lexeme);
+		return inverse[0];
 	}
 
 	/**
