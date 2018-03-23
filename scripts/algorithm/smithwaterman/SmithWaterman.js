@@ -15,22 +15,28 @@
 
 'use strict';
 
-import { AlgorithmResults } from '/scripts/algorithm/AlgorithmResults.js';
-//import net.lldp.checksims.algorithm.InternalAlgorithmError;
-import { SimilarityDetector } from '/scripts/algorithm/SimilarityDetector.js';
-//import net.lldp.checksims.submission.Submission;
-import { TokenList } from '/scripts/token/TokenList.js';
-import { TokenType } from '/scripts/token/TokenType.js';
-import { SmithWatermanAlgorithm } from '/scripts/algorithm/smithwaterman/SmithWatermanAlgorithm.js';
-//import net.lldp.checksims.token.TokenTypeMismatchException;
-//import org.apache.commons.lang3.tuple.Pair;
-
-import { checkNotNull, checkArgument } from '/scripts/util/misc.js';
+/*
+global loader
+global AlgorithmResults
+global SimilarityDetector
+global TokenList
+global TokenType
+global SmithWatermanAlgorithm
+global checkNotNull, checkArgument
+*/
+loader.load([
+	,'/scripts/algorithm/AlgorithmResults.js'
+	,'/scripts/algorithm/SimilarityDetector.js'
+	,'/scripts/token/TokenList.js'
+	,'/scripts/token/TokenType.js'
+	,'/scripts/algorithm/smithwaterman/SmithWatermanAlgorithm.js'
+	,'/scripts/util/misc.js'
+]);
 
 /**
  * Implementation of the Smith-Waterman algorithm.
  */
-export class SmithWaterman extends SimilarityDetector {
+class SmithWaterman extends SimilarityDetector {
 	/**
 	 * @return Singleton instance of the Smith-Waterman algorithm
 	 */

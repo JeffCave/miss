@@ -13,18 +13,29 @@
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
 
-import {AlgorithmRunner} from '/scripts/algorithm/PreprocessSubmissions.js';
-import {PreprocessSubmissions} from '/scripts/algorithm/preprocessor/PreprocessSubmissions.js';
-import {SimilarityMatrix} from '/scripts/algorithm/similaritymatrix/SimilarityMatrix.js';
-import {PairGenerator} from '/scripts/util/PairGenerator.js';
+/*
+global loader
+global AlgorithmRunner
+global PreprocessSubmissions
+global SimilarityMatrix
+global PairGenerator
+global ChecksimsException
+global checkNotNull
+*/
+loader.load([
+	,'/scripts/algorithm/AlgorithmRunner.js'
+	,'/scripts/algorithm/preprocessor/PreprocessSubmissions.js'
+	,'/scripts/algorithm/similaritymatrix/SimilarityMatrix.js'
+	,'/scripts/util/PairGenerator.js'
+	,'/scripts/ChecksimsException.js'
+	,'/scripts/util/misc.js'
+]);
 
-import { ChecksimsException } from '/scripts/ChecksimsException.js';
-import { checkNotNull } from '/scripts/util/misc.js';
 
 /**
  * CLI Entry point and main public API endpoint for Checksims.
  */
-export class ChecksimsRunner {
+class ChecksimsRunner {
 
 	constructor() {
 
@@ -46,58 +57,53 @@ export class ChecksimsRunner {
 	 * @return Map containing output of all output printers requested. Keys are name of output printer.
 	 * @throws ChecksimsException Thrown on error performing similarity detection
 	 */
-	static runChecksims(config){
+	static async runChecksims(config){
 		checkNotNull(config);
+		config = await config;
 
-		//TODO: do this with web workers
-		// Set parallelism
-		//let threads = config.getNumThreads();
-		//ParallelAlgorithm.setThreadCount(threads);
-
-		let submissions = config.getSubmissions();
-
-		console.log("Got " + submissions.size() + " submissions to test.");
-
-		let archiveSubmissions = config.getArchiveSubmissions();
-
-		if(!archiveSubmissions.isEmpty()) {
-			console.log("Got " + archiveSubmissions.size + " archive submissions to test.");
-		}
-
-		if(submissions.size === 0) {
-			throw new ChecksimsException("No student submissions were found - cannot run Checksims!");
-		}
-
-		// Apply all preprocessors
-		config.getPreprocessors().forEach(function(p){
-			submissions = new Set(PreprocessSubmissions.process(p, submissions));
-
-			if(!archiveSubmissions.isEmpty()) {
-				archiveSubmissions = new Set(PreprocessSubmissions.process(p, archiveSubmissions));
+		let submissions = new Promise((resolve,reject)=>{
+			let submissions = config.getSubmissions();
+			console.log("Got " + submissions.length + " submissions to test.");
+			if(submissions.length === 0) {
+				reject(new ChecksimsException("No student submissions were found - cannot run Checksims!"));
 			}
+			resolve(submissions);
 		});
+		let archiveSubmissions = new Promise((resolve,reject)=>{
+			let archive = config.getArchiveSubmissions();
+			console.log("Got " + archive.length + " archive submissions to test.");
+			resolve(archive);
+		});
+		let allSubmissions = await Promise.all([submissions,archiveSubmissions]);
 
-		if(submissions.size < 2) {
+		submissions = allSubmissions[0];
+		archiveSubmissions = allSubmissions[1];
+		if(2 > submissions.length + archiveSubmissions.length) {
 			throw new ChecksimsException("Did not get at least 2 student submissions! Cannot run Checksims!");
 		}
-
+		// Apply all preprocessors
+		config.getPreprocessors().forEach(function(p){
+			submissions = Array.from(PreprocessSubmissions.process(p, submissions));
+			archiveSubmissions = Array.from(PreprocessSubmissions.process(p, archiveSubmissions));
+		});
 		// Apply algorithm to submissions
-		let allPairs = PairGenerator.generatePairsWithArchive(submissions, archiveSubmissions);
+		let allPairs = await PairGenerator.generatePairsWithArchive(submissions, archiveSubmissions);
 		let results = AlgorithmRunner.runAlgorithm(allPairs, config.getAlgorithm());
-		let resultsMatrix = SimilarityMatrix.generateMatrix(submissions, archiveSubmissions, results);
+		let resultsMatrix = SimilarityMatrix.generateMatrix(results, submissions, archiveSubmissions);
 
 		//TODO: do this with web workers
 		// All parallel jobs are done, shut down the parallel executor
 		//ParallelAlgorithm.shutdownExecutor();
 
 		// Output using all output printers
-		let outputMap = config.getOutputPrinters()
-			.reduce(function(a,p){
+		let outputMap = config.getOutputPrinters().reduce(function(a,p){
 				console.log("Generating " + p.getName() + " output");
 				a[p.getName()] = p.printMatrix(resultsMatrix);
 				return a;
-			},{});
+			},{})
+			;
 
 		return outputMap;
+
 	}
 }

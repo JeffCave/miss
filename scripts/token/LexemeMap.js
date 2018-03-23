@@ -14,8 +14,13 @@
  */
 
 'use strict';
-
-import { checkNotNull, checkArgument } from '/scripts/util/misc.js';
+/*
+global loader
+global checkNotNull
+*/
+loader.load([
+	,'/scripts/util/misc.js'
+]);
 
 
 /**
@@ -37,14 +42,27 @@ import { checkNotNull, checkArgument } from '/scripts/util/misc.js';
  * present, though in the future it is desired to add Tokens backed
  * by Characters, not integers.
  */
-export class LexemeMap {
-	constructor() {}
+class LexemeMap {
+	constructor() {
+
+	}
 
 	static get lexemeMap(){
+		if(!('pLexemeMap' in LexemeMap)){
+			this.pLexemeMap = new Map();
+		}
+		return this.pLexemeMap;
+	}
+
+	static get lexemeIndex(){
 		if(!('pLexemeIndex' in LexemeMap)){
-			this.pLexemeIndex = {};
+			this.pLexemeIndex = 0;
 		}
 		return this.pLexemeIndex;
+	}
+
+	static set lexemeIndex(value){
+		this.pLexemeIndex = value;
 	}
 
 	/**
@@ -54,15 +72,13 @@ export class LexemeMap {
 	static getLexemeForToken(token) {
 		checkNotNull(token);
 
-		if(token in this.lexemeMap) {
-			return this.lexemeMap[token];
+		if(this.lexemeMap.has(token)) {
+			let val = this.lexemeMap.get(token);
+			return val;
 		}
-		let newLexeme = this.lexemeIndex.getAndIncrement();
-		let previous = this.lexemeMap.put(token, newLexeme);
-
-		if(previous !== null) {
-			throw new Error("Overwrote lexeme mapping for token " + token.toString());
-		}
+		let newLexeme = this.lexemeIndex;
+		this.lexemeIndex = this.lexemeIndex + 1;
+		this.lexemeMap.set(token, newLexeme);
 
 		return newLexeme;
 	}
@@ -76,11 +92,16 @@ export class LexemeMap {
 	 * @return Token of given type
 	 */
 	static getTokenForLexeme(lexeme) {
-		if(!this.lexemeMap.inverse().containsKey(lexeme)) {
+		let inverse = Array.from(this.lexemeMap.entries());
+		inverse = inverse.filter(function(d){
+				return d[1] === lexeme;
+			});
+		inverse = inverse.shift();
+		if(typeof inverse === 'undefined') {
 			throw new Error("Lexeme " + lexeme + " does not map to any value!");
 		}
 
-		return this.lexemeMap.inverse().get(lexeme);
+		return inverse[0];
 	}
 
 	/**
@@ -90,6 +111,6 @@ export class LexemeMap {
 	 */
 	static resetMappings() {
 		this.lexemeMap.clear();
-		this.lexemeIndex.set(0);
+		this.lexemeIndex = 0;
 	}
 }

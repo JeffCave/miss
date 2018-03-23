@@ -20,24 +20,25 @@
  */
 
 'use strict';
-
-import {ChecksimsException} from '/scripts/ChecksimsException.js';
-import { checkNotNull,checkArgument } from '/scripts/util/misc.js';
-
-import {MatrixPrinter} from './MatrixPrinter.js';
-
-import {Mustache} from 'https://cdnjs.cloudflare.com/ajax/libs/mustache.js/2.3.0/mustache.min.js';
+/*
+global loader
+global checkNotNull
+global MatrixPrinter
+global Mustache
+*/
+loader.load([
+	,'https://cdnjs.cloudflare.com/ajax/libs/mustache.js/2.3.0/mustache.min.js'
+	,'/scripts/ChecksimsException.js'
+	,'/scripts/util/misc.js'
+	,'/scripts/algorithm/similaritymatrix/output/MatrixPrinter.js'
+]);
 
 /**
  * Print a Similarity Matrix to HTML.
  */
-export class MatrixToHTMLPrinter extends MatrixPrinter {
-
-	constructor(){
-	}
-
+class MatrixToHTMLPrinter extends MatrixPrinter {
 	static get templateLocation(){
-		return "/net/lldp/checksims/algorithm/similaritymatrix/output/htmlOutput.vm";
+		return "/scripts/algorithm/similaritymatrix/output/htmlOutput.tmpl.html";
 	}
 
 	/**
@@ -68,24 +69,24 @@ export class MatrixToHTMLPrinter extends MatrixPrinter {
 			"matrix": matrix
 		};
 		let output = Mustache.render (template, context);
-		return output.toString();
+		return output;
 	}
 
 	getName() {
 		return "html";
 	}
 
-    toString() {
-        return "Singleton instance of MatrixToHTMLPrinter";
-    }
+	toString() {
+		return "Singleton instance of MatrixToHTMLPrinter";
+	}
 
-    hashCode() {
-        return this.getName().hashCode();
-    }
+	hashCode() {
+		return this.getName().hashCode();
+	}
 
 	equals(other) {
-        return other instanceof MatrixToHTMLPrinter;
-    }
+		return (other instanceof MatrixToHTMLPrinter);
+	}
 }
 
 
@@ -104,9 +105,8 @@ export class MatrixToHTMLPrinter extends MatrixPrinter {
 var xhr = new XMLHttpRequest();
 xhr.open('GET', MatrixToHTMLPrinter.templateLocation, false);
 xhr.send();
-
 if (xhr.status === 200) {
-	MatrixToHTMLPrinter.prototype.template = xhr.responseText;
+	MatrixToHTMLPrinter.template = xhr.responseText;
 }
 else{
 	throw new Error("Could not resolve resource for HTML output template!");

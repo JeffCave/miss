@@ -18,7 +18,7 @@
 /**
  * An immutable 2-D coordinate.
  */
-export class Coordinate{
+class Coordinate{
     /**
      * Construct a 2D coordinate.
      *

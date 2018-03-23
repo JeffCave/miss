@@ -14,10 +14,17 @@
  */
 
 'use strict';
+/*
+global loader
+global Token
+global checkNotNull
+*/
+loader.load([
+	,'/scripts/token/Token.js'
+	,'/scripts/ChecksimsException.js'
+	,'/scripts/util/misc.js'
+]);
 
-import { Token } from '/scripts/token/Token.js';
-import { ChecksimsException } from '/scripts/ChecksimsException.js';
-import { checkNotNull,checkArgument } from '/scripts/util/misc.js';
 
 /**
  * Superclass for decorators for Tokens.

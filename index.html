@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js'></script>
+ <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/jsSHA/2.3.1/sha.js'></script>
+ <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/mustache.js/2.3.0/mustache.min.js'></script>
+ <script type="text/javascript" src="./scripts/allLibs.js"></script>
+ <script type="text/javascript" src="./scripts/ChecksimsCommandLine.js"></script>
+ <script>
+	/*
+	global ChecksimsCommandLine
+	global JSZip
+	*/
+	'use strict';
+
+	window.addEventListener('load',function(){
+		let checker = new ChecksimsCommandLine();
+		let button = document.querySelector('button');
+		let upload = document.querySelector("input[name='zip']");
+		let outputFlds = Array.from(document.querySelectorAll('#results > details'))
+			.reduce(function(a,d){
+				if(d.dataset.type){
+					a[d.dataset.type] = d;
+				}
+				return a;
+			},{})
+			;
+
+		button.addEventListener('click',function(e){
+			checker.runHtml({},outputFlds);
+		});
+
+		upload.addEventListener('change',function(e){
+			Array.from(e.target.files).forEach(function(file){
+				if (!file.type === 'application/x-zip-compressed'){
+					return;
+				}
+				checker
+					.attachSubmissions(file)
+					.then(function(){
+						button.disabled = false;
+						let ul = document.querySelector("ul");
+						ul.innerHTML = '';
+						checker.submissions.forEach(function(path,entry) {
+							ul.innerHTML += '<li>'+entry.name+'</li>';
+						});
+					})
+					;
+			});
+		});
+	});
+ </script>
+</head>
+<body>
+ <fieldset>
+  <input name='zip' type="file" multiple />
+  <button name='run' disabled>Run</button>
+ </fieldset>
+ <details open>
+  <summary>Files</summary>
+  <ul></ul>
+ </details>
+ <section id='results'>
+  <details data-type='html' open>
+   <summary>HTML</summary>
+   <div class='result'></div>
+  </details>
+  <details data-type='csv' open>
+   <summary>CSV</summary>
+   <textarea class='result'></textarea>
+  </details>
+ </section>
+</body>
+</html>

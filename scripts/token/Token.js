@@ -15,8 +15,17 @@
 
 'use strict';
 
-import { checkNotNull,checkArgument } from '/scripts/util/misc.js';
-
+/*
+global loader
+global ConcreteToken
+global LexemeMap
+global checkNotNull
+*/
+loader.load([
+	,'/scripts/util/misc.js'
+	,'/scripts/token/Token.js'
+	,'/scripts/token/LexemeMap.js'
+]);
 
 /**
  * Interface for Tokens.
@@ -28,15 +37,7 @@ import { checkNotNull,checkArgument } from '/scripts/util/misc.js';
  *
  * This interface enables easy use of Decorators for tokens.
  */
-export class Token {
-	/**
-	 * @param token Token to clone
-	 * @return Clone of token
-	 */
-	static cloneToken(token) {
-		return ConcreteToken.cloneToken(token);
-	}
-
+class Token {
 	/**
 	 * Construct a token with given type and validity.
 	 *
@@ -44,35 +45,34 @@ export class Token {
 	 * @param type Type of token
 	 * @param valid Whether the token is valid
 	 */
-	ConcreteToken(token, type, valid = true) {
+	constructor(token, type, valid = true) {
 		checkNotNull(token);
 		checkNotNull(type);
 
-		this.valid = valid;
-		this.type = type;
-		this.lexeme = LexemeMap.getLexemeForToken(token);
+		if(token instanceof LexemeMap){
+			this.valid = valid;
+			this.type = type;
+			this.lexeme = token;
+		}
+		else{
+			this.valid = valid;
+			this.type = type;
+			this.lexeme = LexemeMap.getLexemeForToken(token);
+		}
 	}
 
 	/**
-	 * Private constructor which is essentially a copy constructor.
-	 *
-	 * Does not actually use the LexemeMap, and instead uses a directly-provided lexeme. If the given lexeme is invalid,
-	 * it WILL result in a RuntimeException. Hence, this is only used as a copy constructor, for high-speed duplication
-	 * of tokens.
-	 *
-	 * @param lexeme Lexeme for this token
-	 * @param type Type of this token
-	 * @param valid Validity of this token
+	 * @param token Token to clone
+	 * @return Clone of token
 	 */
-	ConcreteToken(lexeme, type, valid) {
-		this.valid = valid;
-		this.type = type;
-		this.lexeme = lexeme;
+	clone() {
+		let clone = new Token(this.lexeme, this.type, this.valid);
+		return clone;
 	}
 
-    getLexeme() {
-        return this.lexeme;
-    }
+	getLexeme() {
+		return this.lexeme;
+	}
 
     getType() {
         return this.type;

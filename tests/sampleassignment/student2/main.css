@@ -1,0 +1,144 @@
+@import url('https://fonts.googleapis.com/css?family=Open+Sans');
+body{
+	position:relative;
+	font-family: 'Open Sans', sans-serif;
+	display: flex;  
+	flex-flow: row wrap;
+	margin:0;
+	padding: 0;
+}
+
+body > * {
+	padding:1em;
+	position:relative;
+	flex: 1 100%;
+}
+
+address{
+	text-decoration:none;
+	white-space: pre;
+}
+
+header {
+	background: tomato;
+}
+
+header > h1 {
+	margin-bottom:0;
+}
+
+a, a:link,a:visited, a:active, a:hover {
+	color:black;
+	text-decoration-style: wavy;
+	text-decoration-style: dotted;
+}
+
+a:hover{
+	text-shadow:0 0 0.01em black;
+}
+
+footer {
+	background: lightgreen;
+	font-size:0.5em;
+	text-align:left;
+}
+
+main {
+	text-align: left;
+	background: deepskyblue;
+	background: white;
+}
+
+section:last-of-type {
+	background: hotpink;
+	background: deepskyblue;
+}
+
+section:first-of-type {
+	background: gold;
+}
+
+
+button, input{
+	border: 1px solid black;
+	border-radius:0.25em;
+	
+}
+
+button:hover, input:hover,input:focus{
+	box-shadow: 0px 0px 10px #888888;
+}
+
+button {
+	background:rgba(255,255,255,0.75);
+}
+
+label{
+	display:block;
+	font-weight: bold;
+	margin-bottom: 0;
+	margin-top:1em;
+}
+
+input{
+	display:block;
+	margin-top:0;
+	margin-bottom: 1em;
+	width:100%;
+}
+
+/**** custom components ***/
+
+.showhide{
+	display:none;
+}
+
+button.showhide {
+	display:block;
+	position:absolute;
+	right:0px;
+	top:0px;
+	background:transparent;
+	border:0;
+}
+
+.fail{
+	/* border-color:darkred;
+	background-color:darkred;
+	color:white;*/
+	font-weight:bold;
+}
+
+input.fail{
+	border-color:red;
+	box-shadow: 0 0 10px red;
+}
+
+input.warn{
+	border-color:orange;
+	box-shadow: 0 0 10px orange;
+}
+
+input.pass{
+	border-color:green;
+	box-shadow: 0 0 10px green;
+}
+
+@media all and (min-width: 400px) {
+	main {
+		flex: 10 0px; 
+		order: 2;
+	}
+	section { 
+		flex: 0 auto; 
+	}
+	section:last-of-type { 
+		order: 3; 
+	}
+	section:first-of-type { 
+		order: 1; 
+	} 
+	footer { 
+		order: 4; 
+	}
+}

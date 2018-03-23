@@ -15,23 +15,33 @@
 
 'use strict';
 
-
-import { TokenType } from '/scripts/token/TokenType.js';
-import { checkNotNull, checkArgument, assert } from '/scripts/util/misc.js';
-
+/*
+global loader
+global TokenType
+global checkNotNull
+global checkArgument
+*/
+loader.load([
+	,'/scripts/token/TokenType.js'
+	,'/scripts/util/misc.js'
+]);
 
 /**
  * A list of tokens of a specific type.
  */
-export class TokenList extends Array{
+class TokenList extends Array{
 	/**
 	 * Create a TokenList accepting a specific type of token.
 	 *
 	 * @param type Type of token which will be allowed in the list
 	 */
 	constructor(type, baseList=null) {
+		super();
 		if(Array.isArray(baseList)){
-			super(baseList);
+			let the = this;
+			baseList.forEach(function(d){
+				the.push(d);
+			});
 		}
 		this.type = type;
 	}
@@ -42,28 +52,19 @@ export class TokenList extends Array{
 	 * @param onlyValid If true, ignore invalid tokens when joining
 	 * @return String composed of each element in the token list, in order, separated by appropriate character
 	 */
-	join(onlyValid) {
+	join(sepChar = null, onlyValid = false) {
 		if(this.length == 0) {
 			return "";
 		}
 
-		let sepChar;
-
-		switch(this.type) {
-			case TokenType.CHARACTER:
-				sepChar = "";
-				break;
-			case TokenType.WHITESPACE:
-				sepChar = " ";
-				break;
-			case TokenType.LINE:
-				sepChar = "\n";
-				break;
-			default:
-				sepChar = "";
-				break;
+		if(sepChar === null){
+			switch(this.type) {
+				case TokenType.CHARACTER: sepChar = ""; break;
+				case TokenType.WHITESPACE: sepChar = " "; break;
+				case TokenType.LINE: sepChar = "\n"; break;
+				default: sepChar = ""; break;
+			}
 		}
-
 		let b = this
 			.sort()
 			.forEach(function(token){
@@ -81,6 +82,14 @@ export class TokenList extends Array{
 		return b.toString();
 	}
 
+	concat(tokenList){
+		checkArgument(tokenList instanceof Array,"Token list can only accept token lists");
+		let list = new TokenList(this.type);
+		this.forEach(function(d){list.push(d);});
+		tokenList.forEach(function(d){list.push(d);});
+		return list;
+	}
+
 	/**
 	 * Peforms a deep copy of a TokenList, returning an immutable version of the initial list with immutable tokens.
 	 *
@@ -89,6 +98,7 @@ export class TokenList extends Array{
 	 */
 	static immutableCopy(cloneFrom) {
 		checkNotNull(cloneFrom);
+		checkArgument(cloneFrom instanceof TokenList,'Parameter `cloneFrom` must be instance of type `TokeList`');
 		let tmp = cloneFrom.slice(0);
 		return new TokenList(cloneFrom.type, tmp);
 	}
@@ -105,20 +115,45 @@ export class TokenList extends Array{
 		checkNotNull(cloneFrom);
 		let newList = cloneFrom
 			.map(function(token){
-				return token.cloneToken;
+				return token.clone();
 			});
 		newList = new TokenList(cloneFrom.type, newList);
 		return newList;
 	}
 
+	/**
+	 * TODO: This depth of equality checking seems superfluous to me. Check to see that it is required by the algorithm.
+	 */
 	equals(other) {
-		if(!(other instanceof 'TokenList')) {
+		if(!(other instanceof TokenList)) {
+			return false;
+		}
+		if(other.type !== this.type){
+			return false;
+		}
+		if(other.length !== this.length){
+			return false;
+		}
+
+		other = other.map(function(token){
+			return token.getLexeme();
+		});
+		let areSame = this.every(function(token){
+			let lexeme = token.getLexeme();
+			let index = other.indexOf(lexeme);
+			if(0 > index){
+				return false;
+			}
+			other.splice(index,1);
+			return true;
+		});
+		if(!areSame || other.length > 0){
 			return false;
 		}
 
 		// The super.equals() call here is bad practice because we can't *guarantee* it's a PredicatedList<Token>
 		// However, the instanceof TokenList should ensure that invariant is met
-		return other.type.equals(this.type) && super.equals(other);
+		return true;
 	}
 
 	toString() {
@@ -131,5 +166,9 @@ export class TokenList extends Array{
 
 	numValid() {
 		return Number.parseInt(this.filter(function(d){ return d.isValid();}).length,10);
+	}
+
+	size(){
+		return this.length;
 	}
 }

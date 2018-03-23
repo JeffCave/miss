@@ -14,27 +14,36 @@
  */
 
 'use strict';
-
-//import net.lldp.checksims.algorithm.InternalAlgorithmError;
-//import net.lldp.checksims.algorithm.similaritymatrix.SimilarityMatrix;
-//import org.apache.commons.lang3.tuple.Pair;
-
-//import java.text.DecimalFormat;
-
-//import static com.google.common.base.Preconditions.checkNotNull;
-import {ChecksimsException} from '/scripts/ChecksimsException.js';
-import { checkNotNull,checkArgument } from '/scripts/util/misc.js';
-
+/*
+global loader
+global checkNotNull
+global MatrixPrinter
+*/
+loader.load([
+	,'/scripts/algorithm/similaritymatrix/output/MatrixPrinter.js'
+	,'/scripts/ChecksimsException.js'
+	,'/scripts/util/misc.js'
+]);
 
 /**
  * Print a Similarity Matrix as machine-readable CSV.
  */
-export class MatrixToCSVPrinter extends MatrixPrinter {
+class MatrixToCSVPrinter extends MatrixPrinter {
+	constructor(){
+		if('instance' in MatrixToCSVPrinter){
+			throw Error('Meant to be a singleton. Use "getInstance"');
+		}
+		super();
+
+
+		MatrixToCSVPrinter.instance = this;
+	}
+
 	/**
 	 * @return Singleton instance of MatrixToCSVPrinter
 	 */
 	static getInstance() {
-		if('instance' in MatrixToCSVPrinter) {
+		if(!('instance' in MatrixToCSVPrinter)) {
 			MatrixToCSVPrinter.instance = new MatrixToCSVPrinter();
 		}
 		return MatrixToCSVPrinter.instance;
@@ -60,11 +69,11 @@ export class MatrixToCSVPrinter extends MatrixPrinter {
 		builder.push(row);
 
 		// Remaining rows: X label, then all Y results in order
-		for(let x = 0; x < arrayBounds.getLeft(); x++) {
+		for(let x = 0; x < this.arrayBounds.getLeft(); x++) {
 			// First, append name of the X submission
 			row = [matrix.getXSubmission(x).getName()];
 			// Next, append all the matrix values, formatted as given
-			for(let y = 0; y < arrayBounds.getRight(); y++) {
+			for(let y = 0; y < this.arrayBounds.getRight(); y++) {
 				row.push(matrix.getEntryFor(x, y).getSimilarityPercent().toFixed(2));
 			}
 			builder.push(row);
@@ -95,6 +104,6 @@ export class MatrixToCSVPrinter extends MatrixPrinter {
     }
 
     equals(other) {
-        return other instanceof MatrixToCSVPrinter;
+        return other instanceof 'MatrixToCSVPrinter';
     }
 }
