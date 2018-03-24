@@ -91,20 +91,22 @@ class MatrixEntry {
         return this.totalTokens;
     }
 
-    toString() {
-        return "Similarity Matrix Entry comparing " + this.base.getName() + " and " + this.comparedTo.getName();
+	toString() {
+		return "Similarity Matrix Entry comparing " + this.base.getName() + " and " + this.comparedTo.getName();
+	}
+
+	equals(other) {
+		if(!(other instanceof MatrixEntry)) {
+			return false;
+		}
+
+		return	other.getBase().equals(this.base) &&
+				other.getComparedTo().equals(this.comparedTo) &&
+				other.getSimilarTokens() === this.similarTokens
+				;
     }
 
-    equals(other) {
-        if(!(other instanceof MatrixEntry)) {
-            return false;
-        }
-
-        return other.getBase().equals(this.base) && other.getComparedTo().equals(this.comparedTo)
-                && other.getSimilarTokens() === this.similarTokens;
-    }
-
-    hashCode() {
-        return (this.base.hashCode() ^ this.comparedTo.hashCode()) * this.similarTokens;
-    }
+	hashCode() {
+		return (this.base.hashCode() ^ this.comparedTo.hashCode()) * this.similarTokens;
+	}
 }

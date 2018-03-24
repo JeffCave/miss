@@ -15,18 +15,26 @@
 
 /*
 global loader
+
 global AlgorithmRunner
-global PreprocessSubmissions
-global SimilarityMatrix
-global PairGenerator
+global AlgorithmRegistry
 global ChecksimsException
+global ChecksimsConfig
+global PairGenerator
+global PreprocessSubmissions
+global TokenType
+global SimilarityMatrix
+
 global checkNotNull
 */
 loader.load([
 	,'/scripts/algorithm/AlgorithmRunner.js'
+	,'/scripts/algorithm/AlgorithmRegistry.js'
 	,'/scripts/algorithm/preprocessor/PreprocessSubmissions.js'
 	,'/scripts/algorithm/similaritymatrix/SimilarityMatrix.js'
+	,'/scripts/token/TokenType.js'
 	,'/scripts/util/PairGenerator.js'
+	,'/scripts/ChecksimsConfig.js'
 	,'/scripts/ChecksimsException.js'
 	,'/scripts/util/misc.js'
 ]);
@@ -38,7 +46,7 @@ loader.load([
 class ChecksimsRunner {
 
 	constructor() {
-
+		this.config = new ChecksimsConfig();
 	}
 
 	/**
@@ -46,18 +54,20 @@ class ChecksimsRunner {
 	 *
 	 * @return Current version of Checksims
 	 */
-	static getChecksimsVersion(){
+	static get ChecksimsVersion(){
 		return "0.0.0";
 	}
 
+
 	/**
-	 * Main public entrypoint to Checksims. Runs similarity detection according to given configuration.
+	 * Main public entrypoint to Checksims. Runs similarity detection
+	 * according to given configuration.
 	 *
 	 * @param config Configuration defining how Checksims will be run
 	 * @return Map containing output of all output printers requested. Keys are name of output printer.
 	 * @throws ChecksimsException Thrown on error performing similarity detection
 	 */
-	static async runChecksims(config){
+	async runChecksims(config){
 		checkNotNull(config);
 		config = await config;
 
@@ -95,15 +105,87 @@ class ChecksimsRunner {
 		// All parallel jobs are done, shut down the parallel executor
 		//ParallelAlgorithm.shutdownExecutor();
 
-		// Output using all output printers
-		let outputMap = config.getOutputPrinters().reduce(function(a,p){
-				console.log("Generating " + p.getName() + " output");
-				a[p.getName()] = p.printMatrix(resultsMatrix);
-				return a;
-			},{})
-			;
 
-		return outputMap;
+		return resultsMatrix;
 
 	}
+
+	/**
+	 * Parse basic CLI flags and produce a ChecksimsConfig.
+	 *
+	 * @param cli Parsed command line
+	 * @return Config derived from parsed CLI
+	 * @throws ChecksimsException Thrown on invalid user input or internal error
+	 */
+	parseBaseFlags(cli = {}){
+		cli = JSON.merge([{},this.getOpts(),cli]);
+
+		// Create a base config to work from
+		let config = new ChecksimsConfig();
+
+		// Parse plagiarism detection algorithm
+		if('algo' in cli){
+			let algo = AlgorithmRegistry.getInstance().getImplementationInstance(cli['algo']);
+			config = config.setAlgorithm(algo);
+			config = config.setTokenization(algo.getDefaultTokenType());
+		}
+
+		// Parse tokenization
+		if('t' in cli) {
+			config = config.setTokenization(TokenType.fromString(cli['t']));
+		}
+
+		// Parse number of threads to use
+		if('j' in cli) {
+			let numThreads = Number.parseInt(cli["j"],10);
+			if(numThreads < 1) {
+				throw new ChecksimsException("Thread count must be positive!");
+			}
+			config = config.setNumThreads(numThreads);
+		}
+
+		// Parse preprocessors
+		// Ensure no duplicates
+		if('p' in cli) {
+			let preprocessors = [];
+
+			let preprocessorsToUse = cli["p"];
+			preprocessorsToUse.forEach(function(s){
+				let p = PreprocessorRegistry.getInstance().getImplementationInstance(s);
+				preprocessors.add(p);
+			});
+			config = config.setPreprocessors(preprocessors);
+		}
+
+		return config;
+	}
+
+
+	/**
+	 * @param anyRequired Whether any arguments are required
+	 * @return CLI options used in Checksims
+	 */
+	getOpts() {
+		let opts = {
+			"algorithm" : "smithwaterman",
+			"tokenizer" :TokenType.WHITESPACE,
+			"preproc" : ['commoncodeline','lowercase','deduplicate'],
+			"threads" : 1,
+			"regex" : '.*',
+			"verbosity" : 1,
+			// retain empty folders
+			"empty": true,
+			// recurse folder structure
+			"recurse":true,
+			// common code to be ignored (instructor code)
+			"commDir" : null,
+			// use archive (old student assignments)
+			"archDir": null,
+			// submissions (current student assignemnts)
+			"subDir": null,
+		};
+		return opts;
+	}
+
+
 }

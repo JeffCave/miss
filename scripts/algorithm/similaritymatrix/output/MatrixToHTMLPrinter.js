@@ -66,7 +66,12 @@ class MatrixToHTMLPrinter extends MatrixPrinter {
 
 		let template = MatrixToHTMLPrinter.template;
 		let context = {
-			"matrix": matrix
+			"matrix": matrix,
+			"toFixed": function() {
+				return function(num, render) {
+					return parseFloat(render(num)).toFixed(2);
+				};
+			}
 		};
 		let output = Mustache.render (template, context);
 		return output;

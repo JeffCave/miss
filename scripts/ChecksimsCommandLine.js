@@ -99,102 +99,6 @@ class ChecksimsCommandLine {
 
 
 	/**
-	 * @param anyRequired Whether any arguments are required
-	 * @return CLI options used in Checksims
-	 */
-	getOpts() {
-		let opts = {
-			"algorithm" : "smithwaterman",
-			"tokenizer" :TokenType.WHITESPACE,
-			"preproc" : ['commoncodeline','lowercase','deduplicate'],
-			"threads" : 1,
-			"regex" : '.*',
-			"verbosity" : 1,
-			// retain empty folders
-			"empty": true,
-			// recurse folder structure
-			"recurse":true,
-			// common code to be ignored (instructor code)
-			"commDir" : null,
-			// use archive (old student assignments)
-			"archDir": null,
-			// submissions (current student assignemnts)
-			"subDir": null,
-		};
-		return opts;
-	}
-
-
-
-	/**
-	 * Parse basic CLI flags and produce a ChecksimsConfig.
-	 *
-	 * @param cli Parsed command line
-	 * @return Config derived from parsed CLI
-	 * @throws ChecksimsException Thrown on invalid user input or internal error
-	 */
-	parseBaseFlags(cli = {}){
-		cli = JSON.merge([{},this.getOpts(),cli]);
-
-		// Create a base config to work from
-		let config = new ChecksimsConfig();
-
-		// Parse plagiarism detection algorithm
-		if('algo' in cli){
-			let algo = AlgorithmRegistry.getInstance().getImplementationInstance(cli['algo']);
-			config = config.setAlgorithm(algo);
-			config = config.setTokenization(algo.getDefaultTokenType());
-		}
-
-		// Parse tokenization
-		if('t' in cli) {
-			config = config.setTokenization(TokenType.fromString(cli['t']));
-		}
-
-		// Parse number of threads to use
-		if('j' in cli) {
-			let numThreads = Number.parseInt(cli["j"],10);
-			if(numThreads < 1) {
-				throw new ChecksimsException("Thread count must be positive!");
-			}
-			config = config.setNumThreads(numThreads);
-		}
-
-		// Parse preprocessors
-		// Ensure no duplicates
-		if('p' in cli) {
-			let preprocessors = [];
-
-			let preprocessorsToUse = cli["p"];
-			preprocessorsToUse.forEach(function(s){
-				let p = PreprocessorRegistry.getInstance().getImplementationInstance(s);
-				preprocessors.add(p);
-			});
-			config = config.setPreprocessors(preprocessors);
-		}
-
-		// Parse output strategies
-		// Ensure no duplicates
-		if('o' in cli) {
-			let desiredStrategies = cli["o"];
-			let deduplicatedStrategies = new Set(desiredStrategies);
-
-			if(deduplicatedStrategies.size === 0) {
-				throw new ChecksimsException("Error: did not obtain a valid output strategy!");
-			}
-
-			// Convert to MatrixPrinters
-			let printers = deduplicatedStrategies.map(function(name){
-				return MatrixPrinterRegistry.getInstance().getImplementationInstance(name);
-			});
-
-			config = config.setOutputPrinters(printers);
-		}
-
-		return config;
-	}
-
-	/**
 	 * Parse flags which require submissions to be built.
 	 *
 	 * TODO unit tests
@@ -225,12 +129,13 @@ class ChecksimsCommandLine {
 		let tokenizer = Tokenizer.getTokenizer(baseConfig.getTokenization());
 
 		// Generate submissions
-		let submissions = await this.getSubmissions(this.submissions, globPattern, tokenizer, recursive, retainEmpty)
+		let submissions = await this.getSubmissions(this.submissions, globPattern, tokenizer, recursive, retainEmpty);
 		console.log("Generated " + submissions.length + " submissions to process.");
 		if(submissions.length === 0) {
 			throw new ChecksimsException("Could not build any submissions to operate on!");
 		}
 		toReturn = toReturn.setSubmissions(submissions);
+
 		// // Check if we need to perform common code removal
 		// if(cli.commDir) {
 		// 	// Get the directory containing the common code
@@ -356,6 +261,36 @@ class ChecksimsCommandLine {
 		return submissions;
 	}
 
+	async renderResults(results,htmlContainers){
+		let deduplicatedStrategies = Array.from(new Set(['html','csv']));
+		if(deduplicatedStrategies.length === 0) {
+			throw new ChecksimsException("Error: did not obtain a valid output strategy!");
+		}
+
+		// Output using all output printers
+		let outputMap = deduplicatedStrategies
+			.map(function(name){
+				return MatrixPrinterRegistry.getInstance().getImplementationInstance(name);
+			})
+			.reduce(function(a,p){
+				console.log("Generating " + p.getName() + " output");
+				a[p.getName()] = p.printMatrix(results);
+				return a;
+			},{})
+			;
+
+		// Output for all specified strategies
+		Object.entries(outputMap).forEach(function(strategy){
+			let key = strategy[0];
+			let val = strategy[1];
+			if(key in htmlContainers){
+				htmlContainers[key].querySelector('.result').innerHTML = val;
+			}
+		});
+
+
+	}
+
 	/**
 	 * Parse CLI arguments and run Checksims from them.
 	 *
@@ -366,25 +301,20 @@ class ChecksimsCommandLine {
 	async runHtml(args,htmlContainers){
 		checkNotNull(args);
 
+		let checkSims = new ChecksimsRunner();
+
 		// Parse options, second round: required arguments are required
-		let cli = JSON.merge([this.getOpts(),args]);
+		let cli = JSON.merge([checkSims.getOpts(),args]);
 
 		// First, parse basic flags
-		let config = this.parseBaseFlags(cli);
+		let config = checkSims.parseBaseFlags(cli);
 
 		// Parse file flags
 		let finalConfig = this.loadFiles(cli, config);
 
 		// Run Checksims with this config
-		let output = await ChecksimsRunner.runChecksims(finalConfig);
-		// Output for all specified strategies
-		Object.entries(output).forEach(function(strategy){
-			let key = strategy[0];
-			let val = strategy[1];
-			if(key in htmlContainers){
-				htmlContainers[key].querySelector('.result').innerHTML = val;
-			}
-		});
+		let output = await checkSims.runChecksims(finalConfig);
 
+		this.renderResults(output,htmlContainers);
 	}
 }
