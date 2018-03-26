@@ -49,14 +49,12 @@ class Token {
 		checkNotNull(token);
 		checkNotNull(type);
 
-		if(token instanceof LexemeMap){
-			this.valid = valid;
-			this.type = type;
+		this.valid = valid;
+		this.type = type;
+		if(typeof token === 'number'){
 			this.lexeme = token;
 		}
 		else{
-			this.valid = valid;
-			this.type = type;
 			this.lexeme = LexemeMap.getLexemeForToken(token);
 		}
 	}
