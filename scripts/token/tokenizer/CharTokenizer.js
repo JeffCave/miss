@@ -47,25 +47,23 @@ class CharTokenizer extends Tokenizer {
         return CharTokenizer.instance;
     }
 
-    /**
-     * Split a string into character tokens.
-     *
-     * @param string String to split
-     * @return Input string, with a single token representing each character
-     */
-    splitString(string) {
-        checkNotNull(string);
+	/**
+	 * Split a string into character tokens.
+	 *
+	 * @param string String to split
+	 * @return Input string, with a single token representing each character
+	 */
+	splitString(string) {
+		checkNotNull(string);
 
-        let toReturn = new TokenList(this.getType());
-
-		string.split('')
-			.map((character) => {return new ConcreteToken(character, TokenType.CHARACTER);})
-			.forEachOrdered(function(token){
-				toReturn.add(token);
+		let tokens = string.split('')
+			.map((character) => {
+				return new ConcreteToken(character, TokenType.CHARACTER);
 			});
 
-			return toReturn;
-		}
+		let toReturn = new TokenList(this.getType(),tokens);
+		return toReturn;
+	}
 
     getType() {
         return TokenType.CHARACTER;

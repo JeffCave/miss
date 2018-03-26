@@ -104,6 +104,8 @@ class ChecksimsConfig {
 					return a;
 				},new Set())
 			;
+		names = Array.from(names);
+
 		if(names.length !== newPreprocessors.length) {
 			throw new Error("Preprocessors must be unique!");
 		}

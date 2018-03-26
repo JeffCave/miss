@@ -13,7 +13,7 @@ const loader = {
 
 			let elem = document.createElement('script');
 			elem.type='text/javascript';
-			elem.src = lib;
+			elem.src = lib; // + '?nocache';
 			elem.defer = true;
 			try{
 				//console.log('Loading Library: ' + lib);
@@ -64,7 +64,6 @@ const loader = {
 			,'/scripts/algorithm/AlgorithmRegistry.js'
 			,'/scripts/algorithm/AlgorithmResults.js'
 			,'/scripts/algorithm/AlgorithmRunner.js'
-			,'/scripts/submission/AbstractSubmissionDecorator.js'
 			,'/scripts/submission/ValidityIgnoringSubmission.js'
 			,'/scripts/token/tokenizer/Tokenizer.js'
 			,'/scripts/token/tokenizer/CharTokenizer.js'
@@ -75,6 +74,7 @@ const loader = {
 			,'/scripts/token/TokenType.js'
 			,'/scripts/token/TokenList.js'
 			,'/scripts/token/Token.js'
+			,'/scripts/token/ValidityIgnoringToken.js'
 
 			,'/scripts/util/PairGenerator.js'
 			,'/scripts/util/misc.js'

@@ -35,14 +35,23 @@ class TokenList extends Array{
 	 *
 	 * @param type Type of token which will be allowed in the list
 	 */
-	constructor(type, baseList=null) {
+	constructor(type=null, baseList=null) {
 		super();
+
+		checkNotNull(type);
+
+		let isType = Object.values(TokenType).some(function(t){
+			return type === t;
+		});
+		checkArgument(isType,"Expected type to be of TokenType. Received " + type);
+
 		if(Array.isArray(baseList)){
 			let the = this;
 			baseList.forEach(function(d){
 				the.push(d);
 			});
 		}
+
 		this.type = type;
 	}
 
@@ -57,7 +66,13 @@ class TokenList extends Array{
 			return "";
 		}
 
-		if(sepChar === null){
+		if(typeof(sepChar) === 'boolean'){
+			let swap = onlyValid;
+			onlyValid = sepChar;
+			sepChar = swap;
+		}
+
+		if(sepChar === null || sepChar === false){
 			switch(this.type) {
 				case TokenType.CHARACTER: sepChar = ""; break;
 				case TokenType.WHITESPACE: sepChar = " "; break;
@@ -65,21 +80,27 @@ class TokenList extends Array{
 				default: sepChar = ""; break;
 			}
 		}
-		let b = this
-			.sort()
-			.forEach(function(token){
+		let b = Array.from(this)
+			.sort(function(a,b){
+				return a.lexeme - b.lexeme;
+			})
+			// TODO: This should not be necessary. Find a way to prevent NULL insertion to the list
+			.filter(function(d){
+				let keep = (d || false) !== false;
+				return keep;
+			})
+			.map(function(token){
 				if(!onlyValid || token.isValid()) {
-					b.push(token.getTokenAsString());
-					b.push(sepChar);
+					if(!token.lexeme){
+						console.log(token.lexeme);
+					}
+					return token.getTokenAsString();
 				}
-			});
+			})
+			.join(sepChar)
+			;
 
-		// Trim the last trailing whitespace in whitespace tokenization
-		if(this.type.equals(TokenType.WHITESPACE)) {
-			return b.join('').trim();
-		}
-
-		return b.toString();
+		return b;
 	}
 
 	concat(tokenList){
@@ -99,7 +120,7 @@ class TokenList extends Array{
 	static immutableCopy(cloneFrom) {
 		checkNotNull(cloneFrom);
 		checkArgument(cloneFrom instanceof TokenList,'Parameter `cloneFrom` must be instance of type `TokeList`');
-		let tmp = cloneFrom.slice(0);
+		let tmp = Array.from(cloneFrom).slice(0);
 		return new TokenList(cloneFrom.type, tmp);
 	}
 
@@ -113,7 +134,7 @@ class TokenList extends Array{
 	 */
 	static cloneTokenList(cloneFrom) {
 		checkNotNull(cloneFrom);
-		let newList = cloneFrom
+		let newList = Array.from(cloneFrom)
 			.map(function(token){
 				return token.clone();
 			});
@@ -135,10 +156,10 @@ class TokenList extends Array{
 			return false;
 		}
 
-		other = other.map(function(token){
+		other = Array.from(other).map(function(token){
 			return token.getLexeme();
 		});
-		let areSame = this.every(function(token){
+		let areSame = Array.from(this).every(function(token){
 			let lexeme = token.getLexeme();
 			let index = other.indexOf(lexeme);
 			if(0 > index){

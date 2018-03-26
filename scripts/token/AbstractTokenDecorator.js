@@ -33,6 +33,7 @@ class AbstractTokenDecorator extends Token {
 
 	constructor(wrappedToken) {
 		checkNotNull(wrappedToken);
+		super(wrappedToken.lexeme, wrappedToken.type, wrappedToken.valid);
 		this.wrappedToken = wrappedToken;
 	}
 

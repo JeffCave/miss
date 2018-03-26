@@ -55,8 +55,7 @@ class CommonCodeLineRemovalPreprocessor extends SubmissionPreprocessor {
 	 * @return Dummy instance of CommonCodeLineRemovalPreprocessor with empty common code
 	 */
 	static getInstance() {
-		let tokens = new TokenList(TokenType.CHARACTER);
-		let submission = new Submission("Empty","",tokens);
+		let submission = Submission.NullSubmission;
 		let instance = new CommonCodeLineRemovalPreprocessor(submission);
 		return instance;
 	}
@@ -68,6 +67,7 @@ class CommonCodeLineRemovalPreprocessor extends SubmissionPreprocessor {
 	 */
 	constructor(common) {
 		checkNotNull(common);
+		super();
 		this.common = common;
 	}
 
@@ -81,45 +81,24 @@ class CommonCodeLineRemovalPreprocessor extends SubmissionPreprocessor {
 	process(removeFrom) {
 		console.debug("Performing common code removal on submission " + removeFrom.getName());
 
-		let type = this.algorithm.getDefaultTokenType();
-		let tokenizer = Tokenizer.getTokenizer(type);
-
-		// Re-tokenize input and common code using given token type
-		let redoneIn = tokenizer.splitString(removeFrom.getContentAsString());
-		let redoneCommon = tokenizer.splitString(this.common.getContentAsString());
-
 		// Create new submissions with retokenized input
-		let computeIn = new Submission(removeFrom.getName(), removeFrom.getContentAsString(), redoneIn);
-		let computeCommon = new Submission(this.common.getName(), this.common.getContentAsString(), redoneCommon);
+		let computeIn = new Submission(removeFrom);
+		let computeCommon = new Submission(this.common);
 
 		// Use the new submissions to compute this
-		let results;
-
-		// This exception should never happen, but if it does, just rethrow as InternalAlgorithmException
-		try {
-			results = this.algorithm.detectSimilarity(computeIn, computeCommon);
-		}
-		catch(e) {
-			throw new Error(e.getMessage());
-		}
+		let results = CommonCodeLineRemovalPreprocessor.algorithm.detectSimilarity(computeIn, computeCommon);
 
 		// The results contains two TokenLists, representing the final state of the submissions after detection
 		// All common code should be marked invalid for the input submission's final list
-		let listWithCommonInvalid = null;
-		let percentMatched = null;
-		let identTokens = null;
-		if(new ValidityIgnoringSubmission(results.a).equals(computeIn)) {
-			listWithCommonInvalid = results.finalListA;
-			percentMatched = results.percentMatchedA();
-			identTokens = results.identicalTokensA;
-		}
-		else if(new ValidityIgnoringSubmission(results.b).equals(computeIn)) {
+		let listWithCommonInvalid = results.finalListA;
+		let percentMatched = results.percentMatchedA;
+		let identTokens = results.identicalTokensA;
+
+		let comparator = new ValidityIgnoringSubmission(computeIn);
+		if(comparator.equals(results.b)) {
 			listWithCommonInvalid = results.finalListB;
-			percentMatched = results.percentMatchedB();
+			percentMatched = results.percentMatchedB;
 			identTokens = results.identicalTokensB;
-		}
-		else {
-			throw new Error("Unreachable code!");
 		}
 
 		// Recreate the string body of the submission from this new list
@@ -133,7 +112,8 @@ class CommonCodeLineRemovalPreprocessor extends SubmissionPreprocessor {
 		console.trace("Submission " + removeFrom.getName() + " contained " + percentMatched.toFixed(2) + "% common code");
 		console.trace("Removed " + identTokens + " common tokens (of " + removeFrom.getNumTokens() + " total)");
 
-		return new Submission(removeFrom.getName(), newBody, finalListGoodTokenization);
+		let submission = new Submission(removeFrom.getName(), newBody, finalListGoodTokenization);
+		return submission;
 	}
 
 	/**
@@ -148,7 +128,7 @@ class CommonCodeLineRemovalPreprocessor extends SubmissionPreprocessor {
 	}
 
 	hashCode() {
-		return this.getName().hashCode() ^ this.common.getName().hashCode();
+		return hashCode(this.getName()) ^ hashCode(this.common.getName());
 	}
 
 	equals(other) {

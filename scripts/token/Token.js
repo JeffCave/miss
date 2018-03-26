@@ -74,24 +74,25 @@ class Token {
 		return this.lexeme;
 	}
 
-    getType() {
-        return this.type;
-    }
+	getType() {
+		return this.type;
+	}
 
-    getToken() {
-        return LexemeMap.getTokenForLexeme(this.lexeme);
-    }
+	getToken() {
+		let token = LexemeMap.getTokenForLexeme(this.lexeme);
+		return token;
+	}
 
 	getTokenAsString() {
-        return this.getToken().toString();
-    }
+		return this.getToken();
+	}
 
-    /**
-     * @return Whether this token is valid
-     */
-    isValid() {
-        return this.valid;
-    }
+	/**
+	* @return Whether this token is valid
+	*/
+	isValid() {
+		return this.valid;
+	}
 
     /**
      * @param isValid New value for validity of this token

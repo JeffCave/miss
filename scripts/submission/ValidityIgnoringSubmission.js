@@ -8,12 +8,6 @@
  * See LICENSE.txt included in this distribution for the specific
  * language governing permissions and limitations under the License.
  *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at LICENSE.txt.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
  * CDDL HEADER END
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
@@ -23,48 +17,56 @@
 
 /*
 global loader
-global TokenList
+global Submission
 global ValidityIgnoringToken
-global AbstractSubmissionDecorator
 */
 loader.load([
-	,'/scripts/token/TokenList.js'
+	,'/scripts/submission/Submission.js'
 	,'/scripts/token/ValidityIgnoringToken.js'
-	,'/scripts/submission/AbstractSubmissionDecorator.js'
 ]);
 
 /**
- * Submission which ignores validity - tokens are compared ignoring their validity.
+ * Submission which ignores validity - tokens are compared ignoring
+ * their validity.
  *
  * Decorates another submission and overrides equals()
  */
-class ValidityIgnoringSubmission extends AbstractSubmissionDecorator {
-    constructor(wrappedSubmission) {
-        super(wrappedSubmission);
-    }
+class ValidityIgnoringSubmission extends Submission {
+	constructor(wrappedSubmission) {
+		super(wrappedSubmission);
+	}
 
-    equals(other) {
-        if(!(other instanceof 'Submission')) {
-            return false;
-        }
-        if(!other.getTokenType().equals(this.getTokenType())
-                || !other.getName().equals(this.getName())
-                || !(other.getNumTokens() == this.getNumTokens())
-                || !(other.getContentAsString().equals(this.getContentAsString()))) {
-            return false;
-        }
+	equals(other) {
+		if(!(other instanceof Submission)) {
+			return false;
+		}
+		let areNotEqual = false
+			//|| other.getTokenType() !== this.getTokenType()
+			|| other.getName() !== this.getName()
+			|| other.getNumTokens() !== this.getNumTokens()
+			|| other.getContentAsString() !== this.getContentAsString()
+			;
+		if(areNotEqual){
+			return false;
+		}
 
-        let thisList = this.getContentAsTokens()
-                .map(function(d){return new ValidityIgnoringToken(d);})
-                ;
-        let otherList = other.getContentAsTokens()
-                .map(function(d){return new ValidityIgnoringToken(d);})
-                ;
+		let thisList = this.getContentAsTokens()
+			.map(function(d){
+				let token = new ValidityIgnoringToken(d);
+				return token;
+			})
+			;
+		let otherList = other.getContentAsTokens()
+			.map(function(d){
+				let token = new ValidityIgnoringToken(d);
+				return token;
+			})
+			;
 
-        return thisList.equals(otherList);
-    }
+		return thisList.equals(otherList);
+	}
 
-    hashCode() {
-        return super.hashCode();
-    }
+	hashCode() {
+		return super.hashCode();
+	}
 }
