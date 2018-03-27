@@ -49,20 +49,20 @@ class AlgorithmResults {
 
 		this.a = a;
 		this.b = b;
-		this.finalListA = finalListA.slice(0);
-		this.finalListB = finalListB.slice(0);
+		this.finalListA = TokenList.cloneTokenList(finalListA);
+		this.finalListB = TokenList.cloneTokenList(finalListB);
 
-		this.identicalTokensA = finalListA.filter((token) => !token.isValid()).length;
-		this.identicalTokensB = finalListB.filter((token) => !token.isValid()).length;
+		this.identicalTokensA = Array.from(this.finalListA).filter((token) => !token.isValid()).length;
+		this.identicalTokensB = Array.from(this.finalListB).filter((token) => !token.isValid()).length;
 
-		if(a.getNumTokens() == 0) {
+		if(a.getNumTokens() === 0) {
 			this.percentMatchedA = 0.0;
 		}
 		else {
 			this.percentMatchedA = this.identicalTokensA / a.getNumTokens();
 		}
 
-		if(b.getNumTokens() == 0) {
+		if(b.getNumTokens() === 0) {
 			this.percentMatchedB = 0.0;
 		}
 		else {

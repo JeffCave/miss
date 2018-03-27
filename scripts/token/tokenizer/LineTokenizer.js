@@ -21,11 +21,13 @@ global loader
 global TokenType
 global Token
 global Tokenizer
+global TokenList
 global checkNotNull
 */
 loader.load([
 	,'/scripts/token/TokenType.js'
 	,'/scripts/token/Token.js'
+	,'/scripts/token/tokenizer/LineTokenizer.js'
 	,'/scripts/token/tokenizer/Tokenizer.js'
 	,'/scripts/util/misc.js'
 ]);
@@ -34,6 +36,13 @@ loader.load([
  * Splits a file on a line-by-line basis.
  */
 class LineTokenizer extends Tokenizer {
+	constructor(){
+		super();
+		if('instance' in LineTokenizer) {
+			throw new Error("Attempt to construct LineTokenizer, use 'getInstance'");
+		}
+	}
+
 	/**
 	 * @return Singleton instance of LineTokenizer
 	 */
@@ -52,7 +61,7 @@ class LineTokenizer extends Tokenizer {
 	 */
 	splitString(content) {
 		checkNotNull(content);
-		let toReturn = content
+		let tokens = content
 			.split("\n")
 			.filter(function(str){
 				return str !== '';
@@ -61,6 +70,7 @@ class LineTokenizer extends Tokenizer {
 				return new Token(str, TokenType.LINE);
 			})
 			;
+		let toReturn = new TokenList(this.getType(),tokens);
 		return toReturn;
 	}
 

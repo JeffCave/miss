@@ -63,18 +63,20 @@ class MatrixToCSVPrinter extends MatrixPrinter {
 
 		// First row: NULL, then all the Y submissions, comma-separated
 		let row = [null];
-		for(let y = 0; y < matrix.getYSubmission().length; y++) {
-			row.push(matrix.getYSubmission(y).getName());
+		for(let y = 0; y < matrix.ySubmissions.length; y++) {
+			row.push(matrix.ySubmissions[y].getName());
 		}
 		builder.push(row);
 
 		// Remaining rows: X label, then all Y results in order
-		for(let x = 0; x < this.arrayBounds.getLeft(); x++) {
+		for(let x = 0; x < matrix.xSubmissions.length; x++) {
 			// First, append name of the X submission
-			row = [matrix.getXSubmission(x).getName()];
+			row = [matrix.xSubmissions[x].getName()];
 			// Next, append all the matrix values, formatted as given
-			for(let y = 0; y < this.arrayBounds.getRight(); y++) {
-				row.push(matrix.getEntryFor(x, y).getSimilarityPercent().toFixed(2));
+			for(let y = 0; y < matrix.ySubmissions.length; y++) {
+				let entry = matrix.getEntryFor(x, y);
+				let pct = entry.getSimilarityPercent();
+				row.push(pct);
 			}
 			builder.push(row);
 		}
@@ -95,15 +97,15 @@ class MatrixToCSVPrinter extends MatrixPrinter {
 		return "csv";
 	}
 
-    toString() {
-        return "Singleton matrix of MatrixToCSVPrinter";
-    }
+	toString() {
+		return "Singleton matrix of MatrixToCSVPrinter";
+	}
 
-    hashCode() {
-        return this.getName().hashCode();
-    }
+	hashCode() {
+		return this.getName().hashCode();
+	}
 
-    equals(other) {
-        return other instanceof 'MatrixToCSVPrinter';
-    }
+	equals(other) {
+		return other instanceof 'MatrixToCSVPrinter';
+	}
 }

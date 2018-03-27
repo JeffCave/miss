@@ -3,12 +3,9 @@ global jsSHA
 */
 
 function checkNotNull(value = null){
-	if(value === null){
-		throw "Null Exception (checkNotNull)";
-	}
-
-	if(typeof value === 'undefined'){
-		throw "Null Exception (checkNotNull)";
+	if(value === null || typeof value === 'undefined'){
+		console.trace("Null Exception (checkNotNull)")
+		throw new Error("Null Exception (checkNotNull)");
 	}
 }
 
@@ -39,7 +36,27 @@ function hasher(value){
 	hasher.update(value);
 	let hashed = hasher.getHash('HEX');
 	return hashed;
-};
+}
+
+function hashCode(str){
+	const shiftSize = 6;
+	const hashSize = 53;
+	const wrapSize = hashSize - shiftSize;
+	let hash = str.split('')
+		.map(function(d){
+			let c = d.toCharCodeAt(0);
+			return c;
+		})
+		.reduce(function(a,d){
+			let wrap =  a >> wrapSize;
+			a = a << shiftSize;
+			a = a ^ d;
+			a = a | wrap;
+			return a;
+		},0)
+		;
+	return hash;
+}
 
 JSON.clone = function(obj){
 	return JSON.parse(JSON.stringify(obj));

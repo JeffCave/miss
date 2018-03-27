@@ -18,10 +18,12 @@
 /*
 global loader
 global TokenList
-global checkNotNull, checkArgument, hasher
+global TokenType
+global checkNotNull, checkArgument, hashCode
 */
 loader.load([
 	,'/scripts/token/TokenList.js'
+	,'/scripts/token/TokenType.js'
 	,'/scripts/util/misc.js'
 ]);
 
@@ -52,18 +54,98 @@ class Submission {
 	 * @param tokens Content of submission, as token
 	 */
 	constructor(name, content, tokens) {
-		checkNotNull(name);
-		checkArgument(typeof name === 'string','name expected to be string');
-		checkArgument(name !== '', "Submission name cannot be empty");
-		checkNotNull(content);
-		checkArgument(typeof content === 'string' ,'content expected to be string');
-		checkNotNull(tokens);
-		checkArgument(tokens instanceof Array,'tokens expected to be an array');
+		if(name instanceof Submission){
+			tokens = name.tokenList;
+			content = name.content;
+			name = name.name;
+		}
+		else{
+			checkNotNull(name);
+			checkArgument(typeof name === 'string','name expected to be string');
+			checkArgument(name !== '', "Submission name cannot be empty");
+			checkNotNull(content);
+			checkArgument(typeof content === 'string' ,'content expected to be string');
+			checkNotNull(tokens);
+			checkArgument(tokens instanceof Array,'tokens expected to be an array');
+		}
+
+		if(!(tokens instanceof TokenList)){
+			tokens = new TokenList(TokenType.CHARACTER,tokens);
+		}
 
 		this.name = name;
 		this.content = content;
 		this.tokenList = TokenList.immutableCopy(tokens);
 	}
+
+
+	/**
+	 * Build the collection of submissions Checksims will be run on.
+	 *
+	 * TODO add unit tests
+	 *
+	 * @param submissionDirs Directories to build submissions from
+	 * @param glob Glob matcher to use when building submissions
+	 * @param tokenizer Tokenizer to use when building submissions
+	 * @param recursive Whether to recursively traverse when building submissions
+	 * @return Collection of submissions which will be used to run Checksims
+	 */
+	static submissionsFromZip(submissionDirs, glob, tokenizer, recursive, retainEmpty){
+		if(submissionDirs === null){
+			return [];
+		}
+		checkNotNull(submissionDirs);
+		checkArgument(Object.keys(submissionDirs.files).length > 0, "Must provide at least one submission directory!");
+		checkNotNull(glob);
+		checkNotNull(tokenizer);
+
+		// Divide entries by student
+		let studentSubs = {};
+		submissionDirs.forEach(function(name,entry){
+			let key = name.split('/');
+			key.shift();
+			let student = key.shift();
+			if(!entry.dir){
+				if(!(student in studentSubs)){
+					studentSubs[student] = [];
+				}
+				studentSubs[student].push(entry);
+			}
+		});
+
+		// Generate submissions to work on
+		let submissions = Object.entries(studentSubs).map(function(entry){
+			let student = entry[0];
+			let files = entry[1].filter(function(f){
+					let result = glob.test(f.name);
+					return result;
+				});
+			console.debug("Adding student: " + student);
+			let submission = Submission.submissionFromFiles(student, files, tokenizer);
+			return submission;
+		});
+
+		submissions = Promise.all(submissions)
+			.then(function(submissions){
+				submissions = submissions.filter(function(s){
+					if(!retainEmpty) {
+						if(s.getContentAsString() === '') {
+							console.warn("Discarding empty submission " + s.getName());
+						}
+						else {
+							return s;
+						}
+					}
+					else{
+						return s;
+					}
+				});
+				return submissions;
+			});
+
+		return submissions;
+	}
+
 
 	/**
 	 * Turn a list of files and a name into a Submission.
@@ -125,6 +207,23 @@ class Submission {
 	}
 
 
+	/**
+	 * A 'null' submission.
+	 *
+	 * This is an empty submission that can be used as a placeholder in
+	 * various processes where submissions are expected but no
+	 * Submissions are supplied. For example, common code will be
+	 * removed from comparison. Rather than checking for Null
+	 * everywhere, its just easier to have a "nothing to remove" thing.
+	 */
+	static get NullSubmission(){
+		if(!('_NullSubmission' in Submission)){
+			Submission._NullSubmission = new Submission(' ','',new TokenList(TokenType.CHARACTER,));
+		}
+		return Submission._NullSubmission;
+	}
+
+
 
 	getContentAsTokens() {
 		return this.tokenList;
@@ -166,7 +265,7 @@ class Submission {
 
 	hashCode() {
 		if(!('pHash' in this)){
-			this.pHash = hasher(this.name + this.content);
+			this.pHash = hashCode(this.name + this.content);
 		}
 		return this.pHash;
 	}

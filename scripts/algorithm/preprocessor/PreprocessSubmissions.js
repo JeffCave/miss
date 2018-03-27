@@ -15,10 +15,16 @@
  'use strict';
 /*
 global loader
+
+global Submission
+global SubmissionPreprocessor
+
 global checkNotNull, checkArgument
 */
 loader.load([
-	'/scripts/util/misc.js'
+	,'/scripts/submission/Submission.js'
+	,'/scripts/algorithm/preprocessor/SubmissionPreprocessor.js'
+	,'/scripts/util/misc.js'
 ]);
 
 /**
@@ -42,10 +48,13 @@ class PreprocessSubmissions {
 		checkNotNull(preprocessor);
 		checkNotNull(submissions);
 
-		checkArgument(submissions instanceof 'Submission',"Expected instance of 'submission'");
-		checkArgument(preprocessor instanceof 'SubmissionPreprocessor',"Expected instance of 'SubmissionPreprocessor'");
+		checkArgument(Array.isArray(submissions),"Expected a list of 'Submissions', not " + (typeof submissions));
+		submissions.forEach(function(submission){
+			checkArgument(submission instanceof Submission,"Expected a list of 'Submissions', not " + (typeof submission));
+		});
+		checkArgument(preprocessor instanceof SubmissionPreprocessor,"Expected instance of 'SubmissionPreprocessor'");
 
-		console.log("Preprocessing " + submissions.size() + " submissions with preprocessor " + preprocessor.getName());
+		console.log("Preprocessing " + submissions.length + " submissions with preprocessor " + preprocessor.getName());
 
 		// Map the submissions to PreprocessorWorker instances
 		let processed = submissions

@@ -1,4 +1,20 @@
 <table>
- <tr>
- </tr>
+ <thead>
+  <tr>
+   <th>&nbsp;</th>
+   {{#matrix.xSubmissions}}
+   <th>{{name}}</th>
+   {{/matrix.xSubmissions}}
+  </tr>
+ </thead>
+ <tbody>
+  {{#matrix.entries}}
+  <tr>
+   <th>{{0.base.name}}</th>
+   {{#.}}
+   <td style="opacity:{{similarityPercent}};">{{#toFixed}}{{similarityPercent}}{{/toFixed}}</td>
+   {{/.}}
+  </tr>
+  {{/matrix.entries}}
+ </tbody>
 </table>

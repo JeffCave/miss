@@ -50,6 +50,42 @@
 		});
 	});
  </script>
+ <style>
+	body{
+		font-family:sans-serif;
+	}
+	table{
+		border-collapse:collapse;
+	}
+	tbody {
+		background-color:green;
+	}
+	td {
+		padding:0.2em;
+		background-color:red;
+		font-weight:bold;
+		font-family:monospace;
+		text-align:right;
+		color:white;
+		border:1px solid black;
+	}
+	th {
+		background-color:white;
+	}
+	textarea{
+		width:80%;
+	}
+
+	#results > details > * {
+		margin:2em;
+	}
+	#results > details > summary {
+		margin:0;
+		background-color:black;
+		color:white;
+		font-weight:bold;
+	}
+ </style>
 </head>
 <body>
  <fieldset>
@@ -61,11 +97,11 @@
   <ul></ul>
  </details>
  <section id='results'>
-  <details data-type='html' open>
+  <details data-type='html'>
    <summary>HTML</summary>
    <div class='result'></div>
   </details>
-  <details data-type='csv' open>
+  <details data-type='csv'>
    <summary>CSV</summary>
    <textarea class='result'></textarea>
   </details>

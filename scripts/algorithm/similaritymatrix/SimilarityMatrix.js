@@ -18,10 +18,12 @@
 /*
 global loader
 global MatrixEntry
+global Submission
 global checkNotNull, checkArgument
 */
 loader.load([
 	,'/scripts/algorithm/similaritymatrix/MatrixEntry.js'
+	,'/scripts/submission/Submission.js'
 	,'/scripts/util/misc.js'
 ]);
 
@@ -42,7 +44,7 @@ class SimilarityMatrix {
 	 * @param ySubmissions Submissions on the Y axis
 	 * @param builtFrom    Set of Algorithm Results used to build the matrix
 	 */
-	constructor(/*MatrixEntry[][]*/ entries, xSubmissions, ySubmissions, builtFrom) {
+	constructor(entries, xSubmissions, ySubmissions, builtFrom) {
 		checkNotNull(entries);
 		checkNotNull(xSubmissions);
 		checkNotNull(ySubmissions);
@@ -59,19 +61,19 @@ class SimilarityMatrix {
 		this.builtFrom = builtFrom;
 	}
 
-    /**
-     * @return Size of the Similarity Matrix
-     */
-    getArrayBounds() {
-        return [this.xSubmissions.size, this.ySubmissions.size];
-    }
+	/**
+	* @return Size of the Similarity Matrix
+	*/
+	get ArrayBounds() {
+		return [this.xSubmissions.length, this.ySubmissions.length];
+	}
 
-    /**
-     * @return Get the Algorithm Results that were used to build this similarity matrix
-     */
-    getBaseResults() {
-        return this.builtFrom;
-    }
+	/**
+	 * @return Get the Algorithm Results that were used to build this similarity matrix
+	 */
+	get BaseResults() {
+		return this.builtFrom;
+	}
 
 	/**
 	 * Get similarities for one submission compared to another.
@@ -81,40 +83,42 @@ class SimilarityMatrix {
 	 * @return Matrix Entry for given X and Y index
 	 */
 	getEntryFor(xIndex, yIndex) {
+		if(xIndex instanceof Submission){
+			return this.getEntryForSubmissions(xIndex,yIndex);
+		}
+
 		checkArgument(xIndex >= 0, "X index must be greater than 0!");
-		checkArgument(xIndex < this.xSubmissions.size(), "X index must be less than X submissions size ("+ this.xSubmissions.size() + ")!");
+		checkArgument(xIndex < this.xSubmissions.length, "X index must be less than X submissions size ("+ this.xSubmissions.length + ")!");
 		checkArgument(yIndex >= 0, "Y index must be greater than 0!");
-		checkArgument(yIndex < this.ySubmissions.size(), "Y index must be less than Y submissions size ("+ this.ySubmissions.size() + ")!");
+		checkArgument(yIndex < this.ySubmissions.length, "Y index must be less than Y submissions size ("+ this.ySubmissions.length + ")!");
 
 		return this.entries[xIndex][yIndex];
 	}
 
-    /**
-     * Get similarity of X submission to Y submission.
-     *
-     * @param xSubmission Submission to get similarities for
-     * @param ySubmission Submission to get similarities relative to
-     * @return Similarities of xSubmission to ySubmission
-     * @throws NoSuchSubmissionException Thrown if either xSubmission or ySubmission are not present in the matrix
-     */
-    getEntryFor(xSubmission, ySubmission) {
-        checkNotNull(xSubmission);
-        checkNotNull(ySubmission);
+	/**
+	 * Get similarity of X submission to Y submission.
+	 *
+	 * @param xSubmission Submission to get similarities for
+	 * @param ySubmission Submission to get similarities relative to
+	 * @return Similarities of xSubmission to ySubmission
+	 * @throws NoSuchSubmissionException Thrown if either xSubmission or ySubmission are not present in the matrix
+	 */
+	getEntryForSubmissions(xSubmission, ySubmission) {
+		checkNotNull(xSubmission);
+		checkNotNull(ySubmission);
 
-        if (!this.xSubmissions.contains(xSubmission)) {
-            throw new Error("X Submission with name " + xSubmission.getName()
-                    + " not found in similarity matrix!");
-        }
-        else if (!this.ySubmissions.contains(ySubmission)) {
-            throw new Error("Y Submission with name " + ySubmission.getName()
-                    + " not found in similarity matrix!");
-        }
+		let xIndex = this.xSubmissions.indexOf(xSubmission);
+		if (xIndex < 0) {
+			throw new Error("X Submission with name " + xSubmission.getName() + " not found in similarity matrix!");
+		}
 
-        let xIndex = this.xSubmissions.indexOf(xSubmission);
-        let yIndex = this.ySubmissions.indexOf(ySubmission);
+		let yIndex = this.ySubmissions.indexOf(ySubmission);
+		if (yIndex < 0) {
+			throw new Error("Y Submission with name " + ySubmission.getName() + " not found in similarity matrix!");
+		}
 
-        return this.entries[xIndex][yIndex];
-    }
+		return this.entries[xIndex][yIndex];
+	}
 
 	toString() {
 		return "A similarity matrix comparing " + this.xSubmissions.size() + " submissions to " + this.ySubmissions.size();
@@ -235,9 +239,9 @@ class SimilarityMatrix {
 		checkArgument(!inputSubmissions.isEmpty(), "Must provide at least 1 submission to build matrix from");
 		checkArgument(!results.isEmpty(), "Must provide at least 1 AlgorithmResults to build matrix from!");
 
-        let setOfBoth = new Set();
-        setOfBoth.addAll(inputSubmissions);
-        setOfBoth.addAll(archiveSubmissions);
+		let setOfBoth = new Set();
+		setOfBoth.addAll(inputSubmissions);
+		setOfBoth.addAll(archiveSubmissions);
 
 		checkArgument(setOfBoth.size === (archiveSubmissions.size() + inputSubmissions.size()), "Some submissions were found in both archive and input submissions!");
 

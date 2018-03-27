@@ -40,7 +40,8 @@ loader.load([
 ]);
 
 /**
- * Internal class for record-keeping - used to record a line at a specific location in a submission.
+ * Internal class for record-keeping - used to record a line at a
+ * specific location in a submission.
  */
 class SubmissionLine {
 	constructor(lineNum, submission) {
@@ -94,12 +95,14 @@ class LineSimilarityChecker extends SimilarityDetector {
 		let finalA = TokenList.cloneTokenList(linesA);
 		let finalB = TokenList.cloneTokenList(linesB);
 
+		/*
 		if(a.getTokenType() !== b.getTokenType()) {
 			throw new Error("Token list type mismatch: submission " + a.getName() + " has type " +
 				linesA.type.toString() + ", while submission " + b.getName() + " has type "
 				+ linesB.type.toString());
 		}
-		else if(a.equals(b)) {
+		else */
+		if(a.equals(b)) {
 			finalA.forEach((token) => token.setValid(false));
 			finalB.forEach((token) => token.setValid(false));
 			return new AlgorithmResults(a, b, finalA, finalB);
@@ -164,8 +167,8 @@ class LineSimilarityChecker extends SimilarityDetector {
 			}
 		});
 
-		let invalTokensA = finalA.filter((token) => !token.isValid()).length;
-		let invalTokensB = finalB.filter((token) => !token.isValid()).length;
+		let invalTokensA = Array.from(finalA).filter((token) => !token.isValid()).length;
+		let invalTokensB = Array.from(finalB).filter((token) => !token.isValid()).length;
 
 		if(invalTokensA !== identicalLinesA) {
 			throw new Error(
