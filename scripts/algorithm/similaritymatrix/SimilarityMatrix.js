@@ -158,8 +158,14 @@ class SimilarityMatrix {
 	 * @throws InternalAlgorithmError Thrown on missing results, or results containing a submission not in the input
 	 */
 	static generateMatrix(results, inputSubmissions, archive = []){
-		checkNotNull(inputSubmissions);
 		checkNotNull(results);
+		if('results' in results){
+			inputSubmissions = results.submissions;
+			archive = results.archives;
+			results = results.results;
+		}
+
+		checkNotNull(inputSubmissions);
 		checkArgument(inputSubmissions.length !== 0, "Must provide at least 1 submission to build matrix from");
 		checkArgument(results.length !== 0, "Must provide at least 1 AlgorithmResults to build matrix from!");
 

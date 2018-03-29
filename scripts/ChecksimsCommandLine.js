@@ -25,6 +25,7 @@ global ChecksimsRunner
 global CommonCodeLineRemovalPreprocessor
 global MatrixPrinterRegistry
 global Submission
+global SimilarityMatrix
 global Tokenizer
 
 global checkArgument
@@ -168,6 +169,9 @@ class ChecksimsCommandLine {
 			throw new ChecksimsException("Error: did not obtain a valid output strategy!");
 		}
 
+		let resultsMatrix = SimilarityMatrix.generateMatrix(results);
+
+
 		// Output using all output printers
 		let outputMap = deduplicatedStrategies
 			.map(function(name){
@@ -175,7 +179,7 @@ class ChecksimsCommandLine {
 			})
 			.reduce(function(a,p){
 				console.log("Generating " + p.getName() + " output");
-				a[p.getName()] = p.printMatrix(results);
+				a[p.getName()] = p.printMatrix(resultsMatrix);
 				return a;
 			},{})
 			;
@@ -214,8 +218,8 @@ class ChecksimsCommandLine {
 		let finalConfig = this.loadFiles(cli, config);
 
 		// Run Checksims with this config
-		let output = await checkSims.runChecksims(finalConfig);
+		let results = await checkSims.runChecksims(finalConfig);
 
-		this.renderResults(output,htmlContainers);
+		this.renderResults(results,htmlContainers);
 	}
 }
