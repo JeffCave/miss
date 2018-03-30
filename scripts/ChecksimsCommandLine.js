@@ -163,14 +163,13 @@ class ChecksimsCommandLine {
 		return toReturn;
 	}
 
-	async renderResults(results,htmlContainers){
+	renderMatrixes(results,htmlContainers){
 		let deduplicatedStrategies = Array.from(new Set(['html','csv']));
 		if(deduplicatedStrategies.length === 0) {
 			throw new ChecksimsException("Error: did not obtain a valid output strategy!");
 		}
 
 		let resultsMatrix = SimilarityMatrix.generateMatrix(results);
-
 
 		// Output using all output printers
 		let outputMap = deduplicatedStrategies
@@ -192,8 +191,42 @@ class ChecksimsCommandLine {
 				htmlContainers[key].querySelector('.result').innerHTML = val;
 			}
 		});
+	}
 
+	async renderResults(results,htmlContainers){
+		this.renderMatrixes(results,htmlContainers);
 
+		let lst = htmlContainers.lst;
+		lst = lst.querySelector('.result');
+		lst.innerHTML = results.results
+			.sort(function(a,b){
+				let diff = a.percentMatchedA - b.percentMatchedA;
+				return diff;
+			})
+			.map(function(comp){
+				let html = [
+						comp.a.name,
+						comp.b.name,
+						(comp.percentMatchedA * 100).toFixed(0) + '%',
+					]
+					;
+				html = [
+						'<thead>',
+						' <tr>',
+						'  <th colspan="2">Student</th>',
+						'  <th>Similarity</th>',
+						' </tr>',
+						'</thead>',
+						'<tbody>',
+						' <tr><td>',
+						html.join('</td><td>'),
+						'</td></tr>',
+						'</tbody>',
+					]
+					;
+				return html.join('\n');
+			})
+			;
 	}
 
 	/**
