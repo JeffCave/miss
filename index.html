@@ -4,6 +4,10 @@
  <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js'></script>
  <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/jsSHA/2.3.1/sha.js'></script>
  <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/mustache.js/2.3.0/mustache.min.js'></script>
+
+ <script src="https://d3js.org/d3.v4.min.js"></script>
+
+ <script type="text/javascript" src="./scripts/visualizations/force2.js"></script>
  <script type="text/javascript" src="./scripts/allLibs.js"></script>
  <script type="text/javascript" src="./scripts/ChecksimsCommandLine.js"></script>
  <script>
@@ -97,6 +101,15 @@
   <ul></ul>
  </details>
  <section id='results'>
+  <details data-type='force'>
+   <summary>Force</summary>
+   <svg style="padding:0;height:300px;width:300px;list-style-type:none;position:relative;" width="300" height="300"></svg>
+   <ul class='result' style="padding:0;height:300px;width:300px;list-style-type:none;position:relative;"></ul>
+  </details>
+  <details data-type='lst'>
+   <summary>Listing</summary>
+   <table class='result'></table>
+  </details>
   <details data-type='html'>
    <summary>HTML</summary>
    <div class='result'></div>

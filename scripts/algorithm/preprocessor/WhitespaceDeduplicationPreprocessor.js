@@ -31,7 +31,7 @@ loader.load([
 	,'/scripts/util/misc.js'
 ]);
 
-
+PreprocessorRegistry.addPreprocessor('LowercasePreprocessor');
 /**
  * Remove duplicated whitespace characters.
  */

@@ -22,6 +22,7 @@ global ChecksimsException
 global ChecksimsConfig
 global PairGenerator
 global PreprocessSubmissions
+global PreprocessorRegistry
 global TokenType
 global SimilarityMatrix
 
@@ -99,14 +100,17 @@ class ChecksimsRunner {
 		// Apply algorithm to submissions
 		let allPairs = await PairGenerator.generatePairsWithArchive(submissions, archiveSubmissions);
 		let results = AlgorithmRunner.runAlgorithm(allPairs, config.getAlgorithm());
-		let resultsMatrix = SimilarityMatrix.generateMatrix(results, submissions, archiveSubmissions);
 
 		//TODO: do this with web workers
 		// All parallel jobs are done, shut down the parallel executor
 		//ParallelAlgorithm.shutdownExecutor();
 
-
-		return resultsMatrix;
+		let report = {
+			"results" : results,
+			"submissions":submissions,
+			"archives":archiveSubmissions
+		};
+		return report;
 
 	}
 

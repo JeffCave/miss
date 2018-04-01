@@ -37,13 +37,18 @@ loader.load([
  */
 class PreprocessorRegistry extends Registry {
 	constructor() {
-		let detectors = [
-				'CommonCodeLineRemovalPreprocessor',
-				'LowercasePreprocessor',
-				'WhitespaceDeduplicationPreprocessor',
-			];
+		if('instance' in PreprocessorRegistry) {
+			throw new Error('Instantiation of Singleton');
+		}
+		[
+			'CommonCodeLineRemovalPreprocessor',
+			'LowercasePreprocessor',
+			'WhitespaceDeduplicationPreprocessor',
+		].forEach(function(d){
+			PreprocessorRegistry.addPreprocessor(d);
+		});
 		let def = WhitespaceDeduplicationPreprocessor.getInstance().getName();
-		super( detectors, "SubmissionPreprocessor", [], def);
+		super( PreprocessorRegistry.preprocessors , "SubmissionPreprocessor", [], def);
 	}
 
 	/**
@@ -54,6 +59,18 @@ class PreprocessorRegistry extends Registry {
 			PreprocessorRegistry.instance = new PreprocessorRegistry();
 		}
 		return PreprocessorRegistry.instance;
+	}
+
+	static addPreprocessor(preprocessor){
+		checkNotNull(preprocessor);
+		checkArgument(preprocessor instanceof SubmissionPreprocessor,"Invalid data type");
+
+		if(!('preprocessors' in PreprocessorRegistry)){
+			PreprocessorRegistry.preprocessors = [];
+		}
+		if(0 < PreprocessorRegistry.preprocessors.indexOf(preprocessor)){
+			PreprocessorRegistry.preprocessors.push(preprocessor);
+		}
 	}
 
 	toString() {

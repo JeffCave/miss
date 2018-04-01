@@ -38,7 +38,7 @@ loader.load([
  */
 class MatrixToHTMLPrinter extends MatrixPrinter {
 	static get templateLocation(){
-		return "/scripts/algorithm/similaritymatrix/output/htmlOutput.tmpl.html";
+		return "/scripts/visualizations/similaritymatrix/output/htmlOutput.tmpl.html";
 	}
 
 	/**

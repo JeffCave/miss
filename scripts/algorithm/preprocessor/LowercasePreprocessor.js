@@ -23,7 +23,7 @@ import {Tokenizer} from '/scripts/token/tokenizer/Tokenizer.js';
 import {ChecksimsException} from '/scripts/ChecksimsException.js';
 import { checkNotNull,checkArgument } from '/scripts/util/misc.js';
 
-
+PreprocessorRegistry.addPreprocessor('LowercasePreprocessor');
 /**
  * Lowercases tokens to prevent case from interfering with comparisons.
  */

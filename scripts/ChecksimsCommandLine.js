@@ -18,6 +18,7 @@
 /*
 global JSZip
 global RegExp
+global d3
 
 global ChecksimsConfig
 global ChecksimsException
@@ -25,6 +26,7 @@ global ChecksimsRunner
 global CommonCodeLineRemovalPreprocessor
 global MatrixPrinterRegistry
 global Submission
+global SimilarityMatrix
 global Tokenizer
 
 global checkArgument
@@ -162,11 +164,13 @@ class ChecksimsCommandLine {
 		return toReturn;
 	}
 
-	async renderResults(results,htmlContainers){
+	renderMatrixes(results,htmlContainers){
 		let deduplicatedStrategies = Array.from(new Set(['html','csv']));
 		if(deduplicatedStrategies.length === 0) {
 			throw new ChecksimsException("Error: did not obtain a valid output strategy!");
 		}
+
+		let resultsMatrix = SimilarityMatrix.generateMatrix(results);
 
 		// Output using all output printers
 		let outputMap = deduplicatedStrategies
@@ -175,7 +179,7 @@ class ChecksimsCommandLine {
 			})
 			.reduce(function(a,p){
 				console.log("Generating " + p.getName() + " output");
-				a[p.getName()] = p.printMatrix(results);
+				a[p.getName()] = p.printMatrix(resultsMatrix);
 				return a;
 			},{})
 			;
@@ -188,8 +192,144 @@ class ChecksimsCommandLine {
 				htmlContainers[key].querySelector('.result').innerHTML = val;
 			}
 		});
+	}
+
+	renderListTable(results,htmlContainers){
+		let html = [
+						'<thead>',
+						' <tr>',
+						'  <th colspan="2">Students</th>',
+						'  <th colspan="2">Similarities</th>',
+						' </tr>',
+						'</thead>',
+						'<tbody>',
+			];
+		html = html.concat(results.results
+			.sort(function(a,b){
+				let diff = b.percentMatchedA - a.percentMatchedA;
+				if(diff === 0){
+					diff = b.percentMatchedB - a.percentMatchedB;
+				}
+				return diff;
+			})
+			.map(function(comp){
+				let html = [
+						comp.a.name,
+						comp.b.name,
+						(comp.percentMatchedA * 100).toFixed(0) + '%',
+						(comp.percentMatchedB * 100).toFixed(0) + '%',
+					]
+					;
+				html = [
+						' <tr><td>',
+						html.join('</td><td>'),
+						'</td></tr>',
+					]
+					;
+				return html.join('\n');
+			}))
+			;
+		html.push('</tbody>');
+
+		let lst = htmlContainers.lst;
+		lst = lst.querySelector('.result');
+		lst.innerHTML = html.join('\n');
+	}
 
 
+	renderListForce(results,htmlContainers){
+		let container = htmlContainers.force.querySelector('ul.result');
+		let dimensions = window.getComputedStyle(container);
+
+		MikeBostok(results);
+/*
+		let width = Number.parseInt(dimensions.height,10);
+		let height = Number.parseInt(dimensions.width,10);
+		let links = results.results.map(function(d){
+			let rtn = {
+				source:d.a.name,
+				target:d.b.name,
+				value:Math.max(d.percentMatchedA,d.percentMatchedB)
+			};
+			return rtn;
+		});
+
+		let nodeList = d3
+			.select('details[data-type="force"] ul.result')
+			.selectAll('li')
+			.data(results.submissions)
+			;
+
+		let simulator = d3.forceSimulation()
+			.force("link", d3.forceLink().id(function(d) { return d.name; }))
+			.force("charge", d3.forceManyBody())
+			.force("center", d3.forceCenter(width / 2, height / 2))
+			.nodes(results.submissions)
+			.on("tick", function (asdf) {
+				nodeList
+					.style("left", function(d) {
+						d = d.x;
+						d = Number.parseInt(d,10);
+						d = (d+"px");
+						console.log(d);
+						return d;
+					})
+					.style("top" , function(d) {
+						d = d.y;
+						d = Number.parseInt(d,10);
+						d = (d+"px");
+						console.log(d);
+						return d;
+					})
+					;
+			})
+			;
+
+		nodeList
+			.enter().append('li')
+				.style('height', '1em')
+				.style('width', '1em')
+				.style('border-radius', '0.5em')
+				.style('background-color', 'blue')
+				.style('position', 'absolute')
+				.style('left', '0px')
+				.style('top', function(d,i){
+					let a = i*10;
+					a = [a,"px"].join('');
+					return a;
+				})
+				.attr('title',function(d){ return d.name; })
+				//.text(function(d){ return d.name; })
+				.call(d3.drag()
+					.on("start", function (d) {
+						if (!d3.event.active){
+							simulator.alphaTarget(0.3).restart();
+						}
+						d.fx = d.x;
+						d.fy = d.y;
+					})
+					.on("drag", function (d) {
+						d.fx = d3.event.x;
+						d.fy = d3.event.y;
+					})
+					.on("end", function (d) {
+						if (!d3.event.active) {
+							simulator.alphaTarget(0);
+						}
+						d.fx = null;
+						d.fy = null;
+					})
+				);
+		nodeList.exit().remove();
+
+		simulator.force("link").links(links);
+*/
+	}
+
+	async renderResults(results,htmlContainers){
+		this.renderMatrixes(results,htmlContainers);
+		this.renderListTable(results,htmlContainers);
+		this.renderListForce(results,htmlContainers);
 	}
 
 	/**
@@ -214,8 +354,8 @@ class ChecksimsCommandLine {
 		let finalConfig = this.loadFiles(cli, config);
 
 		// Run Checksims with this config
-		let output = await checkSims.runChecksims(finalConfig);
+		let results = await checkSims.runChecksims(finalConfig);
 
-		this.renderResults(output,htmlContainers);
+		this.renderResults(results,htmlContainers);
 	}
 }
