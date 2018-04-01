@@ -39,6 +39,8 @@ loader.load([
 	,'/scripts/util/misc.js'
 ]);
 
+
+//PreprocessorRegistry.addPreprocessor('CommonCodeLineRemovalPreprocessor');
 /**
  * Common Code Removal via Line Comparison.
  */

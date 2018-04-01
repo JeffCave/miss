@@ -204,10 +204,10 @@ class ChecksimsCommandLine {
 						'</thead>',
 						'<tbody>',
 			];
-		html.push(results.results
+		html = html.concat(results.results
 			.sort(function(a,b){
 				let diff = b.percentMatchedA - a.percentMatchedA;
-				if(diff ===0){
+				if(diff === 0){
 					diff = b.percentMatchedB - a.percentMatchedB;
 				}
 				return diff;
