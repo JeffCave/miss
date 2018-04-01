@@ -19,44 +19,44 @@
  * An immutable 2-D coordinate.
  */
 class Coordinate{
-    /**
-     * Construct a 2D coordinate.
-     *
-     * @param x Desired X coordinate
-     * @param y Desired Y coordinate
-     */
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-    }
+	/**
+	* Construct a 2D coordinate.
+	*
+	* @param x Desired X coordinate
+	* @param y Desired Y coordinate
+	*/
+	constructor(x, y) {
+		this.x = x;
+		this.y = y;
+	}
 
-    /**
-     * @return X coordinate
-     */
-    getX() {
-        return this.x;
-    }
+	/**
+	* @return X coordinate
+	*/
+	getX() {
+		return this.x;
+	}
 
-    /**
-     * @return Y coordinate
-     */
-    getY() {
-        return this.y;
-    }
+	/**
+	 * @return Y coordinate
+	 */
+	getY() {
+		return this.y;
+	}
 
-    /**
-     * @return X coordinate
-     */
-    getLeft() {
-        return this.x;
-    }
+	/**
+	 * @return X coordinate
+	 */
+	getLeft() {
+		return this.x;
+	}
 
-    /**
-     * @return Y coordinate
-     */
-    getRight() {
-        return this.y;
-    }
+	/**
+	 * @return Y coordinate
+	 */
+	getRight() {
+		return this.y;
+	}
 
 	equals(other) {
 		if(!(other instanceof Coordinate)) {

@@ -246,7 +246,19 @@ class Submission {
 	}
 
 	toString() {
-		return "A submission with name " + this.name + " and " + this.getNumTokens() + " tokens";
+		let json = {
+			type : 'Submission',
+			name : this.name,
+			content : this.content,
+			hash : this.hashCode
+		};
+		return JSON.stringify(json);
+	}
+
+	static fromString(json){
+		json = JSON.parse(json);
+		let sub = new Submission(json.name, json.content, new TokenList(json.content));
+		return sub;
 	}
 
 	equals(other) {
