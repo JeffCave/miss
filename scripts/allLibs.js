@@ -79,7 +79,6 @@ const loader = {
 			,'scripts/util/PairGenerator.js'
 			,'scripts/util/misc.js'
 			,'scripts/ChecksimsException.js'
-			,'scripts/ChecksimsConfig.js'
 			,'scripts/ChecksimsRunner.js'
 		]);
 })();

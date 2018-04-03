@@ -101,68 +101,6 @@ class ChecksimsCommandLine {
 	}
 
 
-	/**
-	 * Parse flags which require submissions to be built.
-	 *
-	 * TODO unit tests
-	 *
-	 * @param cli Parse CLI options
-	 * @param baseConfig Base configuration to work off
-	 * @return Modified baseConfig with submissions (and possibly common code and archive submissions) changed
-	 * @throws ChecksimsException Thrown on bad argument
-	 * @throws IOException Thrown on error building submissions
-	 */
-	async loadFiles(cli, baseConfig) {
-		checkNotNull(cli);
-		checkNotNull(baseConfig);
-
-		let toReturn = new ChecksimsConfig(baseConfig);
-
-		// Get glob match pattern
-		// Default to *
-		let globPattern = new RegExp(cli.regex,'ig') || /.*/;
-
-		// Check if we are recursively building
-		let recursive = !(cli.recurse != false);
-
-		// Check if we are retaining empty submissions
-		let retainEmpty = cli.empty;
-
-		// Get the tokenizer specified by base config
-		let tokenizer = Tokenizer.getTokenizer(baseConfig.getTokenization());
-
-		// Generate submissions
-		let submissions = await Submission.submissionsFromZip(this.submissions, globPattern, tokenizer, recursive, retainEmpty);
-		console.log("Generated " + submissions.length + " submissions to process.");
-		if(submissions.length === 0) {
-			throw new ChecksimsException("Could not build any submissions to operate on!");
-		}
-		toReturn = toReturn.setSubmissions(submissions);
-
-
-		// All right, parse common code
-		let commonCodeSubmission = await Submission.submissionsFromZip(this.common, globPattern, tokenizer, recursive, false);
-		commonCodeSubmission = commonCodeSubmission.shift();
-		if(!commonCodeSubmission){
-			commonCodeSubmission = Submission.NullSubmission;
-		}
-		let commonCodeRemover = new CommonCodeLineRemovalPreprocessor(commonCodeSubmission);
-		// Common code removal first, always
-		let preprocessors = toReturn.getPreprocessors().splice(0);
-		preprocessors.unshift(commonCodeRemover);
-		toReturn = toReturn.setPreprocessors(preprocessors);
-
-
-		// Check if we need to perform common code removal
-		if(this.archive) {
-			// Get set of archive submissions
-			let archiveSubmissions = Submission.submissionsFromZip(this.archive, globPattern, tokenizer, recursive, retainEmpty);
-			console.debug("Generated " + archiveSubmissions.length + " archive submissions to process");
-			toReturn = toReturn.setArchiveSubmissions(archiveSubmissions);
-		}
-
-		return toReturn;
-	}
 
 	renderMatrixes(results,htmlContainers){
 		let deduplicatedStrategies = Array.from(new Set(['html','csv']));
@@ -257,23 +195,17 @@ class ChecksimsCommandLine {
 	 *
 	 * @param args CLI arguments to parse
 	 */
-	async runHtml(args,htmlContainers){
-		checkNotNull(args);
-
+	async runHtml(htmlContainers){
 		let checkSims = new ChecksimsRunner();
-
-		// Parse options, second round: required arguments are required
-		let cli = JSON.merge([checkSims.getOpts(),args]);
-
-		// First, parse basic flags
-		let config = checkSims.parseBaseFlags(cli);
-
-		// Parse file flags
-		let finalConfig = this.loadFiles(cli, config);
-
-		// Run Checksims with this config
-		let results = await checkSims.runChecksims(finalConfig);
+		checkSims.Submissions = this.submissions;
+		checkSims.CommonCode = this.common;
+		checkSims.ArchiveSubmissions = this.archive;
+		let results = await checkSims.runChecksims();
 
 		this.renderResults(results,htmlContainers);
 	}
+
+
+
+
 }

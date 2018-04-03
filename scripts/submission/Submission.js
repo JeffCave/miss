@@ -90,14 +90,13 @@ class Submission {
 	 * @param recursive Whether to recursively traverse when building submissions
 	 * @return Collection of submissions which will be used to run Checksims
 	 */
-	static submissionsFromZip(submissionDirs, glob, tokenizer, recursive, retainEmpty){
+	static submissionsFromZip(submissionDirs, glob){
 		if(submissionDirs === null){
 			return [];
 		}
 		checkNotNull(submissionDirs);
 		checkArgument(Object.keys(submissionDirs.files).length > 0, "Must provide at least one submission directory!");
 		checkNotNull(glob);
-		checkNotNull(tokenizer);
 
 		// Divide entries by student
 		let studentSubs = {};
@@ -121,24 +120,14 @@ class Submission {
 					return result;
 				});
 			console.debug("Adding student: " + student);
-			let submission = Submission.submissionFromFiles(student, files, tokenizer);
+			let submission = Submission.submissionFromFiles(student, files);
 			return submission;
 		});
 
 		submissions = Promise.all(submissions)
 			.then(function(submissions){
 				submissions = submissions.filter(function(s){
-					if(!retainEmpty) {
-						if(s.getContentAsString() === '') {
-							console.warn("Discarding empty submission " + s.getName());
-						}
-						else {
-							return s;
-						}
-					}
-					else{
-						return s;
-					}
+					return s;
 				});
 				return submissions;
 			});
@@ -161,12 +150,13 @@ class Submission {
 	 * @throws IOException Thrown on error reading from file
 	 * @throws NoMatchingFilesException Thrown if no files are given
 	 */
-	static async submissionFromFiles(name, files, splitter){
+	static async submissionFromFiles(name, files){
 		checkNotNull(name);
 		checkArgument(name.length, "Submission name cannot be empty");
 		checkNotNull(files);
 		checkArgument(Array.isArray(files), "Submission files must be an array");
-		checkNotNull(splitter);
+
+		let splitter = LineTokenizer.getInstance();
 
 		if(files.length === 0) {
 			throw new Error("No matching files found, cannot create submission named '" + name + "'");

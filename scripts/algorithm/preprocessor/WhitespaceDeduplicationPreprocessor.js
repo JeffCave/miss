@@ -26,7 +26,6 @@ loader.load([
 	,'/scripts/submission/Submission.js'
 	,'/scripts/algorithm/preprocessor/SubmissionPreprocessor.js'
 	,'/scripts/token/tokenizer/Tokenizer.js'
-	,'/scripts/ChecksimsConfig.js'
 	,'/scripts/ChecksimsException.js'
 	,'/scripts/util/misc.js'
 ]);
