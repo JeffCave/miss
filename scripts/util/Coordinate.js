@@ -19,44 +19,54 @@
  * An immutable 2-D coordinate.
  */
 class Coordinate{
-    /**
-     * Construct a 2D coordinate.
-     *
-     * @param x Desired X coordinate
-     * @param y Desired Y coordinate
-     */
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-    }
+	/**
+	* Construct a 2D coordinate.
+	*
+	* @param x Desired X coordinate
+	* @param y Desired Y coordinate
+	*/
+	constructor(x, y) {
+		if(typeof x === 'string' && Number.isNaN(+x)){
+			let val = JSON.parse(x);
+			x = val.x;
+			y = val.y;
+		}
 
-    /**
-     * @return X coordinate
-     */
-    getX() {
-        return this.x;
-    }
+		this.x = +x;
+		this.y = +y;
+	}
 
-    /**
-     * @return Y coordinate
-     */
-    getY() {
-        return this.y;
-    }
+	static from(x,y){
+		return new Coordinate(x,y);
+	}
 
-    /**
-     * @return X coordinate
-     */
-    getLeft() {
-        return this.x;
-    }
+	/**
+	* @return X coordinate
+	*/
+	getX() {
+		return this.x;
+	}
 
-    /**
-     * @return Y coordinate
-     */
-    getRight() {
-        return this.y;
-    }
+	/**
+	 * @return Y coordinate
+	 */
+	getY() {
+		return this.y;
+	}
+
+	/**
+	 * @return X coordinate
+	 */
+	getLeft() {
+		return this.x;
+	}
+
+	/**
+	 * @return Y coordinate
+	 */
+	getRight() {
+		return this.y;
+	}
 
 	equals(other) {
 		if(!(other instanceof Coordinate)) {
@@ -71,6 +81,12 @@ class Coordinate{
 	}
 
 	toString() {
-		return "{x:" + this.x + ",y:" + this.y + "}";
+		let val = {
+			x: this.x,
+			y: this.y
+		};
+		val = JSON.stringify(val);
+		return val;
 	}
+
 }

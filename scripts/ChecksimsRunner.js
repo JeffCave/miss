@@ -19,7 +19,6 @@ global loader
 global AlgorithmRunner
 global AlgorithmRegistry
 global ChecksimsException
-global ChecksimsConfig
 global PairGenerator
 global PreprocessSubmissions
 global PreprocessorRegistry
@@ -35,7 +34,6 @@ loader.load([
 	,'/scripts/algorithm/similaritymatrix/SimilarityMatrix.js'
 	,'/scripts/token/TokenType.js'
 	,'/scripts/util/PairGenerator.js'
-	,'/scripts/ChecksimsConfig.js'
 	,'/scripts/ChecksimsException.js'
 	,'/scripts/util/misc.js'
 ]);
@@ -47,15 +45,127 @@ loader.load([
 class ChecksimsRunner {
 
 	constructor() {
-		this.config = new ChecksimsConfig();
+		this.numThreads = 1;
+		this.commonCode = async function(){return Submission.NullSubmission;};
 	}
+
+	get Filter(){
+		if(!('globPattern' in this)){
+			this.globPattern = new RegExp('.*','ig');
+		}
+		return this.globPattern;
+	}
+	set Filter(value){
+		// Get glob match pattern
+		// Default to *
+		this.globPattern = new RegExp(value,'ig') || /.*/;
+	}
+
+	/**
+	 * @return Similarity detection algorithm to use
+	 */
+	get Algorithm() {
+		if(!('algorithm' in this)){
+			this.algorithm = AlgorithmRegistry.getInstance().getImplementationInstance('smithwaterman');
+		}
+		return this.algorithm;
+	}
+	/**
+	 * @param newAlgorithm New similarity detection algorithm to use
+	 * @return This configuration
+	 */
+	set Algorithm(newAlgorithm) {
+		checkNotNull(newAlgorithm);
+		if(typeof newAlgorithm === 'string'){
+			newAlgorithm = AlgorithmRegistry.getInstance().getImplementationInstance(newAlgorithm);
+		}
+
+		this.algorithm = newAlgorithm;
+	}
+	get AlgorithmRegistry(){
+		return AlgorithmRegistry.getInstance();
+	}
+
+	/**
+	 * @return Set of submissions to run on
+	 */
+	get Submissions() {
+		return this.submissions;
+	}
+	/**
+	 * @param newSubmissions New set of submissions to work on. Must contain at least 1 submission.
+	 * @return This configuration
+	 */
+	set Submissions(newSubmissions) {
+		checkNotNull(newSubmissions);
+		this.submissions = Submission.submissionsFromZip(newSubmissions, this.Filter);
+	}
+
+
+	/**
+	 * @return Set of archive submissions to run on
+	 */
+	get ArchiveSubmissions() {
+		return this.archiveSubmissions;
+	}
+	/**
+	 * @param newArchiveSubmissions New set of archive submissions to use. May be empty.
+	 * @return This configuration
+	 */
+	set ArchiveSubmissions(newArchiveSubmissions) {
+		if(!newArchiveSubmissions){
+			this.archiveSubmissions = [];
+		}
+		else{
+			this.archiveSubmissions = Submission.submissionsFromZip(newArchiveSubmissions, this.Filter);
+		}
+	}
+
+
+	/**
+	 * @return Set of archive submissions to run on
+	 */
+	get CommonCode() {
+		return this.commonCode;
+	}
+	/**
+	 * @param newArchiveSubmissions New set of archive submissions to use. May be empty.
+	 * @return This configuration
+	 */
+	set CommonCode(newCommonCode) {
+		if(!newCommonCode){
+			newCommonCode = null;
+		}
+		// All right, parse common code
+		this.commonCode = Submission.submissionsFromZip(newCommonCode, this.Filter);
+	}
+
+
+	/**
+	 * @return Number of threads that will be used for parallel operations
+	 */
+	get NumThreads() {
+		return this.numThreads;
+	}
+	/**
+	 * @param newNumThreads Number of threads to be used for parallel operations. Must be greater than 0.
+	 * @return Copy of configuration with new number of threads set
+	 */
+	set NumThreads(newNumThreads) {
+		checkNotNull(newNumThreads);
+		newNumThreads = Number.parseInt(newNumThreads,10);
+		checkArgument(!isNaN(newNumThreads), "Attempted to set number of threads to " + newNumThreads + " - must be a number!");
+		checkArgument(newNumThreads > 0, "Attempted to set number of threads to " + newNumThreads + " - must be positive integer!");
+		this.numThreads = newNumThreads;
+	}
+
 
 	/**
 	 * Get current version.
 	 *
 	 * @return Current version of Checksims
 	 */
-	static get ChecksimsVersion(){
+	static get Version(){
 		return "0.0.0";
 	}
 
@@ -68,38 +178,44 @@ class ChecksimsRunner {
 	 * @return Map containing output of all output printers requested. Keys are name of output printer.
 	 * @throws ChecksimsException Thrown on error performing similarity detection
 	 */
-	async runChecksims(config){
-		checkNotNull(config);
-		config = await config;
+	async runChecksims(){
+		let allSubmissions = await Promise.all([this.Submissions,this.archiveSubmissions]);
 
-		let submissions = new Promise((resolve,reject)=>{
-			let submissions = config.getSubmissions();
-			console.log("Got " + submissions.length + " submissions to test.");
-			if(submissions.length === 0) {
-				reject(new ChecksimsException("No student submissions were found - cannot run Checksims!"));
-			}
-			resolve(submissions);
-		});
-		let archiveSubmissions = new Promise((resolve,reject)=>{
-			let archive = config.getArchiveSubmissions();
-			console.log("Got " + archive.length + " archive submissions to test.");
-			resolve(archive);
-		});
-		let allSubmissions = await Promise.all([submissions,archiveSubmissions]);
-
-		submissions = allSubmissions[0];
-		archiveSubmissions = allSubmissions[1];
+		let submissions = allSubmissions[0];
+		let archiveSubmissions = allSubmissions[1];
 		if(2 > submissions.length + archiveSubmissions.length) {
 			throw new ChecksimsException("Did not get at least 2 student submissions! Cannot run Checksims!");
 		}
+		console.log("Got " + archiveSubmissions.length + " archive submissions to test.");
+
 		// Apply all preprocessors
-		config.getPreprocessors().forEach(function(p){
+		let registry = await PreprocessorRegistry.getInstance();
+		let preprocessors = registry.getSupportedImplementationNames();
+		preprocessors = preprocessors
+			.filter(function(name){
+				return name !== 'commoncodeline';
+			});
+		preprocessors = preprocessors
+			.map(function(name){
+				let implementation = registry.getImplementationInstance(name);
+				return implementation;
+			});
+		// Common code removal first, always
+		let the = this;
+		preprocessors.unshift((async function(resolve){
+			let common = await the.CommonCode();
+			common = new CommonCodeLineRemovalPreprocessor(common);
+			return common;
+		})());
+		preprocessors = await Promise.all(preprocessors);
+		preprocessors.forEach(function(p){
 			submissions = Array.from(PreprocessSubmissions.process(p, submissions));
 			archiveSubmissions = Array.from(PreprocessSubmissions.process(p, archiveSubmissions));
 		});
 		// Apply algorithm to submissions
 		let allPairs = await PairGenerator.generatePairsWithArchive(submissions, archiveSubmissions);
-		let results = AlgorithmRunner.runAlgorithm(allPairs, config.getAlgorithm());
+		let algo = await this.Algorithm;
+		let results = AlgorithmRunner.runAlgorithm(allPairs, algo);
 
 		//TODO: do this with web workers
 		// All parallel jobs are done, shut down the parallel executor
@@ -113,83 +229,5 @@ class ChecksimsRunner {
 		return report;
 
 	}
-
-	/**
-	 * Parse basic CLI flags and produce a ChecksimsConfig.
-	 *
-	 * @param cli Parsed command line
-	 * @return Config derived from parsed CLI
-	 * @throws ChecksimsException Thrown on invalid user input or internal error
-	 */
-	parseBaseFlags(cli = {}){
-		cli = JSON.merge([{},this.getOpts(),cli]);
-
-		// Create a base config to work from
-		let config = new ChecksimsConfig();
-
-		// Parse plagiarism detection algorithm
-		if('algo' in cli){
-			let algo = AlgorithmRegistry.getInstance().getImplementationInstance(cli['algo']);
-			config = config.setAlgorithm(algo);
-			config = config.setTokenization(algo.getDefaultTokenType());
-		}
-
-		// Parse tokenization
-		if('t' in cli) {
-			config = config.setTokenization(TokenType.fromString(cli['t']));
-		}
-
-		// Parse number of threads to use
-		if('j' in cli) {
-			let numThreads = Number.parseInt(cli["j"],10);
-			if(numThreads < 1) {
-				throw new ChecksimsException("Thread count must be positive!");
-			}
-			config = config.setNumThreads(numThreads);
-		}
-
-		// Parse preprocessors
-		// Ensure no duplicates
-		if('p' in cli) {
-			let preprocessors = [];
-
-			let preprocessorsToUse = cli["p"];
-			preprocessorsToUse.forEach(function(s){
-				let p = PreprocessorRegistry.getInstance().getImplementationInstance(s);
-				preprocessors.add(p);
-			});
-			config = config.setPreprocessors(preprocessors);
-		}
-
-		return config;
-	}
-
-
-	/**
-	 * @param anyRequired Whether any arguments are required
-	 * @return CLI options used in Checksims
-	 */
-	getOpts() {
-		let opts = {
-			"algorithm" : "smithwaterman",
-			"tokenizer" :TokenType.WHITESPACE,
-			"preproc" : ['commoncodeline','lowercase','deduplicate'],
-			"threads" : 1,
-			"regex" : '.*',
-			"verbosity" : 1,
-			// retain empty folders
-			"empty": true,
-			// recurse folder structure
-			"recurse":true,
-			// common code to be ignored (instructor code)
-			"commDir" : null,
-			// use archive (old student assignments)
-			"archDir": null,
-			// submissions (current student assignemnts)
-			"subDir": null,
-		};
-		return opts;
-	}
-
 
 }

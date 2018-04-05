@@ -40,12 +40,12 @@ class AlgorithmResults {
 		checkNotNull(b);
 		checkNotNull(finalListA);
 		checkNotNull(finalListB);
-		checkArgument(a.getNumTokens() == finalListA.size(),
+		checkArgument(a.getNumTokens() === finalListA.length,
 			"Token size mismatch when creating algorithm results for submission \"" + a.getName()
-			+ "\" --- expected " + a.getNumTokens() + ", got " + finalListA.size());
-		checkArgument(b.getNumTokens() == finalListB.size(),
+			+ "\" --- expected " + a.getNumTokens() + ", got " + finalListA.length);
+		checkArgument(b.getNumTokens() === finalListB.length,
 			"Token size mismatch when creating algorithm results for submission \"" + b.getName()
-			+ "\" --- expected " + b.getNumTokens() + ", got " + finalListB.size());
+			+ "\" --- expected " + b.getNumTokens() + ", got " + finalListB.length);
 
 		this.a = a;
 		this.b = b;

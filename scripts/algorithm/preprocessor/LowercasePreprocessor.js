@@ -15,27 +15,34 @@
 
 'use strict';
 
-import {SubmissionPreprocessor} from '/scripts/submission/SubmissionPreprocessor.js';
-import {Submission} from '/scripts/submission/Submission.js';
-//import net.lldp.checksims.token.TokenList;
-import {Tokenizer} from '/scripts/token/tokenizer/Tokenizer.js';
+/*
+global loader
+global SubmissionPreprocessor
+global SubmissionPreprocessor
+global Submission
+global Tokenizer
 
-import {ChecksimsException} from '/scripts/ChecksimsException.js';
-import { checkNotNull,checkArgument } from '/scripts/util/misc.js';
+global ChecksimsException
+global checkNotNull,checkArgument
+*/
+
+loader.load([
+	,'scripts/submission/SubmissionPreprocessor.js'
+	,'scripts/submission/Submission.js'
+	,'scripts/token/tokenizer/Tokenizer.js'
+	,'scripts/ChecksimsException.js'
+	,'scripts/util/misc.js'
+]);
 
 PreprocessorRegistry.addPreprocessor('LowercasePreprocessor');
 /**
  * Lowercases tokens to prevent case from interfering with comparisons.
  */
-export class LowercasePreprocessor extends SubmissionPreprocessor {
-
-	constructor() {
-
-	}
+class LowercasePreprocessor extends SubmissionPreprocessor {
 
 	/**
-	* @return Singleton instance of LowercasePreprocessor
-	*/
+	 * @return Singleton instance of LowercasePreprocessor
+	 */
 	static getInstance() {
 		if(!('instance' in LowercasePreprocessor)) {
 			LowercasePreprocessor.instance = new LowercasePreprocessor();

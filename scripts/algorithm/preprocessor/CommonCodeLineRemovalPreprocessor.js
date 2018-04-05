@@ -69,6 +69,7 @@ class CommonCodeLineRemovalPreprocessor extends SubmissionPreprocessor {
 	 */
 	constructor(common) {
 		checkNotNull(common);
+		checkArgument(common instanceof Submission, "Common Code expected to be of type 'Submission'");
 		super();
 		this.common = common;
 	}

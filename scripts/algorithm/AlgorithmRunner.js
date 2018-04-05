@@ -53,7 +53,7 @@ class AlgorithmRunner {
 
 		let startTime = Date.now();
 
-		console.log("Performing similarity detection on " + submissions.size + " pairs using algorithm " + algorithm.getName());
+		console.log("Performing similarity detection on " + submissions.length + " pairs using algorithm " + algorithm.getName());
 
 		// Perform parallel analysis of all submission pairs to generate a results list
 		let results = submissions.map(function(pair){

@@ -47,7 +47,7 @@ class PreprocessorRegistry extends Registry {
 		].forEach(function(d){
 			PreprocessorRegistry.addPreprocessor(d);
 		});
-		let def = WhitespaceDeduplicationPreprocessor.getInstance().getName();
+		let def = 'WhitespaceDeduplicationPreprocessor';
 		super( PreprocessorRegistry.preprocessors , "SubmissionPreprocessor", [], def);
 	}
 
@@ -55,7 +55,7 @@ class PreprocessorRegistry extends Registry {
 	 * @return Singleton instance of PreprocessorRegistry
 	 */
 	static getInstance() {
-		if('instance' in PreprocessorRegistry) {
+		if(!('instance' in PreprocessorRegistry)) {
 			PreprocessorRegistry.instance = new PreprocessorRegistry();
 		}
 		return PreprocessorRegistry.instance;
@@ -63,12 +63,11 @@ class PreprocessorRegistry extends Registry {
 
 	static addPreprocessor(preprocessor){
 		checkNotNull(preprocessor);
-		checkArgument(preprocessor instanceof SubmissionPreprocessor,"Invalid data type");
 
 		if(!('preprocessors' in PreprocessorRegistry)){
 			PreprocessorRegistry.preprocessors = [];
 		}
-		if(0 < PreprocessorRegistry.preprocessors.indexOf(preprocessor)){
+		if(0 > PreprocessorRegistry.preprocessors.indexOf(preprocessor)){
 			PreprocessorRegistry.preprocessors.push(preprocessor);
 		}
 	}

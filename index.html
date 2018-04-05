@@ -7,7 +7,7 @@
 
  <script src="https://d3js.org/d3.v4.min.js"></script>
 
- <script type="text/javascript" src="./scripts/visualizations/force2.js"></script>
+ <script type="text/javascript" src="./scripts/visualizations/force.js"></script>
  <script type="text/javascript" src="./scripts/allLibs.js"></script>
  <script type="text/javascript" src="./scripts/ChecksimsCommandLine.js"></script>
  <script>
@@ -31,7 +31,7 @@
 			;
 
 		button.addEventListener('click',function(e){
-			checker.runHtml({},outputFlds);
+			checker.runHtml(outputFlds);
 		});
 
 		upload.addEventListener('change',function(e){
@@ -95,16 +95,16 @@
  <fieldset>
   <input name='zip' type="file" multiple />
   <button name='run' disabled>Run</button>
+  <details open>
+   <summary>Files</summary>
+   <ul></ul>
+  </details>
  </fieldset>
- <details open>
-  <summary>Files</summary>
-  <ul></ul>
- </details>
  <section id='results'>
   <details data-type='force'>
    <summary>Force</summary>
    <svg style="padding:0;height:300px;width:300px;list-style-type:none;position:relative;" width="300" height="300"></svg>
-   <ul class='result' style="padding:0;height:300px;width:300px;list-style-type:none;position:relative;"></ul>
+   <ul class='result' style="padding:0;height:300px;width:300px;list-style-type:none;position:relative;display:none;"></ul>
   </details>
   <details data-type='lst'>
    <summary>Listing</summary>

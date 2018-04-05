@@ -52,7 +52,7 @@ class ArraySubset {
 	 * @return Array Subset built from given coordinates
 	 */
 	static from(x1, y1, x2, y2) {
-		return new ArraySubset(Coordinate.of(x1, y1), Coordinate.of(x2, y2));
+		return new ArraySubset(Coordinate.from(x1, y1), Coordinate.from(x2, y2));
 	}
 
 	/**

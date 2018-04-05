@@ -101,70 +101,8 @@ class ChecksimsCommandLine {
 	}
 
 
-	/**
-	 * Parse flags which require submissions to be built.
-	 *
-	 * TODO unit tests
-	 *
-	 * @param cli Parse CLI options
-	 * @param baseConfig Base configuration to work off
-	 * @return Modified baseConfig with submissions (and possibly common code and archive submissions) changed
-	 * @throws ChecksimsException Thrown on bad argument
-	 * @throws IOException Thrown on error building submissions
-	 */
-	async loadFiles(cli, baseConfig) {
-		checkNotNull(cli);
-		checkNotNull(baseConfig);
 
-		let toReturn = new ChecksimsConfig(baseConfig);
-
-		// Get glob match pattern
-		// Default to *
-		let globPattern = new RegExp(cli.regex,'ig') || /.*/;
-
-		// Check if we are recursively building
-		let recursive = !(cli.recurse != false);
-
-		// Check if we are retaining empty submissions
-		let retainEmpty = cli.empty;
-
-		// Get the tokenizer specified by base config
-		let tokenizer = Tokenizer.getTokenizer(baseConfig.getTokenization());
-
-		// Generate submissions
-		let submissions = await Submission.submissionsFromZip(this.submissions, globPattern, tokenizer, recursive, retainEmpty);
-		console.log("Generated " + submissions.length + " submissions to process.");
-		if(submissions.length === 0) {
-			throw new ChecksimsException("Could not build any submissions to operate on!");
-		}
-		toReturn = toReturn.setSubmissions(submissions);
-
-
-		// All right, parse common code
-		let commonCodeSubmission = await Submission.submissionsFromZip(this.common, globPattern, tokenizer, recursive, false);
-		commonCodeSubmission = commonCodeSubmission.shift();
-		if(!commonCodeSubmission){
-			commonCodeSubmission = Submission.NullSubmission;
-		}
-		let commonCodeRemover = new CommonCodeLineRemovalPreprocessor(commonCodeSubmission);
-		// Common code removal first, always
-		let preprocessors = toReturn.getPreprocessors().splice(0);
-		preprocessors.unshift(commonCodeRemover);
-		toReturn = toReturn.setPreprocessors(preprocessors);
-
-
-		// Check if we need to perform common code removal
-		if(this.archive) {
-			// Get set of archive submissions
-			let archiveSubmissions = Submission.submissionsFromZip(this.archive, globPattern, tokenizer, recursive, retainEmpty);
-			console.debug("Generated " + archiveSubmissions.length + " archive submissions to process");
-			toReturn = toReturn.setArchiveSubmissions(archiveSubmissions);
-		}
-
-		return toReturn;
-	}
-
-	renderMatrixes(results,htmlContainers){
+	async renderMatrixes(results,htmlContainers){
 		let deduplicatedStrategies = Array.from(new Set(['html','csv']));
 		if(deduplicatedStrategies.length === 0) {
 			throw new ChecksimsException("Error: did not obtain a valid output strategy!");
@@ -173,36 +111,39 @@ class ChecksimsCommandLine {
 		let resultsMatrix = SimilarityMatrix.generateMatrix(results);
 
 		// Output using all output printers
-		let outputMap = deduplicatedStrategies
+		let outputMap = Promise.all(deduplicatedStrategies
 			.map(function(name){
 				return MatrixPrinterRegistry.getInstance().getImplementationInstance(name);
-			})
-			.reduce(function(a,p){
-				console.log("Generating " + p.getName() + " output");
-				a[p.getName()] = p.printMatrix(resultsMatrix);
-				return a;
-			},{})
-			;
+			}))
+			.then(function(outputs){
+				outputs = outputs
+					.reduce(function(a,p){
+						console.log("Generating " + p.getName() + " output");
+						a[p.getName()] = p.printMatrix(resultsMatrix);
+						return a;
+					},{})
+					;
 
-		// Output for all specified strategies
-		Object.entries(outputMap).forEach(function(strategy){
-			let key = strategy[0];
-			let val = strategy[1];
-			if(key in htmlContainers){
-				htmlContainers[key].querySelector('.result').innerHTML = val;
-			}
+				// Output for all specified strategies
+				Object.entries(outputs).forEach(function(strategy){
+					let key = strategy[0];
+					let val = strategy[1];
+					if(key in htmlContainers){
+						htmlContainers[key].querySelector('.result').innerHTML = val;
+					}
+				});
 		});
 	}
 
 	renderListTable(results,htmlContainers){
 		let html = [
-						'<thead>',
-						' <tr>',
-						'  <th colspan="2">Students</th>',
-						'  <th colspan="2">Similarities</th>',
-						' </tr>',
-						'</thead>',
-						'<tbody>',
+				'<thead>',
+				' <tr>',
+				'  <th colspan="2">Students</th>',
+				'  <th colspan="2">Similarities</th>',
+				' </tr>',
+				'</thead>',
+				'<tbody>',
 			];
 		html = html.concat(results.results
 			.sort(function(a,b){
@@ -241,89 +182,7 @@ class ChecksimsCommandLine {
 		let container = htmlContainers.force.querySelector('ul.result');
 		let dimensions = window.getComputedStyle(container);
 
-		MikeBostok(results);
-/*
-		let width = Number.parseInt(dimensions.height,10);
-		let height = Number.parseInt(dimensions.width,10);
-		let links = results.results.map(function(d){
-			let rtn = {
-				source:d.a.name,
-				target:d.b.name,
-				value:Math.max(d.percentMatchedA,d.percentMatchedB)
-			};
-			return rtn;
-		});
-
-		let nodeList = d3
-			.select('details[data-type="force"] ul.result')
-			.selectAll('li')
-			.data(results.submissions)
-			;
-
-		let simulator = d3.forceSimulation()
-			.force("link", d3.forceLink().id(function(d) { return d.name; }))
-			.force("charge", d3.forceManyBody())
-			.force("center", d3.forceCenter(width / 2, height / 2))
-			.nodes(results.submissions)
-			.on("tick", function (asdf) {
-				nodeList
-					.style("left", function(d) {
-						d = d.x;
-						d = Number.parseInt(d,10);
-						d = (d+"px");
-						console.log(d);
-						return d;
-					})
-					.style("top" , function(d) {
-						d = d.y;
-						d = Number.parseInt(d,10);
-						d = (d+"px");
-						console.log(d);
-						return d;
-					})
-					;
-			})
-			;
-
-		nodeList
-			.enter().append('li')
-				.style('height', '1em')
-				.style('width', '1em')
-				.style('border-radius', '0.5em')
-				.style('background-color', 'blue')
-				.style('position', 'absolute')
-				.style('left', '0px')
-				.style('top', function(d,i){
-					let a = i*10;
-					a = [a,"px"].join('');
-					return a;
-				})
-				.attr('title',function(d){ return d.name; })
-				//.text(function(d){ return d.name; })
-				.call(d3.drag()
-					.on("start", function (d) {
-						if (!d3.event.active){
-							simulator.alphaTarget(0.3).restart();
-						}
-						d.fx = d.x;
-						d.fy = d.y;
-					})
-					.on("drag", function (d) {
-						d.fx = d3.event.x;
-						d.fy = d3.event.y;
-					})
-					.on("end", function (d) {
-						if (!d3.event.active) {
-							simulator.alphaTarget(0);
-						}
-						d.fx = null;
-						d.fy = null;
-					})
-				);
-		nodeList.exit().remove();
-
-		simulator.force("link").links(links);
-*/
+		d3ForceDirected(results);
 	}
 
 	async renderResults(results,htmlContainers){
@@ -339,23 +198,17 @@ class ChecksimsCommandLine {
 	 *
 	 * @param args CLI arguments to parse
 	 */
-	async runHtml(args,htmlContainers){
-		checkNotNull(args);
-
+	async runHtml(htmlContainers){
 		let checkSims = new ChecksimsRunner();
-
-		// Parse options, second round: required arguments are required
-		let cli = JSON.merge([checkSims.getOpts(),args]);
-
-		// First, parse basic flags
-		let config = checkSims.parseBaseFlags(cli);
-
-		// Parse file flags
-		let finalConfig = this.loadFiles(cli, config);
-
-		// Run Checksims with this config
-		let results = await checkSims.runChecksims(finalConfig);
+		checkSims.Submissions = this.submissions;
+		checkSims.CommonCode = this.common;
+		checkSims.ArchiveSubmissions = this.archive;
+		let results = await checkSims.runChecksims();
 
 		this.renderResults(results,htmlContainers);
 	}
+
+
+
+
 }

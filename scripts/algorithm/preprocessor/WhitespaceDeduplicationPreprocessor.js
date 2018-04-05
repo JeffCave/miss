@@ -26,19 +26,15 @@ loader.load([
 	,'/scripts/submission/Submission.js'
 	,'/scripts/algorithm/preprocessor/SubmissionPreprocessor.js'
 	,'/scripts/token/tokenizer/Tokenizer.js'
-	,'/scripts/ChecksimsConfig.js'
 	,'/scripts/ChecksimsException.js'
 	,'/scripts/util/misc.js'
 ]);
 
-PreprocessorRegistry.addPreprocessor('LowercasePreprocessor');
+PreprocessorRegistry.addPreprocessor('WhitespaceDeduplicationPreprocessor');
 /**
  * Remove duplicated whitespace characters.
  */
 class WhitespaceDeduplicationPreprocessor extends SubmissionPreprocessor {
-	constructor() {
-
-	}
 
 	/**
 	 * @return Singleton instance of WhitespaceDeduplicationPreprocessor
@@ -58,10 +54,11 @@ class WhitespaceDeduplicationPreprocessor extends SubmissionPreprocessor {
 	 */
 	process(submission) {
 		checkNotNull(submission);
+		checkArgument(submission instanceof Submission, "'submission' expected to be of type 'Submission'");
 
-		let tabsAndSpacesDedup = submission.getContentAsString().replaceAll("[ \t]+", " ");
-		let unixNewlineDedup = tabsAndSpacesDedup.replaceAll("\n+", "\n");
-		let windowsNewlineDedup = unixNewlineDedup.replaceAll("(\r\n)+", "\r\n");
+		let tabsAndSpacesDedup = submission.getContentAsString().replace(/[ \t]+/g, " ");
+		let unixNewlineDedup = tabsAndSpacesDedup.replace(/\n+/g, "\n");
+		let windowsNewlineDedup = unixNewlineDedup.replace(/(\r\n)+/g, "\n");
 
 		let tokenizer = Tokenizer.getTokenizer(submission.getTokenType());
 

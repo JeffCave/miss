@@ -54,7 +54,7 @@ class Registry {
 	 * @return Names of all supported implementations in this registry
 	 */
 	getSupportedImplementationNames() {
-		return this.registeredHandlers.keys();
+		return Array.from(this.registeredHandlers.keys());
 	}
 
 	/**
@@ -72,7 +72,10 @@ class Registry {
 			throw new Error("No implementation available with name " + name);
 		}
 
-		return this.registeredHandlers.get(name);
+		let the = this;
+		return new Promise(function(resolve, reject){
+				resolve(the.registeredHandlers.get(name));
+			});
 	}
 
 	/**

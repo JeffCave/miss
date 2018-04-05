@@ -5,35 +5,25 @@ implementation of any similarity checking algorithm. Rather this
 project is an attempt to create a simplified, and generic, user
 interface to existing algorithms.
 
-Specifically, there are several barriers to entry that exist for
-faculty members attempting to ensure academic integrity by using
-automated detection algorithms.
+## Current State
 
-1. Complexity
-2. Accesibility
-3. Legality
-4. Reliability
+Currently under active development. Not production ready.
 
-## Complexity
+## How to Use
 
-## Accesibility
+1. Create a zip file containing all projects to compare
+   * the folder structure should be a single folder, containing one folder per project
+2. Navigate to website: https://jeffcave.github.io/checksims/
+3. Upload zip file
+4. Run
 
-## Legality
-
-## Reliability
-
-## Solution
+Several reports are offered offering different insights into work
+inter-relatedness.
 
 # How to Cheat
-
-In particular, I would not use this project as a reference since I
-cannot speak to the effectiveness of *any* algorithm. This project
-does not include any studies into the effectiveness of any particular
-algorithm, nor any research into what makes an effective algorithm.
 
 If you are attempting to study this in an effort to avoid being
 identified as having your work be similar to someone else's, I
 suggest the following:
 
 [How to Cheat in Computer Science 101](https://github.com/genchang1234/How-to-cheat-in-computer-science-101)
-
