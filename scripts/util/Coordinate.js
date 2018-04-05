@@ -30,6 +30,10 @@ class Coordinate{
 		this.y = y;
 	}
 
+	static from(x,y){
+		return new Coordinate(x,y);
+	}
+
 	/**
 	* @return X coordinate
 	*/

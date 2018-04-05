@@ -15,7 +15,15 @@
 
 'use strict';
 
-import {AbstractTokenDecorator} from '/scripts/token/AbstractTokenDecorator.js';
+/*
+global loader
+global AbstractTokenDecorator
+global Token
+*/
+loader.load([
+	,'scripts/token/AbstractTokenDecorator.js'
+	,'scripts/token/Token.js'
+]);
 
 
 /**
@@ -23,7 +31,7 @@ import {AbstractTokenDecorator} from '/scripts/token/AbstractTokenDecorator.js';
  *
  * Decorates other tokens to override their equals() methods
  */
-export class ValidityEnsuringToken extends AbstractTokenDecorator {
+class ValidityEnsuringToken extends AbstractTokenDecorator {
 	constructor(wrappedToken) {
 		super(wrappedToken);
 	}
@@ -43,17 +51,19 @@ export class ValidityEnsuringToken extends AbstractTokenDecorator {
 			return false;
 		}
 
-		if(!(other instanceof 'Token')) {
+		if(!(other instanceof Token)) {
 			return false;
 		}
 
-		return other.getType().equals(this.getType())
-			&& other.getLexeme() == this.getLexeme()
+		let isEqual = other.getType() === this.getType()
+			&& other.getLexeme() === this.getLexeme()
 			&& other.isValid()
 			;
+		return isEqual;
 	}
 
 	hashCode() {
-		return super.hashCode();
+		let hash = super.hashCode();
+		return hash;
 	}
 }

@@ -102,7 +102,7 @@ class ChecksimsCommandLine {
 
 
 
-	renderMatrixes(results,htmlContainers){
+	async renderMatrixes(results,htmlContainers){
 		let deduplicatedStrategies = Array.from(new Set(['html','csv']));
 		if(deduplicatedStrategies.length === 0) {
 			throw new ChecksimsException("Error: did not obtain a valid output strategy!");
@@ -111,36 +111,39 @@ class ChecksimsCommandLine {
 		let resultsMatrix = SimilarityMatrix.generateMatrix(results);
 
 		// Output using all output printers
-		let outputMap = deduplicatedStrategies
+		let outputMap = Promise.all(deduplicatedStrategies
 			.map(function(name){
 				return MatrixPrinterRegistry.getInstance().getImplementationInstance(name);
-			})
-			.reduce(function(a,p){
-				console.log("Generating " + p.getName() + " output");
-				a[p.getName()] = p.printMatrix(resultsMatrix);
-				return a;
-			},{})
-			;
+			}))
+			.then(function(outputs){
+				outputs = outputs
+					.reduce(function(a,p){
+						console.log("Generating " + p.getName() + " output");
+						a[p.getName()] = p.printMatrix(resultsMatrix);
+						return a;
+					},{})
+					;
 
-		// Output for all specified strategies
-		Object.entries(outputMap).forEach(function(strategy){
-			let key = strategy[0];
-			let val = strategy[1];
-			if(key in htmlContainers){
-				htmlContainers[key].querySelector('.result').innerHTML = val;
-			}
+				// Output for all specified strategies
+				Object.entries(outputs).forEach(function(strategy){
+					let key = strategy[0];
+					let val = strategy[1];
+					if(key in htmlContainers){
+						htmlContainers[key].querySelector('.result').innerHTML = val;
+					}
+				});
 		});
 	}
 
 	renderListTable(results,htmlContainers){
 		let html = [
-						'<thead>',
-						' <tr>',
-						'  <th colspan="2">Students</th>',
-						'  <th colspan="2">Similarities</th>',
-						' </tr>',
-						'</thead>',
-						'<tbody>',
+				'<thead>',
+				' <tr>',
+				'  <th colspan="2">Students</th>',
+				'  <th colspan="2">Similarities</th>',
+				' </tr>',
+				'</thead>',
+				'<tbody>',
 			];
 		html = html.concat(results.results
 			.sort(function(a,b){

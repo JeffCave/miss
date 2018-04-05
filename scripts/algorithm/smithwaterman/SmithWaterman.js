@@ -55,53 +55,54 @@ class SmithWaterman extends SimilarityDetector {
 		return "smithwaterman";
 	}
 
-    /**
-     * @return Default token type to be used for this similarity detector
-     */
-    getDefaultTokenType() {
-        return TokenType.WHITESPACE;
-    }
+	/**
+	 * @return Default token type to be used for this similarity detector
+	 */
+	getDefaultTokenType() {
+		return TokenType.WHITESPACE;
+	}
 
-    /**
-     * Apply the Smith-Waterman algorithm to determine the similarity between two submissions.
-     *
-     * Token list types of A and B must match
-     *
-     * @param a First submission to apply to
-     * @param b Second submission to apply to
-     * @return Similarity results of comparing submissions A and B
-     * @throws TokenTypeMismatchException Thrown on comparing submissions with mismatched token types
-     * @throws InternalAlgorithmError Thrown on internal error
-     */
-    detectSimilarity(a, b) {
-        checkNotNull(a);
-        checkNotNull(b);
+	/**
+	 * Apply the Smith-Waterman algorithm to determine the similarity between two submissions.
+	 *
+	 * Token list types of A and B must match
+	 *
+	 * @param a First submission to apply to
+	 * @param b Second submission to apply to
+	 * @return Similarity results of comparing submissions A and B
+	 * @throws TokenTypeMismatchException Thrown on comparing submissions with mismatched token types
+	 * @throws InternalAlgorithmError Thrown on internal error
+	 */
+	detectSimilarity(a, b) {
+		checkNotNull(a);
+		checkNotNull(b);
 
-        // Test for token type mismatch
-        if(!a.getTokenType().equals(b.getTokenType())) {
-            throw new Error("Token list type mismatch: submission " + a.getName() + " has type " +
-                    a.getTokenType().toString() + ", while submission " + b.getName() + " has type "
-                    + b.getTokenType().toString());
-        }
+		// Test for token type mismatch
+		if(!a.getTokenType() === b.getTokenType()) {
+			throw new Error("Token list type mismatch: submission " + a.getName() + " has type " +
+				a.getTokenType().toString() + ", while submission " + b.getName() + " has type "
+				+ b.getTokenType().toString());
+		}
 
-        // Handle a 0-token submission (no similarity)
-        if(a.getNumTokens() == 0 || b.getNumTokens() == 0) {
-            return new AlgorithmResults(a, b, a.getContentAsTokens(), b.getContentAsTokens());
-        }
-        else if(a.equals(b)) {
-            // Handle identical submissions
-            let aInval = TokenList.cloneTokenList(a.getContentAsTokens());
-            aInval.stream().forEach((token) => token.setValid(false));
-            return new AlgorithmResults(a, b, aInval, aInval);
-        }
+		// Handle a 0-token submission (no similarity)
+		if(a.getNumTokens() === 0 || b.getNumTokens() === 0) {
+			return new AlgorithmResults(a, b, a.getContentAsTokens(), b.getContentAsTokens());
+		}
+		else if(a.equals(b)) {
+			// Handle identical submissions
+			let aInval = TokenList.cloneTokenList(a.getContentAsTokens());
+			aInval.forEach((token) => token.setValid(false));
+			return new AlgorithmResults(a, b, aInval, aInval);
+		}
 
-        // Alright, easy cases taken care of. Generate an instance to perform the actual algorithm
-        let algorithm = new SmithWatermanAlgorithm(a.getContentAsTokens(), b.getContentAsTokens());
+		// Alright, easy cases taken care of. Generate an instance to perform the actual algorithm
+		let algorithm = new SmithWatermanAlgorithm(a.getContentAsTokens(), b.getContentAsTokens());
 
-        let endLists = algorithm.computeSmithWatermanAlignmentExhaustive();
+		let endLists = algorithm.computeSmithWatermanAlignmentExhaustive();
 
-        return new AlgorithmResults(a, b, endLists.getLeft(), endLists.getRight());
-    }
+		let results = new AlgorithmResults(a, b, endLists.getLeft(), endLists.getRight());
+		return results;
+	}
 
     toString() {
         return "Singleton instance of Smith-Waterman Algorithm";

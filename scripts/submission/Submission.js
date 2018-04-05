@@ -92,7 +92,7 @@ class Submission {
 	 */
 	static submissionsFromZip(submissionDirs, glob){
 		if(submissionDirs === null){
-			return [];
+			return async function(){return Submission.NullSubmission;};
 		}
 		checkNotNull(submissionDirs);
 		checkArgument(Object.keys(submissionDirs.files).length > 0, "Must provide at least one submission directory!");

@@ -46,6 +46,7 @@ class ChecksimsRunner {
 
 	constructor() {
 		this.numThreads = 1;
+		this.commonCode = async function(){return Submission.NullSubmission;};
 	}
 
 	get Filter(){
@@ -64,6 +65,9 @@ class ChecksimsRunner {
 	 * @return Similarity detection algorithm to use
 	 */
 	get Algorithm() {
+		if(!('algorithm' in this)){
+			this.algorithm = AlgorithmRegistry.getInstance().getImplementationInstance('smithwaterman');
+		}
 		return this.algorithm;
 	}
 	/**
@@ -77,7 +81,6 @@ class ChecksimsRunner {
 		}
 
 		this.algorithm = newAlgorithm;
-		return this;
 	}
 	get AlgorithmRegistry(){
 		return AlgorithmRegistry.getInstance();
@@ -110,8 +113,12 @@ class ChecksimsRunner {
 	 * @return This configuration
 	 */
 	set ArchiveSubmissions(newArchiveSubmissions) {
-		checkNotNull(newArchiveSubmissions);
-		this.archiveSubmissions = Submission.submissionsFromZip(newArchiveSubmissions, this.Filter);
+		if(!newArchiveSubmissions){
+			this.archiveSubmissions = [];
+		}
+		else{
+			this.archiveSubmissions = Submission.submissionsFromZip(newArchiveSubmissions, this.Filter);
+		}
 	}
 
 
@@ -119,9 +126,6 @@ class ChecksimsRunner {
 	 * @return Set of archive submissions to run on
 	 */
 	get CommonCode() {
-		if(!('commonCode' in this)){
-			this.commonCode = async function(){return Submission.NullSubmission;};
-		}
 		return this.commonCode;
 	}
 	/**
@@ -129,7 +133,9 @@ class ChecksimsRunner {
 	 * @return This configuration
 	 */
 	set CommonCode(newCommonCode) {
-		checkNotNull(newCommonCode);
+		if(!newCommonCode){
+			newCommonCode = null;
+		}
 		// All right, parse common code
 		this.commonCode = Submission.submissionsFromZip(newCommonCode, this.Filter);
 	}
@@ -151,7 +157,6 @@ class ChecksimsRunner {
 		checkArgument(!isNaN(newNumThreads), "Attempted to set number of threads to " + newNumThreads + " - must be a number!");
 		checkArgument(newNumThreads > 0, "Attempted to set number of threads to " + newNumThreads + " - must be positive integer!");
 		this.numThreads = newNumThreads;
-		return this;
 	}
 
 
@@ -173,44 +178,44 @@ class ChecksimsRunner {
 	 * @return Map containing output of all output printers requested. Keys are name of output printer.
 	 * @throws ChecksimsException Thrown on error performing similarity detection
 	 */
-	async runChecksims(config){
-		checkNotNull(config);
-		config = await config;
+	async runChecksims(){
+		let allSubmissions = await Promise.all([this.Submissions,this.archiveSubmissions]);
 
-		let submissions = new Promise((resolve,reject)=>{
-			let submissions = config.getSubmissions();
-			console.log("Got " + submissions.length + " submissions to test.");
-			if(submissions.length === 0) {
-				reject(new ChecksimsException("No student submissions were found - cannot run Checksims!"));
-			}
-			resolve(submissions);
-		});
-		let archiveSubmissions = new Promise((resolve,reject)=>{
-			let archive = config.getArchiveSubmissions();
-			console.log("Got " + archive.length + " archive submissions to test.");
-			resolve(archive);
-		});
-		let allSubmissions = await Promise.all([submissions,archiveSubmissions]);
-
-		submissions = allSubmissions[0];
-		archiveSubmissions = allSubmissions[1];
+		let submissions = allSubmissions[0];
+		let archiveSubmissions = allSubmissions[1];
 		if(2 > submissions.length + archiveSubmissions.length) {
 			throw new ChecksimsException("Did not get at least 2 student submissions! Cannot run Checksims!");
 		}
-		// Apply all preprocessors
-		// Common code removal first, always
-		let preprocessors = this.getPreprocessors().splice(0);
-		preprocessors.unshift(commonCodeRemover);
-		toReturn = toReturn.setPreprocessors(preprocessors);
-		let commonCodeRemover = new CommonCodeLineRemovalPreprocessor(commonCodeSubmission);
+		console.log("Got " + archiveSubmissions.length + " archive submissions to test.");
 
-		config.getPreprocessors().forEach(function(p){
+		// Apply all preprocessors
+		let registry = await PreprocessorRegistry.getInstance();
+		let preprocessors = registry.getSupportedImplementationNames();
+		preprocessors = preprocessors
+			.filter(function(name){
+				return name !== 'commoncodeline';
+			});
+		preprocessors = preprocessors
+			.map(function(name){
+				let implementation = registry.getImplementationInstance(name);
+				return implementation;
+			});
+		// Common code removal first, always
+		let the = this;
+		preprocessors.unshift((async function(resolve){
+			let common = await the.CommonCode();
+			common = new CommonCodeLineRemovalPreprocessor(common);
+			return common;
+		})());
+		preprocessors = await Promise.all(preprocessors);
+		preprocessors.forEach(function(p){
 			submissions = Array.from(PreprocessSubmissions.process(p, submissions));
 			archiveSubmissions = Array.from(PreprocessSubmissions.process(p, archiveSubmissions));
 		});
 		// Apply algorithm to submissions
 		let allPairs = await PairGenerator.generatePairsWithArchive(submissions, archiveSubmissions);
-		let results = AlgorithmRunner.runAlgorithm(allPairs, config.getAlgorithm());
+		let algo = await this.Algorithm;
+		let results = AlgorithmRunner.runAlgorithm(allPairs, algo);
 
 		//TODO: do this with web workers
 		// All parallel jobs are done, shut down the parallel executor
@@ -229,6 +234,7 @@ class ChecksimsRunner {
 	 * @param anyRequired Whether any arguments are required
 	 * @return CLI options used in Checksims
 	 */
+	/*
 	static get defaultOpts() {
 		let opts = {
 			"algorithm" : "smithwaterman",
@@ -245,6 +251,7 @@ class ChecksimsRunner {
 		};
 		return opts;
 	}
+	*/
 
 
 }

@@ -39,6 +39,8 @@ const loader = {
 			 * Order of loading is significant. Ensure that the libraries load
 			 * in dependant order
 			 */
+			,'scripts/util/misc.js'
+
 			,'scripts/util/reflection/NamedInstantiable.js'
 			,'scripts/util/reflection/Registry.js'
 			,'scripts/algorithm/SimilarityDetector.js'
@@ -49,16 +51,19 @@ const loader = {
 			,'scripts/algorithm/linesimilarity/LineSimilarityChecker.js'
 			,'scripts/visualizations/similaritymatrix/output/MatrixPrinter.js'
 			,'scripts/submission/Submission.js'
+			,'scripts/algorithm/preprocessor/PreprocessorRegistry.js'
 
 			,'scripts/algorithm/preprocessor/CommonCodeLineRemovalPreprocessor.js'
-			,'scripts/algorithm/preprocessor/PreprocessorRegistry.js'
+			,'scripts/algorithm/preprocessor/LowercasePreprocessor.js'
 			,'scripts/algorithm/preprocessor/PreprocessSubmissions.js'
+			,'scripts/algorithm/preprocessor/WhitespaceDeduplicationPreprocessor.js'
 			,'scripts/algorithm/smithwaterman/ArraySubset.js'
 			,'scripts/algorithm/smithwaterman/SmithWatermanAlgorithm.js'
 			,'scripts/algorithm/smithwaterman/SmithWaterman.js'
 			,'scripts/algorithm/AlgorithmRegistry.js'
 			,'scripts/algorithm/AlgorithmResults.js'
 			,'scripts/algorithm/AlgorithmRunner.js'
+			,'scripts/submission/ValidityEnsuringSubmission.js'
 			,'scripts/submission/ValidityIgnoringSubmission.js'
 			,'scripts/token/tokenizer/Tokenizer.js'
 			,'scripts/token/tokenizer/CharTokenizer.js'
@@ -70,6 +75,7 @@ const loader = {
 			,'scripts/token/TokenList.js'
 			,'scripts/token/Token.js'
 			,'scripts/token/ValidityIgnoringToken.js'
+			,'scripts/token/ValidityEnsuringToken.js'
 			,'scripts/visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js'
 			,'scripts/visualizations/similaritymatrix/output/MatrixToCSVPrinter.js'
 			,'scripts/visualizations/similaritymatrix/output/MatrixPrinterRegistry.js'
@@ -77,7 +83,6 @@ const loader = {
 
 			,'scripts/util/Coordinate.js'
 			,'scripts/util/PairGenerator.js'
-			,'scripts/util/misc.js'
 			,'scripts/ChecksimsException.js'
 			,'scripts/ChecksimsRunner.js'
 		]);
