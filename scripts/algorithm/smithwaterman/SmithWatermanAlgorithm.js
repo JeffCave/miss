@@ -38,8 +38,16 @@ class SmithWatermanAlgorithm {
 		return 5;
 	}
 
-	static swConstant(){
+	get threshold(){
+		return SmithWatermanAlgorithm.threshold;
+	}
+
+	static get swConstant(){
 		return 1;
+	}
+
+	get swConstant(){
+		return SmithWatermanAlgorithm.swConstant;
 	}
 
 	/**
@@ -85,11 +93,7 @@ class SmithWatermanAlgorithm {
 	 */
 	computeSmithWatermanAlignmentExhaustive(){
 		// Keep computing while we have results over threshold
-		for(
-			let localCandidates = this.computeArraySubset(this.wholeArray);
-			Object.keys(localCandidates).length > 0;
-			localCandidates = this.computeArraySubset(this.wholeArray)
-		) {
+		for(let localCandidates = this.computeArraySubset(this.wholeArray);	Object.keys(localCandidates).length > 0; localCandidates = this.computeArraySubset(this.wholeArray)) {
 
 			// Get the largest key
 			let largestKey = Object.keys(localCandidates)
@@ -100,12 +104,13 @@ class SmithWatermanAlgorithm {
 			// Get matching coordinates
 			let largestCoords = localCandidates[largestKey];
 
-			if(largestCoords == null || largestCoords.isEmpty()) {
+			if(largestCoords == null || largestCoords.size === 0) {
 				throw new Error("Error: largest key " + largestKey + " maps to null or empty candidate set!");
 			}
 
-			// Arbitrarily break ties
-			let chosenCoord = largestCoords[0];
+			// Arbitrarily break ties by getting first element of list
+			// (which is done stupidly in Sets)
+			let chosenCoord = largestCoords.values().next().value;
 
 			// Get match coordinates
 			let matchCoords = this.getMatchCoordinates(chosenCoord);
@@ -114,7 +119,7 @@ class SmithWatermanAlgorithm {
 			this.setMatchesInvalid(matchCoords);
 		}
 
-		return Coordinate.from(this.xList, this.yList);
+		return [this.xList, this.yList];
 	}
 
 	/**
@@ -394,9 +399,7 @@ class SmithWatermanAlgorithm {
 					let c = this.s[x][prevY];
 
 					let max = Math.max(a, b, c);
-
 					newS = max - this.swConstant;
-
 					if(newS < 0) {
 						newS = 0;
 					}
@@ -433,22 +436,17 @@ class SmithWatermanAlgorithm {
 				this.s[x][y] = newS;
 				this.m[x][y] = newM;
 
-                // Check if we our result is significant
-                if(newS >= this.threshold && newS > newM) {
-                    // It's significant, add it to our results
-                    if(newCandidates.containsKey(newS)) {
-                        let valuesForKey = newCandidates.get(newS);
-
-                        valuesForKey.add(Coordinate.of(x, y));
-                    }
-                    else {
-                        let valuesForKey = new Set();
-                        valuesForKey.add(Coordinate.of(x, y));
-                        newCandidates.put(newS, valuesForKey);
-                    }
-                }
-            }
-        }
+				// Check if we our result is significant
+				if(newS >= this.threshold && newS > newM) {
+					// It's significant, add it to our results
+					if(!(newS in newCandidates)) {
+						newCandidates[newS] = new Set();
+					}
+					let valuesForKey = newCandidates[newS];
+					valuesForKey.add(Coordinate.from(x, y));
+				}
+			}
+		}
 
 		return newCandidates;
 	}
@@ -487,16 +485,18 @@ class SmithWatermanAlgorithm {
 	setMatchesInvalid(coordinates) {
 		checkNotNull(coordinates);
 
-		if(coordinates.isEmpty()) {
+		if(coordinates.size === 0) {
 			return;
 		}
 
 		// Iterate through all match coordinates and set them invalid
+		let the = this;
 		coordinates.forEach(function(coordinate){
+			coordinate = Coordinate.from(coordinate);
 			let x = coordinate.getX() - 1;
 			let y = coordinate.getY() - 1;
-			this.xList.get(x).setValid(false);
-			this.yList.get(y).setValid(false);
+			the.xList[x].setValid(false);
+			the.yList[y].setValid(false);
 		});
 	}
 
@@ -508,10 +508,8 @@ class SmithWatermanAlgorithm {
 	 */
 	getMatchCoordinates(matchCoord) {
 		checkNotNull(matchCoord);
-		checkArgument(this.wholeArray.contains(matchCoord), "Requested match coordinate is out of bounds: "
-		        + matchCoord + " not within " + this.wholeArray);
-		checkArgument(this.s[matchCoord.getX()][matchCoord.getY()] != 0, "Requested match coordinate "
-		        + matchCoord + " polets to 0 in S array!");
+		checkArgument(this.wholeArray.contains(matchCoord), "Requested match coordinate is out of bounds: " + matchCoord + " not within " + this.wholeArray);
+		checkArgument(this.s[matchCoord.getX()][matchCoord.getY()] !== 0, "Requested match coordinate " + matchCoord + " points to 0 in S array!");
 
 		let matchCoordinates = new Set();
 
@@ -520,39 +518,38 @@ class SmithWatermanAlgorithm {
 
 		let largestPredecessor = 1;
 		while(largestPredecessor > 0) {
-            // Only add the current coordinate if the tokens at the given polet match
-            if(new ValidityEnsuringToken(this.xList.get(x - 1)).equals(this.yList.get(y - 1))) {
-                matchCoordinates.add(Coordinate.of(x, y));
+			// Only add the current coordinate if the tokens at the given point match
+			if(new ValidityEnsuringToken(this.xList[x - 1]).equals(this.yList[y - 1])) {
+				matchCoordinates.add(Coordinate.from(x, y).toString());
 
-                // If they match, the predecessor is always the upper-left diagonal
-                x = x - 1;
-                y = y - 1;
-
-                largestPredecessor = this.s[x][y];
-
-                continue;
-            }
-
-			// Get predecessors
-			let a = this.s[x - 1][y - 1];
-			let b = this.s[x - 1][y];
-			let c = this.s[x][y - 1];
-
-			largestPredecessor = SmithWatermanAlgorithm.getMaxOflets(a, b, c);
-
-			// Figure out which predecessor is the largest, and move to its coordinates
-			if(a === largestPredecessor) {
+				// If they match, the predecessor is always the upper-left diagonal
 				x = x - 1;
 				y = y - 1;
+
+				largestPredecessor = this.s[x][y];
 			}
-			else if(b === largestPredecessor) {
-				x = x - 1;
-			}
-			else if(c === largestPredecessor) {
-				y = y - 1;
-			}
-			else {
-				throw new Error("Unreachable code!");
+			else{
+				// Get predecessors
+				let a = this.s[x - 1][y - 1];
+				let b = this.s[x - 1][y];
+				let c = this.s[x][y - 1];
+
+				largestPredecessor = Math.max(a, b, c);
+
+				// Figure out which predecessor is the largest, and move to its coordinates
+				if(a === largestPredecessor) {
+					x = x - 1;
+					y = y - 1;
+				}
+				else if(b === largestPredecessor) {
+					x = x - 1;
+				}
+				else if(c === largestPredecessor) {
+					y = y - 1;
+				}
+				else {
+					throw new Error("Unreachable code!");
+				}
 			}
 		}
 
@@ -589,7 +586,7 @@ class SmithWatermanAlgorithm {
 	*
 	* @param merge Map to merge leto candidates
 	*/
-	mergeletoCandidates(merge) {
+	mergeIntoCandidates(merge) {
 		checkNotNull(merge);
 
 		merge.keys().forEach(function(key){

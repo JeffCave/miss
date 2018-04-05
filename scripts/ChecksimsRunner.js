@@ -230,28 +230,4 @@ class ChecksimsRunner {
 
 	}
 
-	/**
-	 * @param anyRequired Whether any arguments are required
-	 * @return CLI options used in Checksims
-	 */
-	/*
-	static get defaultOpts() {
-		let opts = {
-			"algorithm" : "smithwaterman",
-			"tokenizer" :TokenType.WHITESPACE,
-			"preproc" : ['commoncodeline','lowercase','deduplicate'],
-			"threads" : 1,
-			"regex" : '.*',
-			// common code to be ignored (instructor code)
-			"commDir" : null,
-			// use archive (old student assignments)
-			"archDir": null,
-			// submissions (current student assignemnts)
-			"subDir": null,
-		};
-		return opts;
-	}
-	*/
-
-
 }

@@ -26,8 +26,14 @@ class Coordinate{
 	* @param y Desired Y coordinate
 	*/
 	constructor(x, y) {
-		this.x = x;
-		this.y = y;
+		if(typeof x === 'string' && Number.isNaN(+x)){
+			let val = JSON.parse(x);
+			x = val.x;
+			y = val.y;
+		}
+
+		this.x = +x;
+		this.y = +y;
 	}
 
 	static from(x,y){
@@ -75,6 +81,12 @@ class Coordinate{
 	}
 
 	toString() {
-		return "{x:" + this.x + ",y:" + this.y + "}";
+		let val = {
+			x: this.x,
+			y: this.y
+		};
+		val = JSON.stringify(val);
+		return val;
 	}
+
 }

@@ -100,17 +100,17 @@ class SmithWaterman extends SimilarityDetector {
 
 		let endLists = algorithm.computeSmithWatermanAlignmentExhaustive();
 
-		let results = new AlgorithmResults(a, b, endLists.getLeft(), endLists.getRight());
+		let results = new AlgorithmResults(a, b, endLists[0], endLists[1]);
 		return results;
 	}
 
-    toString() {
-        return "Singleton instance of Smith-Waterman Algorithm";
-    }
+	toString() {
+		return "Singleton instance of Smith-Waterman Algorithm";
+	}
 
 	hashCode() {
-        return this.getName().hashCode();
-    }
+		return this.getName().hashCode();
+	}
 
 	equals(other) {
 		return other instanceof SmithWaterman;

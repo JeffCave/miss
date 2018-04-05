@@ -91,9 +91,6 @@ class TokenList extends Array{
 			})
 			.map(function(token){
 				if(!onlyValid || token.isValid()) {
-					if(!token.lexeme){
-						console.log(token.lexeme);
-					}
 					return token.getTokenAsString();
 				}
 			})

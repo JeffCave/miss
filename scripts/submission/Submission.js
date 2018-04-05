@@ -208,7 +208,7 @@ class Submission {
 	 */
 	static get NullSubmission(){
 		if(!('_NullSubmission' in Submission)){
-			Submission._NullSubmission = new Submission(' ','',new TokenList(TokenType.CHARACTER,));
+			Submission._NullSubmission = new Submission(' ','',new TokenList(TokenType.LINE));
 		}
 		return Submission._NullSubmission;
 	}
