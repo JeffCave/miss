@@ -1,0 +1,89 @@
+body{
+	font-family:sans-serif;
+}
+
+table{
+	border-collapse:collapse;
+}
+td {
+	padding:0.2em;
+	font-weight:bold;
+	font-family:monospace;
+	text-align:right;
+	border:1px solid black;
+}
+th {
+	background-color:white;
+}
+
+textarea{
+	width:80%;
+	height:300px;
+}
+
+#results > details > * {
+	margin:2em;
+}
+#results > details > summary {
+	margin:0;
+	background-color:black;
+	color:white;
+	font-weight:bold;
+}
+
+#results > details[data-type='html'] tbody {
+	background-color: green;
+}
+#results > details[data-type='html'] td {
+	background-color: red;
+	color: white;
+}
+
+
+
+#results > details[data-type='lst'] thead {
+	display: none;
+}
+#results > details[data-type='lst'] tbody {
+	border: 1px solid black;
+	font-size: 200%;
+}
+#results > details[data-type='lst'] tr {
+	border: 1px solid grey;
+	border-radius:0.25em;
+}
+#results > details[data-type='lst'] tr:hover {
+	background-color: lightgray;
+	border: 3px solid darkgray;
+	border-radius: 25%;
+}
+#results > details[data-type='lst'] td {
+	border: 0;
+}
+#results > details[data-type='lst'] tr > td:nth-of-type(2) {
+	vertical-align: top;
+	font-size: 50%;
+	float: left;
+	width: 7em;
+	text-align: center;
+}
+#results > details[data-type='lst'] tr > td:nth-of-type(2):after {
+	content: '\002002\002919\002002';
+}
+#results > details[data-type='lst'] tr > td:nth-of-type(2):before {
+	content: '\002002\0027f5\002002';
+}
+#results > details[data-type='lst'] tr > td:nth-of-type(3) {
+	vertical-align: bottom;
+	font-size: 50%;
+	float: right;
+	clear: both;
+	width: 7em;
+	text-align: center;
+}
+#results > details[data-type='lst'] tr > td:nth-of-type(3):after {
+	content: '\002002\0027f6\002002';
+}
+#results > details[data-type='lst'] tr > td:nth-of-type(3):before {
+	content: '\002002\00291a\002002';
+}
