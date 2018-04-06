@@ -122,11 +122,14 @@ class ChecksimsCommandLine {
 	}
 
 	renderListTable(results,htmlContainers){
+		let cellTemplate = [
+				,"  <td><meter min='0' max='100' value='{{pct}}' title='{{pct}}% similar'></meter><span title='{{pct}}% similar'>{{name}}</span> </td>"
+			].join('\n')
+			;
 		let html = [
 				'<thead>',
 				' <tr>',
 				'  <th>Student</th>',
-				'  <th colspan="2">Similarities</th>',
 				'  <th>Student</th>',
 				' </tr>',
 				'</thead>',
@@ -142,18 +145,16 @@ class ChecksimsCommandLine {
 			})
 			.map(function(comp){
 				let html = [
-						comp.a.name,
-						(comp.percentMatchedA * 100).toFixed(0) + '%',
-						(comp.percentMatchedB * 100).toFixed(0) + '%',
-						comp.b.name,
-					]
+						cellTemplate
+							.replace(/{{name}}/g,comp.a.name)
+							.replace(/{{pct}}/g,(comp.percentMatchedA * 100).toFixed(0))
+						,
+						cellTemplate
+							.replace(/{{name}}/g,comp.b.name)
+							.replace(/{{pct}}/g,(comp.percentMatchedB * 100).toFixed(0))
+					].join('')
 					;
-				html = [
-						' <tr><td>',
-						html.join('</td><td>'),
-						'</td></tr>',
-					]
-					;
+				html = [' <tr>', html, '</tr>',];
 				return html.join('\n');
 			}))
 			;

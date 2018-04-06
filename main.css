@@ -1,5 +1,6 @@
 body{
 	font-family:sans-serif;
+	position:relative;
 }
 
 table{
@@ -26,7 +27,7 @@ textarea{
 }
 #results > details > summary {
 	margin:0;
-	background-color:black;
+	background-color:#2F2F2F;
 	color:white;
 	font-weight:bold;
 }
@@ -41,49 +42,57 @@ textarea{
 
 
 
+#results > details[data-type='lst'] table{
+	width:80%;
+	border:0;
+}
 #results > details[data-type='lst'] thead {
 	display: none;
 }
 #results > details[data-type='lst'] tbody {
-	border: 1px solid black;
-	font-size: 200%;
+	border:0;
 }
 #results > details[data-type='lst'] tr {
-	border: 1px solid grey;
-	border-radius:0.25em;
-}
-#results > details[data-type='lst'] tr:hover {
-	background-color: lightgray;
-	border: 3px solid darkgray;
-	border-radius: 25%;
 }
 #results > details[data-type='lst'] td {
-	border: 0;
+	border:0;
+	padding:0;
+	margin:0;
+	position:relative;
+	width:50%;
+	font-family:sans-serif;
+	vertical-align: middle;
 }
+
+#results > details[data-type='lst'] tr > td > meter {
+	width:100%;
+	height:1.25em;
+}
+#results > details[data-type='lst'] tr > td > meter::-webkit-meter-bar {
+	background: lightsteelblue;
+}
+#results > details[data-type='lst'] tr > td > meter::-webkit-meter-optimum-value{
+	background: steelblue;
+	border-top-right-radius:0.5em;
+	border-bottom-right-radius:0.5em;
+}
+#results > details[data-type='lst'] tr > td > span {
+	position:absolute;
+	left:0.5em;
+	color:white;
+	font-weight:bold;
+	z-index:10;
+	height:1.25em;
+	vertical-align: middle;
+	padding: 0.15em;
+}
+
 #results > details[data-type='lst'] tr > td:nth-of-type(2) {
-	vertical-align: top;
-	font-size: 50%;
-	float: left;
-	width: 7em;
-	text-align: center;
+	border-left: 0.1em solid white;
 }
-#results > details[data-type='lst'] tr > td:nth-of-type(2):after {
-	content: '\002002\002919\002002';
+#results > details[data-type='lst'] tr > td:nth-of-type(1) > meter {
+	transform:rotate(180deg);
 }
-#results > details[data-type='lst'] tr > td:nth-of-type(2):before {
-	content: '\002002\0027f5\002002';
-}
-#results > details[data-type='lst'] tr > td:nth-of-type(3) {
-	vertical-align: bottom;
-	font-size: 50%;
-	float: right;
-	clear: both;
-	width: 7em;
-	text-align: center;
-}
-#results > details[data-type='lst'] tr > td:nth-of-type(3):after {
-	content: '\002002\0027f6\002002';
-}
-#results > details[data-type='lst'] tr > td:nth-of-type(3):before {
-	content: '\002002\00291a\002002';
+#results > details[data-type='lst'] tr > td:nth-of-type(1) > span {
+	right:0.5em;
 }
