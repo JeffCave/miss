@@ -1,17 +1,3 @@
-/*
- * CDDL HEADER START
- *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * See LICENSE.txt included in this distribution for the specific
- * language governing permissions and limitations under the License.
- *
- * CDDL HEADER END
- *
- * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
- */
 'use strict';
 
 
@@ -139,8 +125,9 @@ class ChecksimsCommandLine {
 		let html = [
 				'<thead>',
 				' <tr>',
-				'  <th colspan="2">Students</th>',
+				'  <th>Student</th>',
 				'  <th colspan="2">Similarities</th>',
+				'  <th>Student</th>',
 				' </tr>',
 				'</thead>',
 				'<tbody>',
@@ -156,9 +143,9 @@ class ChecksimsCommandLine {
 			.map(function(comp){
 				let html = [
 						comp.a.name,
-						comp.b.name,
 						(comp.percentMatchedA * 100).toFixed(0) + '%',
 						(comp.percentMatchedB * 100).toFixed(0) + '%',
+						comp.b.name,
 					]
 					;
 				html = [
