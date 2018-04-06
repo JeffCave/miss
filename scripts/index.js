@@ -199,3 +199,55 @@ class ChecksimsCommandLine {
 
 
 }
+
+
+
+window.addEventListener('load',function(){
+	let checker = new ChecksimsCommandLine();
+	let button = document.querySelector('button');
+	let upload = document.querySelector("input[name='zip']");
+	let outputFlds = Array.from(document.querySelectorAll('#results > details'))
+		.reduce(function(a,d){
+			if(d.dataset.type){
+				a[d.dataset.type] = d;
+			}
+			return a;
+		},{})
+		;
+
+	button.addEventListener('click',function(e){
+		checker.runHtml(outputFlds);
+	});
+
+	upload.addEventListener('change',function(e){
+		Array.from(e.target.files).forEach(function(file){
+			if (!file.type === 'application/x-zip-compressed'){
+				return;
+			}
+			checker
+				.attachSubmissions(file)
+				.then(function(){
+					button.disabled = false;
+					let ul = document.querySelector("ul");
+					let entries = [];
+					checker.submissions.forEach(function(path,entry) {
+						entries.push(entry);
+					});
+					ul.innerHTML = entries.sort((a,b)=>{
+							a = a.name;
+							b = b.name;
+							if(a===b) return 0;
+							if(a<b) return -1;
+							return 1;
+						})
+						.map((entry)=>{
+							return '<li>'+entry.name+'</li>';
+						})
+						.join('')
+						;
+				})
+				;
+		});
+	});
+});
+
