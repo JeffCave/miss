@@ -1,3 +1,21 @@
+:root{
+	--notice-info-off:whitesmoke;
+	--notice-info-low:lightsteelblue;
+	--notice-info-high:steelblue;
+
+	--notice-fail-off:mistyrose;
+	--notice-fail-low:lightsalmon;
+	--notice-fail-high:darkred;
+	/*
+	--notice-warn-off:mistyrose;
+	--notice-warn-low:lightsalmon;
+	--notice-warn-high:darkred;
+	--notice-pass-off:mistyrose;
+	--notice-pass-low:lightsalmon;
+	--notice-pass-high:darkred;
+	*/
+}
+
 body{
 	font-family:sans-serif;
 	position:relative;
@@ -35,17 +53,18 @@ textarea{
 	writing-mode: vertical-rl;
 }
 #results > details[data-type='html'] tbody {
-	background-color: lavender;
+	background-color: var(--notice-info-off);
 }
 #results > details[data-type='html'] td {
-	background-color: steelblue;
+	background-color: var(--notice-info-high);
 	color: white;
 }
 
 
 
 #results > details[data-type='lst'] table{
-	width:80%;
+	width:calc(100% - 1em);
+	max-width:300px;
 	border:0;
 }
 #results > details[data-type='lst'] thead {
@@ -71,10 +90,10 @@ textarea{
 	height:1.25em;
 }
 #results > details[data-type='lst'] tr > td > meter::-webkit-meter-bar {
-	background: lightsteelblue;
+	background: var(--notice-info-low);
 }
 #results > details[data-type='lst'] tr > td > meter::-webkit-meter-optimum-value{
-	background: steelblue;
+	background: var(--notice-info-high);
 	border-top-right-radius:0.5em;
 	border-bottom-right-radius:0.5em;
 }
@@ -89,8 +108,9 @@ textarea{
 	padding: 0.15em;
 }
 
-#results > details[data-type='lst'] tr > td:nth-of-type(2) {
-	border-left: 0.1em solid white;
+#results > details[data-type='lst'] tr > td:nth-of-type(1) {
+	border-right: 0.1em solid white;
+	border-right-color: var(--notice-info-high);
 }
 #results > details[data-type='lst'] tr > td:nth-of-type(1) > meter {
 	transform:rotate(180deg);
