@@ -31,12 +31,14 @@ textarea{
 	color:white;
 	font-weight:bold;
 }
-
+#results > details[data-type='html'] thead th, #results > details[data-type='html'] thead th > span {
+	writing-mode: vertical-rl;
+}
 #results > details[data-type='html'] tbody {
-	background-color: green;
+	background-color: lavender;
 }
 #results > details[data-type='html'] td {
-	background-color: red;
+	background-color: steelblue;
 	color: white;
 }
 
