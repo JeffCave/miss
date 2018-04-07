@@ -54,7 +54,7 @@ class PreprocessSubmissions {
 		});
 		checkArgument(preprocessor instanceof SubmissionPreprocessor,"Expected instance of 'SubmissionPreprocessor'");
 
-		console.log("Preprocessing " + submissions.length + " submissions with preprocessor " + preprocessor.getName());
+		//console.log("Preprocessing " + submissions.length + " submissions with preprocessor " + preprocessor.getName());
 
 		// Map the submissions to PreprocessorWorker instances
 		let processed = submissions

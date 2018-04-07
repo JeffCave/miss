@@ -1,17 +1,3 @@
-/*
- * CDDL HEADER START
- *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * See LICENSE.txt included in this distribution for the specific
- * language governing permissions and limitations under the License.
- *
- * CDDL HEADER END
- *
- * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
- */
 'use strict';
 
 
@@ -136,11 +122,15 @@ class ChecksimsCommandLine {
 	}
 
 	renderListTable(results,htmlContainers){
+		let cellTemplate = [
+				,"  <td><meter min='0' max='100' value='{{pct}}' title='{{pct}}% similar'></meter><span title='{{pct}}% similar'>{{name}}</span> </td>"
+			].join('\n')
+			;
 		let html = [
 				'<thead>',
 				' <tr>',
-				'  <th colspan="2">Students</th>',
-				'  <th colspan="2">Similarities</th>',
+				'  <th>Student</th>',
+				'  <th>Student</th>',
 				' </tr>',
 				'</thead>',
 				'<tbody>',
@@ -155,18 +145,16 @@ class ChecksimsCommandLine {
 			})
 			.map(function(comp){
 				let html = [
-						comp.a.name,
-						comp.b.name,
-						(comp.percentMatchedA * 100).toFixed(0) + '%',
-						(comp.percentMatchedB * 100).toFixed(0) + '%',
-					]
+						cellTemplate
+							.replace(/{{name}}/g,comp.a.name)
+							.replace(/{{pct}}/g,(comp.percentMatchedA * 100).toFixed(0))
+						,
+						cellTemplate
+							.replace(/{{name}}/g,comp.b.name)
+							.replace(/{{pct}}/g,(comp.percentMatchedB * 100).toFixed(0))
+					].join('')
 					;
-				html = [
-						' <tr><td>',
-						html.join('</td><td>'),
-						'</td></tr>',
-					]
-					;
+				html = [' <tr>', html, '</tr>',];
 				return html.join('\n');
 			}))
 			;
@@ -212,3 +200,55 @@ class ChecksimsCommandLine {
 
 
 }
+
+
+
+window.addEventListener('load',function(){
+	let checker = new ChecksimsCommandLine();
+	let button = document.querySelector('button');
+	let upload = document.querySelector("input[name='zip']");
+	let outputFlds = Array.from(document.querySelectorAll('#results > details'))
+		.reduce(function(a,d){
+			if(d.dataset.type){
+				a[d.dataset.type] = d;
+			}
+			return a;
+		},{})
+		;
+
+	button.addEventListener('click',function(e){
+		checker.runHtml(outputFlds);
+	});
+
+	upload.addEventListener('change',function(e){
+		Array.from(e.target.files).forEach(function(file){
+			if (!file.type === 'application/x-zip-compressed'){
+				return;
+			}
+			checker
+				.attachSubmissions(file)
+				.then(function(){
+					button.disabled = false;
+					let ul = document.querySelector("ul");
+					let entries = [];
+					checker.submissions.forEach(function(path,entry) {
+						entries.push(entry);
+					});
+					ul.innerHTML = entries.sort((a,b)=>{
+							a = a.name;
+							b = b.name;
+							if(a===b) return 0;
+							if(a<b) return -1;
+							return 1;
+						})
+						.map((entry)=>{
+							return '<li>'+entry.name+'</li>';
+						})
+						.join('')
+						;
+				})
+				;
+		});
+	});
+});
+

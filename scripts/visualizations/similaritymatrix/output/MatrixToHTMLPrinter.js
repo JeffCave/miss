@@ -69,7 +69,7 @@ class MatrixToHTMLPrinter extends MatrixPrinter {
 			"matrix": matrix,
 			"toFixed": function() {
 				return function(num, render) {
-					return parseFloat(render(num)).toFixed(2);
+					return (parseFloat(render(num))*100).toFixed(0);
 				};
 			}
 		};

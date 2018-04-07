@@ -9,93 +9,14 @@
 
  <script type="text/javascript" src="./scripts/visualizations/force.js"></script>
  <script type="text/javascript" src="./scripts/allLibs.js"></script>
- <script type="text/javascript" src="./scripts/ChecksimsCommandLine.js"></script>
- <script>
-	/*
-	global ChecksimsCommandLine
-	global JSZip
-	*/
-	'use strict';
-
-	window.addEventListener('load',function(){
-		let checker = new ChecksimsCommandLine();
-		let button = document.querySelector('button');
-		let upload = document.querySelector("input[name='zip']");
-		let outputFlds = Array.from(document.querySelectorAll('#results > details'))
-			.reduce(function(a,d){
-				if(d.dataset.type){
-					a[d.dataset.type] = d;
-				}
-				return a;
-			},{})
-			;
-
-		button.addEventListener('click',function(e){
-			checker.runHtml(outputFlds);
-		});
-
-		upload.addEventListener('change',function(e){
-			Array.from(e.target.files).forEach(function(file){
-				if (!file.type === 'application/x-zip-compressed'){
-					return;
-				}
-				checker
-					.attachSubmissions(file)
-					.then(function(){
-						button.disabled = false;
-						let ul = document.querySelector("ul");
-						ul.innerHTML = '';
-						checker.submissions.forEach(function(path,entry) {
-							ul.innerHTML += '<li>'+entry.name+'</li>';
-						});
-					})
-					;
-			});
-		});
-	});
- </script>
- <style>
-	body{
-		font-family:sans-serif;
-	}
-	table{
-		border-collapse:collapse;
-	}
-	tbody {
-		background-color:green;
-	}
-	td {
-		padding:0.2em;
-		background-color:red;
-		font-weight:bold;
-		font-family:monospace;
-		text-align:right;
-		color:white;
-		border:1px solid black;
-	}
-	th {
-		background-color:white;
-	}
-	textarea{
-		width:80%;
-	}
-
-	#results > details > * {
-		margin:2em;
-	}
-	#results > details > summary {
-		margin:0;
-		background-color:black;
-		color:white;
-		font-weight:bold;
-	}
- </style>
+ <script type="text/javascript" src="./scripts/index.js"></script>
+ <link rel='stylesheet' href='main.css' />
 </head>
 <body>
  <fieldset>
   <input name='zip' type="file" multiple />
   <button name='run' disabled>Run</button>
-  <details open>
+  <details>
    <summary>Files</summary>
    <ul></ul>
   </details>
@@ -103,12 +24,12 @@
  <section id='results'>
   <details data-type='force'>
    <summary>Force</summary>
-   <svg style="padding:0;height:300px;width:300px;list-style-type:none;position:relative;" width="300" height="300"></svg>
+   <svg style="padding:0;height:300px;width:300px;list-style-type:none;position:relative;border:1px solid darkgray;" width="300" height="300"></svg>
    <ul class='result' style="padding:0;height:300px;width:300px;list-style-type:none;position:relative;display:none;"></ul>
   </details>
   <details data-type='lst'>
    <summary>Listing</summary>
-   <table class='result'></table>
+   <table class="result"></table>
   </details>
   <details data-type='html'>
    <summary>HTML</summary>

@@ -53,10 +53,24 @@ class PairGenerator {
 			let first = remaining.pop();
 			// Form a pair for every remaining submission by pairing with the first, removed submission
 			remaining.forEach(function(submission) {
+				// they are undordered pairs, therefore it is best to have
+				// them be deterministically order by something relatively
+				// arbitrary
+				let pair = [first, submission].sort(function(a,b){
+					return a.Name.localeCompare(b.Name);
+				});
 				// Add the newly-generated pair to our return
-				pairs.push([first, submission]);
+				pairs.push(pair);
 			});
 		}
+
+		pairs = pairs.sort((a,b)=>{
+			let comp = a[0].Name.localeCompare(b[0].Name);
+			if(comp === 0){
+				comp = a[1].Name.localeCompare(b[1].Name);
+			}
+			return comp;
+		});
 
 		return pairs;
 	}

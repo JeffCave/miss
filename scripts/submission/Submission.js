@@ -224,6 +224,10 @@ class Submission {
 	}
 
 	getName() {
+		return this.Name;
+	}
+
+	get Name(){
 		return this.name;
 	}
 
@@ -270,20 +274,5 @@ class Submission {
 			this.pHash = hashCode(this.name + this.content);
 		}
 		return this.pHash;
-	}
-
-	/**
-	 * Compare two Submissions, using natural ordering by name.
-	 *
-	 * Note that the natural ordering of ConcreteSubmission is
-	 * inconsistent with equality. Ordering is based solely on the name
-	 * of a submission; two submissions with the same name, but different
-	 * contents, will have compareTo() return 0, but equals() return false
-	 *
-	 * @param other Submission to compare to
-	 * @return Integer indicating relative ordering of the submissions
-	 */
-	compareTo(other) {
-		return this.name.compareTo(other.getName());
 	}
 }

@@ -112,8 +112,8 @@ class CommonCodeLineRemovalPreprocessor extends SubmissionPreprocessor {
 		let oldTokenizer = Tokenizer.getTokenizer(oldType);
 		let finalListGoodTokenization = oldTokenizer.splitString(newBody);
 
-		console.trace("Submission " + removeFrom.getName() + " contained " + percentMatched.toFixed(2) + "% common code");
-		console.trace("Removed " + identTokens + " common tokens (of " + removeFrom.getNumTokens() + " total)");
+		//console.trace("Submission " + removeFrom.getName() + " contained " + percentMatched.toFixed(2) + "% common code");
+		//console.trace("Removed " + identTokens + " common tokens (of " + removeFrom.getNumTokens() + " total)");
 
 		let submission = new Submission(removeFrom.getName(), newBody, finalListGoodTokenization);
 		return submission;

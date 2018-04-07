@@ -3,7 +3,7 @@
   <tr>
    <th>&nbsp;</th>
    {{#matrix.xSubmissions}}
-   <th style='writing-mode: vertical-lr;'><span>{{name}}</span></th>
+   <th><span>{{name}}</span></th>
    {{/matrix.xSubmissions}}
   </tr>
  </thead>
@@ -12,7 +12,7 @@
   <tr>
    <th>{{0.base.name}}</th>
    {{#.}}
-   <td style="opacity:{{similarityPercent}};">{{#toFixed}}{{similarityPercent}}{{/toFixed}}</td>
+   <td style="opacity:{{similarityPercent}};" title="{{#toFixed}}{{similarityPercent}}{{/toFixed}}%">&nbsp;</td>
    {{/.}}
   </tr>
   {{/matrix.entries}}
