@@ -23,8 +23,8 @@ export {
 	MatrixToHTMLPrinter
 };
 
-import {checkNotNull} from '/scripts/util/misc.js';
-import {MatrixPrinter} from '/scripts/visualizations/similaritymatrix/output/MatrixPrinter.js';
+import {checkNotNull} from '../../../util/misc.js';
+import {MatrixPrinter} from '../../../visualizations/similaritymatrix/output/MatrixPrinter.js';
 
 
 /**

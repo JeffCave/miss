@@ -17,11 +17,11 @@ export {
 	SmithWaterman
 };
 
-import AlgorithmResults from '/scripts/algorithm/AlgorithmResults.js';
-import SimilarityDetector from '/scripts/algorithm/SimilarityDetector.js';
-import TokenList from '/scripts/token/TokenList.js';
-import SmithWatermanAlgorithm from '/scripts/algorithm/smithwaterman/SmithWatermanAlgorithm.js';
-import checkNotNull from '/scripts/util/misc.js';
+import AlgorithmResults from '../../algorithm/AlgorithmResults.js';
+import SimilarityDetector from '../../algorithm/SimilarityDetector.js';
+import TokenList from '../../token/TokenList.js';
+import SmithWatermanAlgorithm from '../../algorithm/smithwaterman/SmithWatermanAlgorithm.js';
+import checkNotNull from '../../util/misc.js';
 
 /**
  * Implementation of the Smith-Waterman algorithm.

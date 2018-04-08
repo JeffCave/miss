@@ -18,9 +18,9 @@ export {
 };
 
 import {TokenList} from '../TokenList.js';
-import {CharTokenizer}       from '/scripts/token/tokenizer/CharTokenizer.js';
-import {WhitespaceTokenizer} from '/scripts/token/tokenizer/WhitespaceTokenizer.js';
-import {LineTokenizer}       from '/scripts/token/tokenizer/LineTokenizer.js';
+import {CharTokenizer}       from '../../token/tokenizer/CharTokenizer.js';
+import {WhitespaceTokenizer} from '../../token/tokenizer/WhitespaceTokenizer.js';
+import {LineTokenizer}       from '../../token/tokenizer/LineTokenizer.js';
 
 /**
  * Interface to convert a string into a list of tokens of a certain type.

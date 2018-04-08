@@ -17,9 +17,9 @@ export{
 	SimilarityMatrix
 };
 
-import {MatrixEntry} from '/scripts/visualizations/similaritymatrix/MatrixEntry.js';
-import {Submission} from '/scripts/submission/Submission.js';
-import {checkNotNull,checkArgument} from '/scripts/util/misc.js';
+import {MatrixEntry} from '../../visualizations/similaritymatrix/MatrixEntry.js';
+import {Submission} from '../../submission/Submission.js';
+import {checkNotNull,checkArgument} from '../../util/misc.js';
 
 /**
  * A Similarity Matrix represents the similarities between a given group of submissions.

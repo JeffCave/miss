@@ -17,8 +17,8 @@ export {
 	ValidityIgnoringSubmission
 };
 
-import {Submission} from '/scripts/submission/Submission.js';
-import {ValidityIgnoringToken} from '/scripts/token/ValidityIgnoringToken.js';
+import {Submission} from '../submission/Submission.js';
+import {ValidityIgnoringToken} from '../token/ValidityIgnoringToken.js';
 
 
 /**

@@ -17,8 +17,8 @@ export{
 	ArraySubset
 };
 
-import {Coordinate} from '/scripts/util/Coordinate.js';
-import {checkNotNull,checkArgument} from '/scripts/util/misc.js';
+import {Coordinate} from '../../util/Coordinate.js';
+import {checkNotNull,checkArgument} from '../../util/misc.js';
 
 /**
  * An immutable subset of a 2-Dimensional Array.

@@ -23,8 +23,8 @@ export {
 	AlgorithmRunner
 };
 
-import {SimilarityDetector} from '/scripts/algorithm/SimilarityDetector.js';
-import {checkNotNull,checkArgument} from '/scripts/util/misc.js';
+import {SimilarityDetector} from './SimilarityDetector.js';
+import {checkNotNull,checkArgument} from '../util/misc.js';
 
 /**
  * Run a pairwise similarity detection algorithm on a number of submission pairs.

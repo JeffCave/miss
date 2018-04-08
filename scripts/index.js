@@ -1,9 +1,9 @@
 'use strict';
 
-import {ChecksimsRunner} from '/scripts/ChecksimsRunner.js';
-import {d3ForceDirected} from '/scripts/visualizations/force.js';
-import {SimilarityMatrix} from '/scripts/visualizations/similaritymatrix/SimilarityMatrix.js';
-import {MatrixPrinterRegistry} from '/scripts/visualizations/similaritymatrix/output/MatrixPrinterRegistry.js';
+import {ChecksimsRunner} from './ChecksimsRunner.js';
+import {d3ForceDirected} from './visualizations/force.js';
+import {SimilarityMatrix} from './visualizations/similaritymatrix/SimilarityMatrix.js';
+import {MatrixPrinterRegistry} from './visualizations/similaritymatrix/output/MatrixPrinterRegistry.js';
 
 
 /**

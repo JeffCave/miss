@@ -18,7 +18,7 @@ export {
 	SimilarityDetector
 };
 
-import {NamedInstantiable} from '/scripts/util/reflection/NamedInstantiable.js';
+import {NamedInstantiable} from '../util/reflection/NamedInstantiable.js';
 
 
 /**

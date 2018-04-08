@@ -17,7 +17,7 @@ export {
 	MatrixPrinter
 };
 
-import {NamedInstantiable} from '/scripts/util/reflection/NamedInstantiable.js';
+import {NamedInstantiable} from '../../../util/reflection/NamedInstantiable.js';
 
 /**
  * Output a Similarity Matrix in human-readable or machine-readable format.

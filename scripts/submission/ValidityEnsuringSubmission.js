@@ -17,10 +17,10 @@ export {
 	ValidityEnsuringSubmission
 };
 
-import {TokenList} from 'scripts/token/TokenList.js';
-import {ValidityEnsuringToken} from 'scripts/token/ValidityEnsuringToken.js';
-import {Submission} from 'scripts/submission/Submission.js';
-import {checkArgument} from '/scripts/util/misc.js';
+import {TokenList} from '../token/TokenList.js';
+import {ValidityEnsuringToken} from '../token/ValidityEnsuringToken.js';
+import {Submission} from '../submission/Submission.js';
+import {checkArgument} from '../util/misc.js';
 
 /**
  * Submission which enforces token validity - two tokens, even if

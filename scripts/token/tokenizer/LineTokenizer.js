@@ -19,8 +19,8 @@ export {
 	LineTokenizer
 };
 
-import {Token} from '/scripts/token/Token.js';
-import {Tokenizer} from '/scripts/token/tokenizer/Tokenizer.js';
+import {Token} from '../../token/Token.js';
+import {Tokenizer} from '../../token/tokenizer/Tokenizer.js';
 import {TokenList} from '../../token/TokenList.js';
 import {checkNotNull} from '../../util/misc.js';
 

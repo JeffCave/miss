@@ -18,8 +18,8 @@ export {
 	Token
 };
 
-import {checkNotNull} from '/scripts/util/misc.js';
-import {LexemeMap} from '/scripts/token/LexemeMap.js';
+import {checkNotNull} from '../util/misc.js';
+import {LexemeMap} from '../token/LexemeMap.js';
 
 /**
  * Interface for Tokens.

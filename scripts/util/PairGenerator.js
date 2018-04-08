@@ -17,7 +17,7 @@ export {
 	PairGenerator
 };
 
-import {checkNotNull, checkArgument} from '/scripts/util/misc.js';
+import {checkNotNull, checkArgument} from '../util/misc.js';
 
 /**
  * Generates unordered pairs of submissions.

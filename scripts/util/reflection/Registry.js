@@ -17,15 +17,15 @@ export{
 	Registry
 };
 
-import {CommonCodeLineRemovalPreprocessor} from '/scripts/preprocessor/CommonCodeLineRemovalPreprocessor.js';
-import {LowercasePreprocessor} from '/scripts/preprocessor/LowercasePreprocessor.js';
-import {WhitespaceDeduplicationPreprocessor} from '/scripts/preprocessor/WhitespaceDeduplicationPreprocessor.js';
-import {SmithWaterman} from '/scripts/algorithm/smithwaterman/SmithWaterman.js';
-import {LineSimilarityChecker} from '/scripts/algorithm/linesimilarity/LineSimilarityChecker.js';
-import {MatrixToCSVPrinter} from '/scripts/visualizations/similaritymatrix/output/MatrixToCSVPrinter.js';
-import {MatrixToHTMLPrinter} from '/scripts/visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
+import {CommonCodeLineRemovalPreprocessor} from '../../preprocessor/CommonCodeLineRemovalPreprocessor.js';
+import {LowercasePreprocessor} from '../../preprocessor/LowercasePreprocessor.js';
+import {WhitespaceDeduplicationPreprocessor} from '../../preprocessor/WhitespaceDeduplicationPreprocessor.js';
+import {SmithWaterman} from '../../algorithm/smithwaterman/SmithWaterman.js';
+import {LineSimilarityChecker} from '../../algorithm/linesimilarity/LineSimilarityChecker.js';
+import {MatrixToCSVPrinter} from '../../visualizations/similaritymatrix/output/MatrixToCSVPrinter.js';
+import {MatrixToHTMLPrinter} from '../../visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
 
-import {checkNotNull} from '/scripts/util/misc.js';
+import {checkNotNull} from '../../util/misc.js';
 
 /**
  * Parent class for all registry implementations.

@@ -17,8 +17,8 @@ export {
 	RegistryWithDefault
 };
 
-import {Registry} from '/scripts/util/reflection/Registry.js';
-import {checkNotNull} from '/scripts/util/misc.js';
+import {Registry} from '../../util/reflection/Registry.js';
+import {checkNotNull} from '../../util/misc.js';
 
 /**
  * Extension of a Registry with the ability to retrieve a default implementation.

@@ -17,8 +17,8 @@ export {
 	MatrixToCSVPrinter
 };
 
-import {MatrixPrinter} from '/scripts/visualizations/similaritymatrix/output/MatrixPrinter.js';
-import {checkNotNull} from '/scripts/util/misc.js';
+import {MatrixPrinter} from '../../../visualizations/similaritymatrix/output/MatrixPrinter.js';
+import {checkNotNull} from '../../../util/misc.js';
 
 /**
  * Print a Similarity Matrix as machine-readable CSV.

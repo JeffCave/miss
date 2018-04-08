@@ -17,8 +17,8 @@ export {
 	WhitespaceTokenizer
 };
 
-import {Token} from '/scripts/token/Token.js';
-import {checkNotNull} from '/scripts/util/misc.js';
+import {Token} from '../../token/Token.js';
+import {checkNotNull} from '../../util/misc.js';
 
 /**
  * Split a file into tokens based on spaces.

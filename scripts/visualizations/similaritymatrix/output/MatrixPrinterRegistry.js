@@ -17,8 +17,8 @@ export {
 	MatrixPrinterRegistry
 };
 
-import {RegistryWithDefault} from '/scripts/util/reflection/RegistryWithDefault.js';
-import {MatrixToHTMLPrinter} from '/scripts/visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
+import {RegistryWithDefault} from '../../../util/reflection/RegistryWithDefault.js';
+import {MatrixToHTMLPrinter} from '../../../visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
 
 
 /**

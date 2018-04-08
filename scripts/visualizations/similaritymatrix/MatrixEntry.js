@@ -17,7 +17,7 @@ export {
 	MatrixEntry
 };
 
-import {checkNotNull,checkArgument} from '/scripts/util/misc.js';
+import {checkNotNull,checkArgument} from '../../util/misc.js';
 
 /**
  * An entry in the Similarity Matrix.

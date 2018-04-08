@@ -17,7 +17,7 @@ export{
 	LexemeMap
 };
 
-import {checkNotNull} from '/scripts/util/misc.js';
+import {checkNotNull} from '../util/misc.js';
 
 /**
  * Maps lexemes (integers) to the original token contents.

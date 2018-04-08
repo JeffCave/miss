@@ -17,11 +17,11 @@ export {
 	SmithWatermanAlgorithm
 };
 
-import {TokenList} from '/scripts/token/TokenList.js';
-import {ValidityEnsuringToken} from '/scripts/token/ValidityEnsuringToken.js';
-import {ArraySubset} from '/scripts/algorithm/smithwaterman/ArraySubset.js';
+import {TokenList} from '../../token/TokenList.js';
+import {ValidityEnsuringToken} from '../../token/ValidityEnsuringToken.js';
+import {ArraySubset} from '../../algorithm/smithwaterman/ArraySubset.js';
 import {Coordinate} from '../../util/Coordinate.js';
-import {checkNotNull,checkArgument} from '/scripts/util/misc.js';
+import {checkNotNull,checkArgument} from '../../util/misc.js';
 
 /**
  * Actual implementation of the Smith-Waterman algorithm.

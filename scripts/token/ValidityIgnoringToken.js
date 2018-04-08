@@ -17,7 +17,7 @@ export {
 	ValidityIgnoringToken
 };
 
-import Token from '/scripts/token/Token.js';
+import Token from '../token/Token.js';
 
 
 /**
