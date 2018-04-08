@@ -12,20 +12,14 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
+export{
+	SimilarityMatrix
+};
 
-/*
-global loader
-global MatrixEntry
-global Submission
-global checkNotNull, checkArgument
-*/
-loader.load([
-	,'/scripts/algorithm/similaritymatrix/MatrixEntry.js'
-	,'/scripts/submission/Submission.js'
-	,'/scripts/util/misc.js'
-]);
+import {MatrixEntry} from '../../visualizations/similaritymatrix/MatrixEntry.js';
+import {Submission} from '../../submission/Submission.js';
+import {checkNotNull,checkArgument} from '../../util/misc.js';
 
 /**
  * A Similarity Matrix represents the similarities between a given group of submissions.

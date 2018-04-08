@@ -12,18 +12,14 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
+export {
+	ValidityIgnoringSubmission
+};
 
-/*
-global loader
-global Submission
-global ValidityIgnoringToken
-*/
-loader.load([
-	,'/scripts/submission/Submission.js'
-	,'/scripts/token/ValidityIgnoringToken.js'
-]);
+import {Submission} from '../submission/Submission.js';
+import {ValidityIgnoringToken} from '../token/ValidityIgnoringToken.js';
+
 
 /**
  * Submission which ignores validity - tokens are compared ignoring
@@ -31,7 +27,7 @@ loader.load([
  *
  * Decorates another submission and overrides equals()
  */
-class ValidityIgnoringSubmission extends Submission {
+export default class ValidityIgnoringSubmission extends Submission {
 	constructor(wrappedSubmission) {
 		super(wrappedSubmission);
 	}

@@ -12,25 +12,17 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
-/*
-global loader
-global Submission
-global Submission
-global SubmissionPreprocessor
-global Tokenizer
-global checkNotNull
-*/
-loader.load([
-	,'/scripts/submission/Submission.js'
-	,'/scripts/algorithm/preprocessor/SubmissionPreprocessor.js'
-	,'/scripts/token/tokenizer/Tokenizer.js'
-	,'/scripts/ChecksimsException.js'
-	,'/scripts/util/misc.js'
-]);
+export {
+	WhitespaceDeduplicationPreprocessor
+};
 
-PreprocessorRegistry.addPreprocessor('WhitespaceDeduplicationPreprocessor');
+import {Submission} from '../submission/Submission.js';
+import {SubmissionPreprocessor} from '../preprocessor/SubmissionPreprocessor.js';
+import {Tokenizer} from '../token/tokenizer/Tokenizer.js';
+import {checkNotNull,checkArgument} from '../util/misc.js';
+
+
 /**
  * Remove duplicated whitespace characters.
  */

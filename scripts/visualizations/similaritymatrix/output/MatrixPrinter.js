@@ -12,21 +12,17 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
+export {
+	MatrixPrinter
+};
 
-/*
-global loader
-global NamedInstantiable
-*/
-loader.load([
-	'/scripts/util/reflection/NamedInstantiable.js'
-]);
+import {NamedInstantiable} from '../../../util/reflection/NamedInstantiable.js';
 
 /**
  * Output a Similarity Matrix in human-readable or machine-readable format.
  */
-class MatrixPrinter extends NamedInstantiable {
+export default class MatrixPrinter extends NamedInstantiable {
     /**
      * Print a Similarity Matrix to string.
      *

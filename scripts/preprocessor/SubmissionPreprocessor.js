@@ -12,21 +12,17 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
+export {
+	SubmissionPreprocessor
+};
 
-/*
-global loader
-global NamedInstantiable
-*/
-loader.load([
-	'/scripts/util/reflection/NamedInstantiable.js',
-]);
+import NamedInstantiable from '../util/reflection/NamedInstantiable.js';
 
 /**
  * Interface for submission preprocessors which act on submissions.
  */
-class SubmissionPreprocessor extends NamedInstantiable {
+export default class SubmissionPreprocessor extends NamedInstantiable {
 	/**
 	 * Perform some implementation-specific transformation on the input submission.
 	 *

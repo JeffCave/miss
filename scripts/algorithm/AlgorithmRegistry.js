@@ -12,21 +12,19 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
- 'use strict';
+'use strict';
+export {
+	AlgorithmRegistry
+};
 
-/*
-global RegistryWithDefault
-global LineSimilarityChecker
-*/
-/*
-import {LineSimilarityChecker} from '/scripts/algorithm/linesimilarity/LineSimilarityChecker';
-import {RegistryWithDefault} from '/scripts/util/reflection/RegistryWithDefault';
-*/
+import {LineSimilarityChecker} from '../algorithm/linesimilarity/LineSimilarityChecker.js';
+import {RegistryWithDefault} from '../util/reflection/RegistryWithDefault.js';
+
 
 /**
  * Registry for all supported similarity detection algorithms.
  */
-class AlgorithmRegistry extends RegistryWithDefault {
+export default class AlgorithmRegistry extends RegistryWithDefault {
 
 	constructor(){
 		if("instance" in AlgorithmRegistry){

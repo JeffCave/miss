@@ -1,23 +1,10 @@
 'use strict';
 
+import {ChecksimsRunner} from './ChecksimsRunner.js';
+import {d3ForceDirected} from './visualizations/force.js';
+import {SimilarityMatrix} from './visualizations/similaritymatrix/SimilarityMatrix.js';
+import {MatrixPrinterRegistry} from './visualizations/similaritymatrix/output/MatrixPrinterRegistry.js';
 
-/*
-global JSZip
-global RegExp
-global d3
-
-global ChecksimsConfig
-global ChecksimsException
-global ChecksimsRunner
-global CommonCodeLineRemovalPreprocessor
-global MatrixPrinterRegistry
-global Submission
-global SimilarityMatrix
-global Tokenizer
-
-global checkArgument
-global checkNotNull
-*/
 
 /**
  * Parses Checksims' command-line options.
@@ -97,7 +84,7 @@ class ChecksimsCommandLine {
 		let resultsMatrix = SimilarityMatrix.generateMatrix(results);
 
 		// Output using all output printers
-		let outputMap = Promise.all(deduplicatedStrategies
+		Promise.all(deduplicatedStrategies
 			.map(function(name){
 				return MatrixPrinterRegistry.getInstance().getImplementationInstance(name);
 			}))
@@ -122,10 +109,7 @@ class ChecksimsCommandLine {
 	}
 
 	renderListTable(results,htmlContainers){
-		let cellTemplate = [
-				,"  <td><meter min='0' max='100' value='{{pct}}' title='{{pct}}% similar'></meter><span title='{{pct}}% similar'>{{name}}</span> </td>"
-			].join('\n')
-			;
+		let cellTemplate = "  <td><meter min='-1' max='100' value='{{pct}}' title='{{pct}}% similar'></meter><span title='{{pct}}% similar'>{{name}}</span> </td>";
 		let html = [
 				'<thead>',
 				' <tr>',
@@ -136,24 +120,28 @@ class ChecksimsCommandLine {
 				'<tbody>',
 			];
 		html = html.concat(results.results
+			.map(function(d){
+				let rtn = [
+						{'name':d.a.name,'pct':d.percentMatchedA},
+						{'name':d.b.name,'pct':d.percentMatchedB}
+					].sort(function(a,b){
+						let diff = b.pct - a.pct;
+						return diff;
+					});
+				rtn.total = rtn[0].pct + rtn[1].pct;
+				return rtn;
+			})
 			.sort(function(a,b){
-				let diff = b.percentMatchedA - a.percentMatchedA;
-				if(diff === 0){
-					diff = b.percentMatchedB - a.percentMatchedB;
-				}
+				let diff = b.total - a.total;
 				return diff;
 			})
 			.map(function(comp){
-				let html = [
-						cellTemplate
-							.replace(/{{name}}/g,comp.a.name)
-							.replace(/{{pct}}/g,(comp.percentMatchedA * 100).toFixed(0))
-						,
-						cellTemplate
-							.replace(/{{name}}/g,comp.b.name)
-							.replace(/{{pct}}/g,(comp.percentMatchedB * 100).toFixed(0))
-					].join('')
-					;
+				let html = comp.map(function(d){
+						return cellTemplate
+							.replace(/{{name}}/g,d.name)
+							.replace(/{{pct}}/g,(d.pct * 100).toFixed(0))
+							;
+					}).join('');
 				html = [' <tr>', html, '</tr>',];
 				return html.join('\n');
 			}))
@@ -167,9 +155,8 @@ class ChecksimsCommandLine {
 
 
 	renderListForce(results,htmlContainers){
-		let container = htmlContainers.force.querySelector('ul.result');
-		let dimensions = window.getComputedStyle(container);
-
+		//let container = htmlContainers.force.querySelector('ul.result');
+		//let dimensions = window.getComputedStyle(container);
 		d3ForceDirected(results);
 	}
 
@@ -195,9 +182,6 @@ class ChecksimsCommandLine {
 
 		this.renderResults(results,htmlContainers);
 	}
-
-
-
 
 }
 

@@ -14,18 +14,13 @@
  */
 
 'use strict';
+export{
+	Submission
+};
 
-/*
-global loader
-global TokenList
-global TokenType
-global checkNotNull, checkArgument, hashCode
-*/
-loader.load([
-	,'/scripts/token/TokenList.js'
-	,'/scripts/token/TokenType.js'
-	,'/scripts/util/misc.js'
-]);
+import {LineTokenizer} from '../token/tokenizer/LineTokenizer.js';
+import {TokenList}     from '../token/TokenList.js';
+import {checkNotNull, checkArgument, hashCode} from '../util/misc.js';
 
 /**
  * Interface for Submissions.
@@ -70,7 +65,7 @@ class Submission {
 		}
 
 		if(!(tokens instanceof TokenList)){
-			tokens = new TokenList(TokenType.CHARACTER,tokens);
+			tokens = new TokenList(TokenList.TokenType.CHARACTER,tokens);
 		}
 
 		this.name = name;
@@ -208,7 +203,7 @@ class Submission {
 	 */
 	static get NullSubmission(){
 		if(!('_NullSubmission' in Submission)){
-			Submission._NullSubmission = new Submission(' ','',new TokenList(TokenType.LINE));
+			Submission._NullSubmission = new Submission(' ','',new TokenList(TokenList.TokenType.LINE));
 		}
 		return Submission._NullSubmission;
 	}

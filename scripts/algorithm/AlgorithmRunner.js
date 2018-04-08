@@ -18,23 +18,18 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
+export {
+	AlgorithmRunner
+};
 
-/*
-global loader
-global SimilarityDetector
-global checkNotNull, checkArgument
-*/
-loader.load([
-	,'/scripts/algorithm/SimilarityDetector.js'
-	,'/scripts/util/misc.js'
-]);
+import {SimilarityDetector} from './SimilarityDetector.js';
+import {checkNotNull,checkArgument} from '../util/misc.js';
 
 /**
  * Run a pairwise similarity detection algorithm on a number of submission pairs.
  */
-class AlgorithmRunner {
+export default class AlgorithmRunner {
 	constructor() {}
 
 	/**

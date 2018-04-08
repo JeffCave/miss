@@ -2,7 +2,7 @@
 global d3
 */
 
-function d3ForceDirected(results){
+export function d3ForceDirected(results){
 
 
 	let graph = {

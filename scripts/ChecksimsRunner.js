@@ -13,31 +13,19 @@
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
 
-/*
-global loader
+'use strict';
+export {
+	ChecksimsRunner
+};
 
-global AlgorithmRunner
-global AlgorithmRegistry
-global ChecksimsException
-global PairGenerator
-global PreprocessSubmissions
-global PreprocessorRegistry
-global TokenType
-global SimilarityMatrix
-
-global checkNotNull
-*/
-loader.load([
-	,'/scripts/algorithm/AlgorithmRunner.js'
-	,'/scripts/algorithm/AlgorithmRegistry.js'
-	,'/scripts/algorithm/preprocessor/PreprocessSubmissions.js'
-	,'/scripts/algorithm/similaritymatrix/SimilarityMatrix.js'
-	,'/scripts/token/TokenType.js'
-	,'/scripts/util/PairGenerator.js'
-	,'/scripts/ChecksimsException.js'
-	,'/scripts/util/misc.js'
-]);
-
+import {AlgorithmRunner} from './algorithm/AlgorithmRunner.js';
+import {AlgorithmRegistry} from './algorithm/AlgorithmRegistry.js';
+import {CommonCodeLineRemovalPreprocessor} from './preprocessor/CommonCodeLineRemovalPreprocessor.js';
+import {PreprocessSubmissions} from './preprocessor/PreprocessSubmissions.js';
+import {PreprocessorRegistry} from './preprocessor/PreprocessorRegistry.js';
+import {PairGenerator} from './util/PairGenerator.js';
+import {Submission} from './submission/Submission.js';
+import {checkNotNull} from './util/misc.js';
 
 /**
  * CLI Entry point and main public API endpoint for Checksims.

@@ -12,20 +12,18 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
+export {
+	AlgorithmResults
+};
 
-/*
-global loader
-global checkNotNull, checkArgument
-*/
-loader.load([
+import {TokenList} from '../token/TokenList.js';
+import {checkNotNull,checkArgument} from '../util/misc.js';
 
-]);
 /**
  * Results for a pairwise comparison algorithm.
  */
-class AlgorithmResults {
+export default class AlgorithmResults {
 
 	/**
 	 * Construct results for a pairwise similarity detection algorithm.

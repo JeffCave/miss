@@ -13,18 +13,14 @@
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
 'use strict';
+export {
+	ValidityEnsuringSubmission
+};
 
-/*
-global loader
-global TokenList
-global ValidityEnsuringToken
-global Submission
-*/
-loader.load([
-	,'scripts/token/TokenList.js'
-	,'scripts/token/ValidityEnsuringToken.js'
-	,'scripts/submission/Submission.js'
-]);
+import {TokenList} from '../token/TokenList.js';
+import {ValidityEnsuringToken} from '../token/ValidityEnsuringToken.js';
+import {Submission} from '../submission/Submission.js';
+import {checkArgument} from '../util/misc.js';
 
 /**
  * Submission which enforces token validity - two tokens, even if
@@ -32,7 +28,7 @@ loader.load([
  *
  * Decorates another submission and overrides equals()
  */
-class ValidityEnsuringSubmission extends Submission {
+export default class ValidityEnsuringSubmission extends Submission {
 	constructor(submission) {
 		checkArgument(submission instanceof Submission, "Expected an instance of 'Submission'");
 		super(submission);

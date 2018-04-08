@@ -12,16 +12,12 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
-/*
-global loader
-global checkNotNull
-*/
-loader.load([
-	,'/scripts/util/misc.js'
-]);
+export{
+	LexemeMap
+};
 
+import {checkNotNull} from '../util/misc.js';
 
 /**
  * Maps lexemes (integers) to the original token contents.

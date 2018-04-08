@@ -12,15 +12,12 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
-/*
-global loader
-global AbstractTokenDecorator
-*/
-loader.load([
-	'/scripts/token/AbstractTokenDecorator.js'
-]);
+export {
+	ValidityIgnoringToken
+};
+
+import Token from '../token/Token.js';
 
 
 /**
@@ -28,7 +25,7 @@ loader.load([
  *
  * Decorates other tokens to override their equals() method
  */
-class ValidityIgnoringToken extends AbstractTokenDecorator {
+export default class ValidityIgnoringToken extends Token {
 	constructor(wrappedToken) {
 		super(wrappedToken);
 	}
