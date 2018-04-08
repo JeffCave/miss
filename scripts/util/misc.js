@@ -1,10 +1,19 @@
+'use strict';
+export{
+	checkNotNull,
+	checkArgument,
+	hasher,
+	hashCode,
+	Pair
+};
+
 /*
 global jsSHA
 */
 
-function checkNotNull(value = null){
+export default function checkNotNull(value = null){
 	if(value === null || typeof value === 'undefined'){
-		console.trace("Null Exception (checkNotNull)")
+		console.trace("Null Exception (checkNotNull)");
 		throw new Error("Null Exception (checkNotNull)");
 	}
 }
@@ -13,9 +22,7 @@ function checkArgument(value = null, msg = ""){
 	checkNotNull(value);
 	checkNotNull(msg);
 
-	if(!value){
-		throw new Error(msg);
-	}
+	assert(value,msg);
 }
 
 class Pair extends Set{

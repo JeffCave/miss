@@ -13,32 +13,43 @@
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
 'use strict';
-/*
-global loader
-global checkNotNull, checkArgument
-*/
-loader.load([
-	,'/scripts/util/misc.js'
-]);
+export{
+	Registry
+};
+
+import {CommonCodeLineRemovalPreprocessor} from '/scripts/preprocessor/CommonCodeLineRemovalPreprocessor.js';
+import {LowercasePreprocessor} from '/scripts/preprocessor/LowercasePreprocessor.js';
+import {WhitespaceDeduplicationPreprocessor} from '/scripts/preprocessor/WhitespaceDeduplicationPreprocessor.js';
+import {SmithWaterman} from '/scripts/algorithm/smithwaterman/SmithWaterman.js';
+import {LineSimilarityChecker} from '/scripts/algorithm/linesimilarity/LineSimilarityChecker.js';
+import {MatrixToCSVPrinter} from '/scripts/visualizations/similaritymatrix/output/MatrixToCSVPrinter.js';
+import {MatrixToHTMLPrinter} from '/scripts/visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
+
+import {checkNotNull} from '/scripts/util/misc.js';
 
 /**
  * Parent class for all registry implementations.
  *
- * A Registry contains a number of implementations of a given interface which are contained within a given package.
- * Registries are initialized via reflection; no modification is required to add a new implementation to a registry, so
- * long as it implements the appropriate interface and is in the appropriate package.
+ * A Registry contains a number of implementations of a given
+ * interface which are contained within a given package. Registries
+ * are initialized via reflection; no modification is required to add
+ * a new implementation to a registry, so long as it implements the
+ * appropriate interface and is in the appropriate package.
  */
-class Registry {
+export default class Registry {
+
 	/**
-	 * Create a Registry instance for implementations of a given base class in the given package and subpackages.
+	 * Create a Registry instance for implementations of a given base
+	 * class in the given package and subpackages.
 	 *
-	 * Please note that inner classes *WILL NOT BE REGISTERED* - only top-level classes will be included in a registry!
+	 * Please note that inner classes *WILL NOT BE REGISTERED* - only
+	 * top-level classes will be included in a registry!
 	 *
 	 * @param initPath Package to (recursively) search for implementations
 	 * @param baseClazz Base class or interface which all implementations in the registry extend or implement
 	 * @param ignoredImplementations Names of implementations which should not be included in the registry.
 	 */
-	constructor( include = [], /*Class<T>*/ baseClazz, /*Set<String>*/ ignores=[]) {
+	constructor( include = [], baseClazz, ignores=[]) {
 		checkNotNull(baseClazz);
 		checkNotNull(ignores);
 		checkNotNull(include);
@@ -83,13 +94,8 @@ class Registry {
 	 *
 	 * All subclasses MUST implement a static, no arguments getInstance method
 	 *
-	 * Please note that reflectiveInstantiator ignores inner classes --- all classes instantiated will be top level
-	 *
-	 * @param packageName Package name to instantiate in
-	 * @param subclassesOf Class to instantiate subclasses of
-	 * @param ignore Set of implementations to ignore (not include in the registry)
-	 * @param <T> Type of the original class, which all subclasses will be as well
-	 * @return List of instances of classes extending/implementing subclassesOf
+	 * Please note that reflectiveInstantiator ignores inner classes ---
+	 * all classes instantiated will be top level
 	 */
 	registerAll(types) {
 		checkNotNull(types);
@@ -98,11 +104,12 @@ class Registry {
 
 		let allInstances = types.map(function(type){
 				// Invoke the method to get an instance
-				let instance = eval(type).getInstance();
+				let instance = eval(type);
+				instance = instance.getInstance();
 				if(!instance){
 					throw new Error('Attempt to register unknown type: ' + type);
 				}
-				let name = instance.getName().toLowerCase();
+				//let name = instance.getName().toLowerCase();
 				return instance;
 			})
 			.filter(function(instance){

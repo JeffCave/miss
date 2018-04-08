@@ -12,84 +12,77 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
+export {
+	MatrixEntry
+};
 
-/*
-global loader
-global checkNotNull, checkArgument
-*/
-
-loader.load([
-	,'/scripts/submission/Submission.js'
-	,'/scripts/ChecksimsException.js'
-	,'/scripts/util/misc.js'
-]);
+import {checkNotNull,checkArgument} from '/scripts/util/misc.js';
 
 /**
  * An entry in the Similarity Matrix.
  */
-class MatrixEntry {
-    /**
-     * Construct a Similarity Matrix entry.
-     *
-     * @param base Submission we are reporting relative to
-     * @param comparedTo Submission being compared to
-     * @param similarTokens Number of tokens shared by both submissions
-     */
-    constructor(base, comparedTo, similarTokens) {
-        checkNotNull(base);
-        checkNotNull(comparedTo);
-        checkArgument(similarTokens >= 0, "There cannot be a negative number of similar tokens");
-        checkArgument(similarTokens <= base.getNumTokens(), "Attempted to created MatrixEntry with " + similarTokens
-                + " similar tokens --- only " + base.getNumTokens() + " tokens in base!");
+export default class MatrixEntry {
+	/**
+	 * Construct a Similarity Matrix entry.
+	 *
+	 * @param base Submission we are reporting relative to
+	 * @param comparedTo Submission being compared to
+	 * @param similarTokens Number of tokens shared by both submissions
+	 */
+	constructor(base, comparedTo, similarTokens) {
+		checkNotNull(base);
+		checkNotNull(comparedTo);
+		checkArgument(similarTokens >= 0, "There cannot be a negative number of similar tokens");
+		checkArgument(similarTokens <= base.getNumTokens(), "Attempted to created MatrixEntry with " + similarTokens
+				+ " similar tokens --- only " + base.getNumTokens() + " tokens in base!");
 
-        this.base = base;
-        this.comparedTo = comparedTo;
-        this.similarTokens = +similarTokens;
-        this.totalTokens = +base.getNumTokens();
-        this.similarityPercent = 0.0;
+		this.base = base;
+		this.comparedTo = comparedTo;
+		this.similarTokens = +similarTokens;
+		this.totalTokens = +base.getNumTokens();
+		this.similarityPercent = 0.0;
 
-        if(this.totalTokens > 0) {
-            this.similarityPercent = similarTokens / this.totalTokens;
-        }
+		if(this.totalTokens > 0) {
+			this.similarityPercent = similarTokens / this.totalTokens;
+		}
 
-    }
+	}
 
-    /**
-     * @return Base submission we are comparing
-     */
-    getBase() {
-        return this.base;
-    }
+	/**
+	 * @return Base submission we are comparing
+	 */
+	getBase() {
+		return this.base;
+	}
 
-    /**
-     * @return Submission the base is being compared to
-     */
-    getComparedTo() {
-        return this.comparedTo;
-    }
+	/**
+	 * @return Submission the base is being compared to
+	 */
+	getComparedTo() {
+		return this.comparedTo;
+	}
 
-    /**
-     * @return Percentage similarity of base submission to compared submission
-     */
-    getSimilarityPercent() {
-        return this.similarityPercent;
-    }
+	/**
+	 * @return Percentage similarity of base submission to compared submission
+	 */
+	getSimilarityPercent() {
+		return this.similarityPercent;
+	}
 
-    /**
-     * @return Number of identical tokens between the two submissions
-     */
-    getSimilarTokens() {
-        return this.similarTokens;
-    }
+	/**
+	 * @return Number of identical tokens between the two submissions
+	 */
+	getSimilarTokens() {
+		return this.similarTokens;
+	}
 
-    /**
-     * @return Total number of tokens in base submission
-     */
-    getTotalTokens() {
-        return this.totalTokens;
-    }
+	/**
+	 * @return Total number of tokens in base submission
+	 */
+	getTotalTokens() {
+		return this.totalTokens;
+	}
 
 	toString() {
 		return "Similarity Matrix Entry comparing " + this.base.getName() + " and " + this.comparedTo.getName();
@@ -104,7 +97,7 @@ class MatrixEntry {
 				other.getComparedTo().equals(this.comparedTo) &&
 				other.getSimilarTokens() === this.similarTokens
 				;
-    }
+	}
 
 	hashCode() {
 		return (this.base.hashCode() ^ this.comparedTo.hashCode()) * this.similarTokens;

@@ -12,25 +12,19 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
- 'use strict';
-/*
-global loader
+'use strict';
+export {
+	PreprocessSubmissions
+};
 
-global Submission
-global SubmissionPreprocessor
-
-global checkNotNull, checkArgument
-*/
-loader.load([
-	,'/scripts/submission/Submission.js'
-	,'/scripts/algorithm/preprocessor/SubmissionPreprocessor.js'
-	,'/scripts/util/misc.js'
-]);
+import {Submission} from '../submission/Submission.js';
+import {SubmissionPreprocessor} from '../preprocessor/SubmissionPreprocessor.js';
+import {checkNotNull,checkArgument} from '../util/misc.js';
 
 /**
  * Apply a preprocessor (maps Submission to Submission) to a given list of submissions.
  */
-class PreprocessSubmissions {
+export default class PreprocessSubmissions {
 	constructor() {
 
 	}

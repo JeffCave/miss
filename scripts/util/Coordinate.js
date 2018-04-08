@@ -12,13 +12,15 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
+export{
+	Coordinate
+};
 
 /**
  * An immutable 2-D coordinate.
  */
-class Coordinate{
+export default class Coordinate{
 	/**
 	* Construct a 2D coordinate.
 	*

@@ -12,24 +12,17 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
+export {
+	TokenList
+};
 
-/*
-global loader
-global TokenType
-global checkNotNull
-global checkArgument
-*/
-loader.load([
-	,'/scripts/token/TokenType.js'
-	,'/scripts/util/misc.js'
-]);
+import {checkNotNull,checkArgument} from '../util/misc.js';
 
 /**
  * A list of tokens of a specific type.
  */
-class TokenList extends Array{
+export default class TokenList extends Array{
 	/**
 	 * Create a TokenList accepting a specific type of token.
 	 *
@@ -40,7 +33,7 @@ class TokenList extends Array{
 
 		checkNotNull(type);
 
-		let isType = Object.values(TokenType).some(function(t){
+		let isType = Object.values(TokenList.TokenType).some(function(t){
 			return type === t;
 		});
 		checkArgument(isType,"Expected type to be of TokenType. Received " + type);
@@ -53,6 +46,14 @@ class TokenList extends Array{
 		}
 
 		this.type = type;
+	}
+
+	static get TokenType(){
+		return {
+			CHARACTER: "character",
+			WHITESPACE: "whitespace",
+			LINE: "line"
+		};
 	}
 
 	/**
@@ -74,9 +75,9 @@ class TokenList extends Array{
 
 		if(sepChar === null || sepChar === false){
 			switch(this.type) {
-				case TokenType.CHARACTER: sepChar = ""; break;
-				case TokenType.WHITESPACE: sepChar = " "; break;
-				case TokenType.LINE: sepChar = "\n"; break;
+				case TokenList.TokenType.CHARACTER: sepChar = ""; break;
+				case TokenList.TokenType.WHITESPACE: sepChar = " "; break;
+				case TokenList.TokenType.LINE: sepChar = "\n"; break;
 				default: sepChar = ""; break;
 			}
 		}

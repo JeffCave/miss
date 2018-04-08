@@ -10,15 +10,14 @@
  *
  * When distributing Covered Code, include this CDDL HEADER in each
  * file and include the License file at LICENSE.txt.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
  * CDDL HEADER END
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
+'use status';
+export {
+	NamedInstantiable
+};
 
 /**
  * All implementations which desire to be instantiated by a Registry must implement this interface.
@@ -28,18 +27,18 @@
  *
  * It is recommended (but not mandatory) that all namedInstantiable implementations override hashCode() and equals()
  */
-class NamedInstantiable {
-    /**
-     * MUST BE UNIQUE FOR EACH IMPLEMENTATING CLASS.
-     *
-     * Technically, the uniqueness requirement is only within a single registry. For example, there are separate
-     * registries for SimilarityDetector and MatrixPrinter. The names for implementations must be unique within these
-     * registries, but it is acceptable for a MatrixPrinter to have the same name as a SimilarityDetector because they
-     * will never be in the same registry. Despite this, retaining global uniqueness is desirable for clarity.
-     *
-     * @return Name of the implementation as it will be seen in the registry
-     */
-    get Name(){
-        return "";
-    }
+export default class NamedInstantiable {
+	/**
+	 * MUST BE UNIQUE FOR EACH IMPLEMENTATING CLASS.
+	 *
+	 * Technically, the uniqueness requirement is only within a single registry. For example, there are separate
+	 * registries for SimilarityDetector and MatrixPrinter. The names for implementations must be unique within these
+	 * registries, but it is acceptable for a MatrixPrinter to have the same name as a SimilarityDetector because they
+	 * will never be in the same registry. Despite this, retaining global uniqueness is desirable for clarity.
+	 *
+	 * @return Name of the implementation as it will be seen in the registry
+	 */
+	get Name(){
+		return "";
+	}
 }

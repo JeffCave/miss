@@ -15,22 +15,14 @@
 
 
 'use strict';
+export {
+	LineTokenizer
+};
 
-/*
-global loader
-global TokenType
-global Token
-global Tokenizer
-global TokenList
-global checkNotNull
-*/
-loader.load([
-	,'/scripts/token/TokenType.js'
-	,'/scripts/token/Token.js'
-	,'/scripts/token/tokenizer/LineTokenizer.js'
-	,'/scripts/token/tokenizer/Tokenizer.js'
-	,'/scripts/util/misc.js'
-]);
+import {Token} from '/scripts/token/Token.js';
+import {Tokenizer} from '/scripts/token/tokenizer/Tokenizer.js';
+import {TokenList} from '../../token/TokenList.js';
+import {checkNotNull} from '../../util/misc.js';
 
 /**
  * Splits a file on a line-by-line basis.
@@ -67,7 +59,7 @@ class LineTokenizer extends Tokenizer {
 				return str !== '';
 			})
 			.map((str) => {
-				return new Token(str, TokenType.LINE);
+				return new Token(str, TokenList.TokenType.LINE);
 			})
 			;
 		let toReturn = new TokenList(this.getType(),tokens);
@@ -75,7 +67,7 @@ class LineTokenizer extends Tokenizer {
 	}
 
 	getType() {
-		return TokenType.LINE;
+		return TokenList.TokenType.LINE;
 	}
 
 	toString() {

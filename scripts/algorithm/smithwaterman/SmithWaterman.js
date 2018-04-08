@@ -12,31 +12,21 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
+export {
+	SmithWaterman
+};
 
-/*
-global loader
-global AlgorithmResults
-global SimilarityDetector
-global TokenList
-global TokenType
-global SmithWatermanAlgorithm
-global checkNotNull, checkArgument
-*/
-loader.load([
-	,'/scripts/algorithm/AlgorithmResults.js'
-	,'/scripts/algorithm/SimilarityDetector.js'
-	,'/scripts/token/TokenList.js'
-	,'/scripts/token/TokenType.js'
-	,'/scripts/algorithm/smithwaterman/SmithWatermanAlgorithm.js'
-	,'/scripts/util/misc.js'
-]);
+import AlgorithmResults from '/scripts/algorithm/AlgorithmResults.js';
+import SimilarityDetector from '/scripts/algorithm/SimilarityDetector.js';
+import TokenList from '/scripts/token/TokenList.js';
+import SmithWatermanAlgorithm from '/scripts/algorithm/smithwaterman/SmithWatermanAlgorithm.js';
+import checkNotNull from '/scripts/util/misc.js';
 
 /**
  * Implementation of the Smith-Waterman algorithm.
  */
-class SmithWaterman extends SimilarityDetector {
+export default class SmithWaterman extends SimilarityDetector {
 	/**
 	 * @return Singleton instance of the Smith-Waterman algorithm
 	 */
@@ -59,7 +49,7 @@ class SmithWaterman extends SimilarityDetector {
 	 * @return Default token type to be used for this similarity detector
 	 */
 	getDefaultTokenType() {
-		return TokenType.WHITESPACE;
+		return TokenList.TokenType.WHITESPACE;
 	}
 
 	/**

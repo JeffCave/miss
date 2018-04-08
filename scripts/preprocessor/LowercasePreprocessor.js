@@ -12,33 +12,20 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
+export {
+	LowercasePreprocessor
+};
 
-/*
-global loader
-global SubmissionPreprocessor
-global SubmissionPreprocessor
-global Submission
-global Tokenizer
+import {SubmissionPreprocessor} from './SubmissionPreprocessor.js';
+import {Submission} from '../submission/Submission.js';
+import {Tokenizer} from '../token/tokenizer/Tokenizer.js';
+import {checkNotNull} from '../util/misc.js';
 
-global ChecksimsException
-global checkNotNull,checkArgument
-*/
-
-loader.load([
-	,'scripts/submission/SubmissionPreprocessor.js'
-	,'scripts/submission/Submission.js'
-	,'scripts/token/tokenizer/Tokenizer.js'
-	,'scripts/ChecksimsException.js'
-	,'scripts/util/misc.js'
-]);
-
-PreprocessorRegistry.addPreprocessor('LowercasePreprocessor');
 /**
  * Lowercases tokens to prevent case from interfering with comparisons.
  */
-class LowercasePreprocessor extends SubmissionPreprocessor {
+export default class LowercasePreprocessor extends SubmissionPreprocessor {
 
 	/**
 	 * @return Singleton instance of LowercasePreprocessor

@@ -12,18 +12,14 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
+export {
+	MatrixPrinterRegistry
+};
 
-/*
-global loader
-global RegistryWithDefault
-global MatrixToHTMLPrinter
-*/
-loader.load([
-	,'/scripts/util/reflection/RegistryWithDefault.js'
-	,'/scripts/algorithm/similaritymatrix/output/MatrixToHTMLPrinter.js'
-]);
+import {RegistryWithDefault} from '/scripts/util/reflection/RegistryWithDefault.js';
+import {MatrixToHTMLPrinter} from '/scripts/visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
+
 
 /**
  * Registry for Matrix Printers.

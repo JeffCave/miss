@@ -12,18 +12,12 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
+export {
+	ValidityEnsuringToken
+};
 
-/*
-global loader
-global AbstractTokenDecorator
-global Token
-*/
-loader.load([
-	,'scripts/token/AbstractTokenDecorator.js'
-	,'scripts/token/Token.js'
-]);
+import {Token} from './Token.js';
 
 
 /**
@@ -31,9 +25,9 @@ loader.load([
  *
  * Decorates other tokens to override their equals() methods
  */
-class ValidityEnsuringToken extends AbstractTokenDecorator {
+export default class ValidityEnsuringToken extends Token {
 	constructor(wrappedToken) {
-		super(wrappedToken);
+		super(wrappedToken.Lexeme,wrappedToken.Type,wrappedToken.Valid);
 	}
 
 	/**

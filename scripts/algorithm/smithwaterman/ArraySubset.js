@@ -12,17 +12,13 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
-/*
-global loader
-global Coordinate
-global checkNotNull, checkArgument
-*/
-loader.load([
-	,'/scripts/algorithm/smithwaterman/Coordinate.js'
-	,'/scripts/util/misc.js'
-]);
+export{
+	ArraySubset
+};
+
+import {Coordinate} from '/scripts/util/Coordinate.js';
+import {checkNotNull,checkArgument} from '/scripts/util/misc.js';
 
 /**
  * An immutable subset of a 2-Dimensional Array.

@@ -12,54 +12,43 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
+export {
+	WhitespaceTokenizer
+};
 
-/*
-global loader
-global TokenType
-global ConcreteToken
-global TokenList
-global Tokenizer
-global checkNotNull
-*/
-loader.load([
-	,'/scripts/token/TokenType.js'
-	,'/scripts/token/ConcreteToken.js'
-	,'/scripts/token/TokenList.js'
-	,'/scripts/token/tokenizer/Tokenizer.js'
-	,'/scripts/util/misc.js'
-]);
+import {Token} from '/scripts/token/Token.js';
+import {checkNotNull} from '/scripts/util/misc.js';
 
 /**
  * Split a file into tokens based on spaces.
  */
-class WhitespaceTokenizer extends Tokenizer {
-    /**
-     * @return Singleton instance of WhitespaceTokenizer
-     */
-    static getInstance() {
-        if(!('instance' in WhitespaceTokenizer)){
-            WhitespaceTokenizer.instance = new WhitespaceTokenizer();
-        }
+class WhitespaceTokenizer{ // extends Tokenizer {
+	/**
+	 * @return Singleton instance of WhitespaceTokenizer
+	 */
+	static getInstance() {
+		if(!('instance' in WhitespaceTokenizer)){
+			WhitespaceTokenizer.instance = new WhitespaceTokenizer();
+		}
 
-        return WhitespaceTokenizer.instance;
-    }
+		return WhitespaceTokenizer.instance;
+	}
 
-    /**
-     * Split a string into whitespace-delineated tokens.
-     *
-     * @param string Input string
-     * @return List of WHITESPACE tokens representing the input submission
-     */
+	/**
+	 * Split a string into whitespace-delineated tokens.
+	 *
+	 * @param string Input string
+	 * @return List of WHITESPACE tokens representing the input submission
+	 */
 	splitString(string) {
-        checkNotNull(string);
+		checkNotNull(string);
 
 		let toReturn = string
 			.split("\\s+")
 			.filter((str) => {return str === "";})
 			.map((str) => {
-				return new ConcreteToken(str, TokenType.WHITESPACE);
+				return new Token(str, TokenType.WHITESPACE);
 			})
 			;
 

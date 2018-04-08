@@ -12,39 +12,24 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
+export {
+	CommonCodeLineRemovalPreprocessor
+};
 
-/*
-global loader
-global LineSimilarityChecker
-global Submission
-global ValidityIgnoringSubmission
-global TokenList
-global TokenType
-global Tokenizer
-global SubmissionPreprocessor
-global  ChecksimsException
-global  checkNotNull,checkArgument
-*/
-loader.load([
-	,'/scripts/algorithm/linesimilarity/LineSimilarityChecker.js'
-	,'/scripts/submission/Submission.js'
-	,'/scripts/submission/ValidityIgnoringSubmission.js'
-	,'/scripts/token/TokenList.js'
-	,'/scripts/token/TokenType.js'
-	,'/scripts/token/tokenizer/Tokenizer.js'
-	,'/scripts/algorithm/preprocessor/SubmissionPreprocessor.js'
-	,'/scripts/ChecksimsException.js'
-	,'/scripts/util/misc.js'
-]);
+import {LineSimilarityChecker} from '../algorithm/linesimilarity/LineSimilarityChecker.js';
+import {Submission} from '../submission/Submission.js';
+import {ValidityIgnoringSubmission} from '../submission/ValidityIgnoringSubmission.js';
+import {Tokenizer} from '../token/tokenizer/Tokenizer.js';
+import {SubmissionPreprocessor} from '../preprocessor/SubmissionPreprocessor.js';
+import {checkNotNull,checkArgument} from '../util/misc.js';
 
 
 //PreprocessorRegistry.addPreprocessor('CommonCodeLineRemovalPreprocessor');
 /**
  * Common Code Removal via Line Comparison.
  */
-class CommonCodeLineRemovalPreprocessor extends SubmissionPreprocessor {
+export default class CommonCodeLineRemovalPreprocessor extends SubmissionPreprocessor {
 
 	static get algorithm(){
 		if(!('_algorithm' in CommonCodeLineRemovalPreprocessor)){

@@ -14,14 +14,11 @@
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
 'use strict';
+export {
+	SimilarityDetector
+};
 
-/*
-global loader
-global NamedInstantiable
-*/
-loader.load([
-	'/scripts/util/reflection/NamedInstantiable.js',
-]);
+import {NamedInstantiable} from '/scripts/util/reflection/NamedInstantiable.js';
 
 
 /**
@@ -33,7 +30,7 @@ loader.load([
  * This is required as reflection is used to automatically detect and instantiate all similarity detection algorithms
  * present at runtime.
  */
-class SimilarityDetector extends NamedInstantiable {
+export default class SimilarityDetector extends NamedInstantiable {
 	/**
 	 * @return Default token type to be used for this similarity detector
 	 */

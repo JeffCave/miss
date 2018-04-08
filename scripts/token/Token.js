@@ -14,18 +14,12 @@
  */
 
 'use strict';
+export {
+	Token
+};
 
-/*
-global loader
-global ConcreteToken
-global LexemeMap
-global checkNotNull
-*/
-loader.load([
-	,'/scripts/util/misc.js'
-	,'/scripts/token/Token.js'
-	,'/scripts/token/LexemeMap.js'
-]);
+import {checkNotNull} from '/scripts/util/misc.js';
+import {LexemeMap} from '/scripts/token/LexemeMap.js';
 
 /**
  * Interface for Tokens.
@@ -37,7 +31,7 @@ loader.load([
  *
  * This interface enables easy use of Decorators for tokens.
  */
-class Token {
+export default class Token {
 	/**
 	 * Construct a token with given type and validity.
 	 *
@@ -69,10 +63,17 @@ class Token {
 	}
 
 	getLexeme() {
+		return this.Lexeme;
+	}
+	get Lexeme() {
 		return this.lexeme;
 	}
 
 	getType() {
+		return this.Type;
+	}
+
+	get Type() {
 		return this.type;
 	}
 

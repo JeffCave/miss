@@ -12,29 +12,21 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
+'use strict';
+export {
+	RegistryWithDefault
+};
 
-/*
-global loader
-global Registry
-global checkNotNull
-*/
-loader.load([
-	,'/scripts/util/reflection/Registry.js'
-	,'/scripts/util/misc.js'
-]);
+import {Registry} from '/scripts/util/reflection/Registry.js';
+import {checkNotNull} from '/scripts/util/misc.js';
 
 /**
  * Extension of a Registry with the ability to retrieve a default implementation.
  */
-class RegistryWithDefault extends Registry {
+export default class RegistryWithDefault extends Registry {
 	/**
-	* Create a Registry instance for implementations of a given base class in the given package and subpackages.
-	*
-	* @param initPath Package to (recursively) search for implementations
-	* @param baseClazz Base class or interface which all implementations in the registry extend or implement
-	* @param defaultImplementation Name of default implementation for this registry
-	* @param ignoredImplementations Names of implementations which will not be included in the registry
-	* @throws NoSuchImplementationException Thrown if no implementation with the name of the requested default exists
+	* Create a Registry instance for implementations of a given base
+	* class in the given package and subpackages.
 	*/
 	constructor(classList, baseClazz, ignoredImplementations, defaultImplementation){
 		super(classList, baseClazz, ignoredImplementations);
@@ -59,6 +51,4 @@ class RegistryWithDefault extends Registry {
 	getDefaultImplementation() {
 		return this.instanceOfDefault;
 	}
-
-
 }

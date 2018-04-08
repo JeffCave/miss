@@ -12,18 +12,13 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
-/*
-global loader
-global checkNotNull
-global MatrixPrinter
-*/
-loader.load([
-	,'/scripts/algorithm/similaritymatrix/output/MatrixPrinter.js'
-	,'/scripts/ChecksimsException.js'
-	,'/scripts/util/misc.js'
-]);
+export {
+	MatrixToCSVPrinter
+};
+
+import {MatrixPrinter} from '/scripts/visualizations/similaritymatrix/output/MatrixPrinter.js';
+import {checkNotNull} from '/scripts/util/misc.js';
 
 /**
  * Print a Similarity Matrix as machine-readable CSV.

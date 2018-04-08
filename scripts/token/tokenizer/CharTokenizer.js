@@ -12,30 +12,20 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
+export {
+	CharTokenizer
+};
 
-/*
-global loader
-global TokenType
-global ConcreteToken
-global TokenList
-global Tokenizer
-global checkNotNull
-*/
-loader.load([
-	,'/scripts/token/TokenType.js'
-	,'/scripts/token/ConcreteToken.js'
-	,'/scripts/token/TokenList.js'
-	,'/scripts/token/tokenizer/Tokenizer.js'
-	,'/scripts/util/misc.js'
-]);
+import {Token}     from '../Token.js';
+import {TokenList} from '../TokenList.js';
 
+import {checkNotNull} from '../../util/misc.js';
 
 /**
  * Split a file into a list of character tokens.
  */
-class CharTokenizer extends Tokenizer {
+class CharTokenizer{ // extends Tokenizer {
     /**
      * @return Singleton instance of CharTokenizer
      */
@@ -58,18 +48,18 @@ class CharTokenizer extends Tokenizer {
 
 		let tokens = string.split('')
 			.map((character) => {
-				return new ConcreteToken(character, TokenType.CHARACTER);
+				return new Token(character, TokenList.TokenType.CHARACTER);
 			});
 
 		let toReturn = new TokenList(this.getType(),tokens);
 		return toReturn;
 	}
 
-    getType() {
-        return TokenType.CHARACTER;
-    }
+	getType() {
+		return TokenList.TokenType.CHARACTER;
+	}
 
-    toString() {
-        return "Singleton instance of FileCharSplitter";
-    }
+	toString() {
+		return "Singleton instance of FileCharSplitter";
+	}
 }

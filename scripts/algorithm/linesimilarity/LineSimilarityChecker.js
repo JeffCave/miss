@@ -12,38 +12,22 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
+export {
+	LineSimilarityChecker
+};
 
-/*
-global loader
-global AlgorithmResults
-global SimilarityDetector
-global Submission
-global TokenList
-global TokenType
-global checkArgument
-global checkNotNull
-global hasher
-*/
-loader.load([
-	,'https://cdnjs.cloudflare.com/ajax/libs/jsSHA/2.3.1/sha.js'
-
-	,'/scripts/algorithm/AlgorithmResults.js'
-	,'/scripts/algorithm/SimilarityDetector.js'
-	,'/scripts/submission/Submission.js'
-	,'/scripts/token/Token.js'
-	,'/scripts/token/TokenList.js'
-	,'/scripts/token/TokenType.js'
-	,'/scripts/util/misc.js'
-
-]);
+import {AlgorithmResults} from '../../algorithm/AlgorithmResults.js';
+import {SimilarityDetector} from '../../algorithm/SimilarityDetector.js';
+import {Submission} from '../../submission/Submission.js';
+import {TokenList} from '../../token/TokenList.js';
+import {checkNotNull, checkArgument, hasher} from '../../util/misc.js';
 
 /**
  * Internal class for record-keeping - used to record a line at a
  * specific location in a submission.
  */
-class SubmissionLine {
+export default class SubmissionLine {
 	constructor(lineNum, submission) {
 		this.lineNum = lineNum;
 		this.submission = submission;
@@ -72,7 +56,7 @@ class LineSimilarityChecker extends SimilarityDetector {
 	}
 
 	getDefaultTokenType() {
-		return TokenType.LINE;
+		return TokenList.TokenType.LINE;
 	}
 
 	/**

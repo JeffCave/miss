@@ -12,20 +12,12 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
+export {
+	PairGenerator
+};
 
-/*
-global loader
-global Submission
-global ChecksimsException
-global checkNotNull, checkArgument, Pair
-*/
-loader.load([
-	,'/scripts/submission/Submission.js'
-	,'/scripts/ChecksimsException.js'
-	,'/scripts/util/misc.js'
-]);
+import {checkNotNull, checkArgument} from '/scripts/util/misc.js';
 
 /**
  * Generates unordered pairs of submissions.

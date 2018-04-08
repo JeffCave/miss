@@ -8,34 +8,22 @@
  * See LICENSE.txt included in this distribution for the specific
  * language governing permissions and limitations under the License.
  *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at LICENSE.txt.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
  * CDDL HEADER END
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
+export {
+	PreprocessorRegistry
+};
 
-/*
-global loader
-global WhitespaceDeduplicationPreprocessor
-global Registry
-*/
-loader.load([
-	,'/scripts/algorithm/preprocessor/WhitespaceDeduplicationPreprocessor.js'
-	,'/scripts/util/reflection/Registry.js'
-]);
-
+import {Registry} from '/scripts/util/reflection/Registry.js';
+import {checkNotNull} from '/scripts/util/misc.js';
 
 /**
  * Registry to obtain valid preprocessors.
  */
-class PreprocessorRegistry extends Registry {
+export default class PreprocessorRegistry extends Registry {
 	constructor() {
 		if('instance' in PreprocessorRegistry) {
 			throw new Error('Instantiation of Singleton');
@@ -47,6 +35,7 @@ class PreprocessorRegistry extends Registry {
 		].forEach(function(d){
 			PreprocessorRegistry.addPreprocessor(d);
 		});
+
 		let def = 'WhitespaceDeduplicationPreprocessor';
 		super( PreprocessorRegistry.preprocessors , "SubmissionPreprocessor", [], def);
 	}

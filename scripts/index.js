@@ -1,23 +1,10 @@
 'use strict';
 
+import {ChecksimsRunner} from '/scripts/ChecksimsRunner.js';
+import {d3ForceDirected} from '/scripts/visualizations/force.js';
+import {SimilarityMatrix} from '/scripts/visualizations/similaritymatrix/SimilarityMatrix.js';
+import {MatrixPrinterRegistry} from '/scripts/visualizations/similaritymatrix/output/MatrixPrinterRegistry.js';
 
-/*
-global JSZip
-global RegExp
-global d3
-
-global ChecksimsConfig
-global ChecksimsException
-global ChecksimsRunner
-global CommonCodeLineRemovalPreprocessor
-global MatrixPrinterRegistry
-global Submission
-global SimilarityMatrix
-global Tokenizer
-
-global checkArgument
-global checkNotNull
-*/
 
 /**
  * Parses Checksims' command-line options.
@@ -97,7 +84,7 @@ class ChecksimsCommandLine {
 		let resultsMatrix = SimilarityMatrix.generateMatrix(results);
 
 		// Output using all output printers
-		let outputMap = Promise.all(deduplicatedStrategies
+		Promise.all(deduplicatedStrategies
 			.map(function(name){
 				return MatrixPrinterRegistry.getInstance().getImplementationInstance(name);
 			}))
@@ -168,9 +155,8 @@ class ChecksimsCommandLine {
 
 
 	renderListForce(results,htmlContainers){
-		let container = htmlContainers.force.querySelector('ul.result');
-		let dimensions = window.getComputedStyle(container);
-
+		//let container = htmlContainers.force.querySelector('ul.result');
+		//let dimensions = window.getComputedStyle(container);
 		d3ForceDirected(results);
 	}
 
@@ -196,9 +182,6 @@ class ChecksimsCommandLine {
 
 		this.renderResults(results,htmlContainers);
 	}
-
-
-
 
 }
 

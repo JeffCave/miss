@@ -18,25 +18,19 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
-
 'use strict';
-/*
-global loader
-global checkNotNull
-global MatrixPrinter
-global Mustache
-*/
-loader.load([
-	,'https://cdnjs.cloudflare.com/ajax/libs/mustache.js/2.3.0/mustache.min.js'
-	,'/scripts/ChecksimsException.js'
-	,'/scripts/util/misc.js'
-	,'/scripts/algorithm/similaritymatrix/output/MatrixPrinter.js'
-]);
+export {
+	MatrixToHTMLPrinter
+};
+
+import {checkNotNull} from '/scripts/util/misc.js';
+import {MatrixPrinter} from '/scripts/visualizations/similaritymatrix/output/MatrixPrinter.js';
+
 
 /**
  * Print a Similarity Matrix to HTML.
  */
-class MatrixToHTMLPrinter extends MatrixPrinter {
+export default class MatrixToHTMLPrinter extends MatrixPrinter {
 	static get templateLocation(){
 		return "scripts/visualizations/similaritymatrix/output/htmlOutput.tmpl.html";
 	}
