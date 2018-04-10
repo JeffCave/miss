@@ -38,21 +38,21 @@ export default class ValidityIgnoringSubmission extends Submission {
 		}
 		let areNotEqual = false
 			//|| other.getTokenType() !== this.getTokenType()
-			|| other.getName() !== this.getName()
-			|| other.getNumTokens() !== this.getNumTokens()
+			|| other.Name !== this.Name
+			|| other.NumTokens !== this.NumTokens
 			|| other.getContentAsString() !== this.getContentAsString()
 			;
 		if(areNotEqual){
 			return false;
 		}
 
-		let thisList = this.getContentAsTokens()
+		let thisList = this.ContentAsTokens
 			.map(function(d){
 				let token = new ValidityIgnoringToken(d);
 				return token;
 			})
 			;
-		let otherList = other.getContentAsTokens()
+		let otherList = other.ContentAsTokens
 			.map(function(d){
 				let token = new ValidityIgnoringToken(d);
 				return token;

@@ -67,7 +67,7 @@ export default class CommonCodeLineRemovalPreprocessor extends SubmissionPreproc
 	 * @throws InternalAlgorithmError Thrown on error removing common code
 	 */
 	process(removeFrom) {
-		console.debug("Performing common code removal on submission " + removeFrom.getName());
+		console.debug("Performing common code removal on submission " + removeFrom.Name);
 
 		// Create new submissions with retokenized input
 		let computeIn = new Submission(removeFrom);
@@ -93,14 +93,14 @@ export default class CommonCodeLineRemovalPreprocessor extends SubmissionPreproc
 		let newBody = listWithCommonInvalid.join(true);
 
 		// Retokenize the new body with the original tokenization
-		let oldType = removeFrom.getTokenType();
+		let oldType = removeFrom.TokenType;
 		let oldTokenizer = Tokenizer.getTokenizer(oldType);
 		let finalListGoodTokenization = oldTokenizer.splitString(newBody);
 
 		//console.trace("Submission " + removeFrom.getName() + " contained " + percentMatched.toFixed(2) + "% common code");
-		//console.trace("Removed " + identTokens + " common tokens (of " + removeFrom.getNumTokens() + " total)");
+		//console.trace("Removed " + identTokens + " common tokens (of " + removeFrom.NumTokens + " total)");
 
-		let submission = new Submission(removeFrom.getName(), newBody, finalListGoodTokenization);
+		let submission = new Submission(removeFrom.Name, newBody, finalListGoodTokenization);
 		return submission;
 	}
 

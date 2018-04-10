@@ -63,45 +63,20 @@ export default class Submission {
 	}
 
 
-	getContentAsTokens() {
-		console.trace('Deprecation Warning');
-		return this.ContentAsTokens;
-	}
-
 	get ContentAsTokens() {
 		return this.tokenList;
-	}
-
-	getContentAsString() {
-		console.trace('Deprecation Warning');
-		return this.ContentAsString;
 	}
 
 	get ContentAsString() {
 		return this.content;
 	}
 
-	getName() {
-		console.trace('Deprecation Warning');
-		return this.Name;
-	}
-
 	get Name(){
 		return this.name;
 	}
 
-	getNumTokens() {
-		console.trace('Deprecation Warning');
-		return this.NumTokens;
-	}
-
 	get NumTokens() {
 		return this.tokenList.size();
-	}
-
-	getTokenType() {
-		console.trace('Deprecation Warning');
-		return this.TokenType;
 	}
 
 	get TokenType() {
@@ -125,10 +100,10 @@ export default class Submission {
 		}
 
 		let isEqual =
-			other.getName() === this.getName()
-			&& other.getNumTokens() === this.getNumTokens()
-			&& other.getContentAsTokens().equals(this.tokenList)
-			&& other.getContentAsString() === this.content
+			other.Name === this.Name
+			&& other.NumTokens === this.NumTokens
+			&& other.ContentAsTokens.equals(this.tokenList)
+			&& other.ContentAsString === this.content
 			;
 		return isEqual;
 	}

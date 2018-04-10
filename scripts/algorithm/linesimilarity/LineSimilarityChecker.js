@@ -74,18 +74,11 @@ class LineSimilarityChecker extends SimilarityDetector {
 		checkArgument(a instanceof Submission, "Expecting to compare Submissions (a is " + (typeof a) + ")");
 		checkArgument(b instanceof Submission, "Expecting to compare Submissions (b is " + (typeof b) + ")");
 
-		let linesA = a.getContentAsTokens();
-		let linesB = b.getContentAsTokens();
+		let linesA = a.ContentAsTokens;
+		let linesB = b.ContentAsTokens;
 		let finalA = TokenList.cloneTokenList(linesA);
 		let finalB = TokenList.cloneTokenList(linesB);
 
-		/*
-		if(a.getTokenType() !== b.getTokenType()) {
-			throw new Error("Token list type mismatch: submission " + a.getName() + " has type " +
-				linesA.type.toString() + ", while submission " + b.getName() + " has type "
-				+ linesB.type.toString());
-		}
-		else */
 		if(a.equals(b)) {
 			finalA.forEach((token) => token.setValid(false));
 			finalB.forEach((token) => token.setValid(false));

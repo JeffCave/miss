@@ -38,12 +38,12 @@ export default class AlgorithmResults {
 		checkNotNull(b);
 		checkNotNull(finalListA);
 		checkNotNull(finalListB);
-		checkArgument(a.getNumTokens() === finalListA.length,
-			"Token size mismatch when creating algorithm results for submission \"" + a.getName()
-			+ "\" --- expected " + a.getNumTokens() + ", got " + finalListA.length);
-		checkArgument(b.getNumTokens() === finalListB.length,
-			"Token size mismatch when creating algorithm results for submission \"" + b.getName()
-			+ "\" --- expected " + b.getNumTokens() + ", got " + finalListB.length);
+		checkArgument(a.NumTokens === finalListA.length,
+			"Token size mismatch when creating algorithm results for submission \"" + a.Name
+			+ "\" --- expected " + a.NumTokens + ", got " + finalListA.length);
+		checkArgument(b.NumTokens === finalListB.length,
+			"Token size mismatch when creating algorithm results for submission \"" + b.Name
+			+ "\" --- expected " + b.NumTokens + ", got " + finalListB.length);
 
 		this.a = a;
 		this.b = b;
@@ -53,18 +53,18 @@ export default class AlgorithmResults {
 		this.identicalTokensA = Array.from(this.finalListA).filter((token) => !token.isValid()).length;
 		this.identicalTokensB = Array.from(this.finalListB).filter((token) => !token.isValid()).length;
 
-		if(a.getNumTokens() === 0) {
+		if(a.NumTokens === 0) {
 			this.percentMatchedA = 0.0;
 		}
 		else {
-			this.percentMatchedA = this.identicalTokensA / a.getNumTokens();
+			this.percentMatchedA = this.identicalTokensA / a.NumTokens;
 		}
 
-		if(b.getNumTokens() === 0) {
+		if(b.NumTokens === 0) {
 			this.percentMatchedB = 0.0;
 		}
 		else {
-			this.percentMatchedB = this.identicalTokensB / b.getNumTokens();
+			this.percentMatchedB = this.identicalTokensB / b.NumTokens;
 		}
 	}
 

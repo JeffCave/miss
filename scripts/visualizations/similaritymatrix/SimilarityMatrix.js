@@ -178,8 +178,8 @@ class SimilarityMatrix {
 
 		// Order the submissions
 		let orderedSubmissions = inputSubmissions.sort(function(a,b){
-				if(a.getName() === b.getName()) return 0;
-				if(a.getName() < b.getName()) return -1;
+				if(a.Name === b.Name) return 0;
+				if(a.Name < b.Name) return -1;
 				return 1;
 			});
 
@@ -187,7 +187,7 @@ class SimilarityMatrix {
 
 		// Start with the diagonal, filling with 100% similarity
 		orderedSubmissions.forEach(function(s,i){
-			matrix[i][i] = new MatrixEntry(s, s, s.getNumTokens());
+			matrix[i][i] = new MatrixEntry(s, s, s.NumTokens);
 		});
 
 		// Now go through all the results, and build appropriate two MatrixEntry objects for each
@@ -265,7 +265,7 @@ class SimilarityMatrix {
 			let xIndex = xSubmissions.indexOf(xSub);
 			let yIndex = ySubmissions.indexOf(xSub);
 
-			matrix[xIndex][yIndex] = new MatrixEntry(xSub, xSub, xSub.getNumTokens());
+			matrix[xIndex][yIndex] = new MatrixEntry(xSub, xSub, xSub.NumTokens);
 		});
 
         // Now iterate through all given algorithm results

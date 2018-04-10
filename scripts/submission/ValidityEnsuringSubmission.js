@@ -42,17 +42,17 @@ export default class ValidityEnsuringSubmission extends Submission {
 		let areEqual =
 			other.getTokenType() !== this.getTokenType()
 			|| other.getName() !== this.getName()
-			|| other.getNumTokens() !== this.getNumTokens()
+			|| other.NumTokens !== this.NumTokens
 			|| other.getContentAsString() !== this.getContentAsString()
 			;
 		if(areEqual){
 			return false;
 		}
 
-		let thisList = this.getContentAsTokens().map((d)=> new ValidityEnsuringToken(d));
+		let thisList = this.ContentAsTokens.map((d)=> new ValidityEnsuringToken(d));
 		thisList = new TokenList(this.getTokenType(),thisList);
 
-		let otherList = other.getContentAsTokens().map((d)=> new ValidityEnsuringToken(d));
+		let otherList = other.ContentAsTokens.map((d)=> new ValidityEnsuringToken(d));
 		otherList = new TokenList(this.getTokenType(),otherList);
 
 		return thisList.equals(otherList);

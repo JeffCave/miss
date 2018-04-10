@@ -34,13 +34,13 @@ export default class MatrixEntry {
 		checkNotNull(base);
 		checkNotNull(comparedTo);
 		checkArgument(similarTokens >= 0, "There cannot be a negative number of similar tokens");
-		checkArgument(similarTokens <= base.getNumTokens(), "Attempted to created MatrixEntry with " + similarTokens
-				+ " similar tokens --- only " + base.getNumTokens() + " tokens in base!");
+		checkArgument(similarTokens <= base.NumTokens, "Attempted to created MatrixEntry with " + similarTokens
+				+ " similar tokens --- only " + base.NumTokens + " tokens in base!");
 
 		this.base = base;
 		this.comparedTo = comparedTo;
 		this.similarTokens = +similarTokens;
-		this.totalTokens = +base.getNumTokens();
+		this.totalTokens = +base.NumTokens;
 		this.similarityPercent = 0.0;
 
 		if(this.totalTokens > 0) {

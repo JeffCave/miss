@@ -44,12 +44,12 @@ export default class LowercasePreprocessor extends SubmissionPreprocessor {
 	process(submission) {
 		checkNotNull(submission);
 
-		let tokenizer = Tokenizer.getTokenizer(submission.getTokenType());
+		let tokenizer = Tokenizer.getTokenizer(submission.TokenType);
 		// Lowercase the content of the submission, then retokenize
-		let contentLower = submission.getContentAsString().toLowerCase();
+		let contentLower = submission.ContentAsString.toLowerCase();
 		let tokenizedLower = tokenizer.splitString(contentLower);
 
-		return new Submission(submission.getName(), contentLower, tokenizedLower);
+		return new Submission(submission.Name, contentLower, tokenizedLower);
 	}
 
 	toString() {

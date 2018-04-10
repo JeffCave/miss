@@ -68,25 +68,25 @@ export default class SmithWaterman extends SimilarityDetector {
 		checkNotNull(b);
 
 		// Test for token type mismatch
-		if(!a.getTokenType() === b.getTokenType()) {
-			throw new Error("Token list type mismatch: submission " + a.getName() + " has type " +
-				a.getTokenType().toString() + ", while submission " + b.getName() + " has type "
-				+ b.getTokenType().toString());
+		if(!a.TokenType === b.TokenType) {
+			throw new Error("Token list type mismatch: submission " + a.Name + " has type " +
+				a.TokenType + ", while submission " + b.Name + " has type "
+				+ b.TokenType);
 		}
 
 		// Handle a 0-token submission (no similarity)
-		if(a.getNumTokens() === 0 || b.getNumTokens() === 0) {
-			return new AlgorithmResults(a, b, a.getContentAsTokens(), b.getContentAsTokens());
+		if(a.NumTokens === 0 || b.NumTokens === 0) {
+			return new AlgorithmResults(a, b, a.ContentAsTokens, b.ContentAsTokens);
 		}
 		else if(a.equals(b)) {
 			// Handle identical submissions
-			let aInval = TokenList.cloneTokenList(a.getContentAsTokens());
+			let aInval = TokenList.cloneTokenList(a.ContentAsTokens);
 			aInval.forEach((token) => token.setValid(false));
 			return new AlgorithmResults(a, b, aInval, aInval);
 		}
 
 		// Alright, easy cases taken care of. Generate an instance to perform the actual algorithm
-		let algorithm = new SmithWatermanAlgorithm(a.getContentAsTokens(), b.getContentAsTokens());
+		let algorithm = new SmithWatermanAlgorithm(a.ContentAsTokens, b.ContentAsTokens);
 
 		let endLists = algorithm.computeSmithWatermanAlignmentExhaustive();
 

@@ -48,15 +48,15 @@ class WhitespaceDeduplicationPreprocessor extends SubmissionPreprocessor {
 		checkNotNull(submission);
 		checkArgument(submission instanceof Submission, "'submission' expected to be of type 'Submission'");
 
-		let tabsAndSpacesDedup = submission.getContentAsString().replace(/[ \t]+/g, " ");
+		let tabsAndSpacesDedup = submission.ContentAsString.replace(/[ \t]+/g, " ");
 		let unixNewlineDedup = tabsAndSpacesDedup.replace(/\n+/g, "\n");
 		let windowsNewlineDedup = unixNewlineDedup.replace(/(\r\n)+/g, "\n");
 
-		let tokenizer = Tokenizer.getTokenizer(submission.getTokenType());
+		let tokenizer = Tokenizer.getTokenizer(submission.TokenType);
 
 		let finalList = tokenizer.splitString(windowsNewlineDedup);
 
-		return new Submission(submission.getName(), windowsNewlineDedup, finalList);
+		return new Submission(submission.Name, windowsNewlineDedup, finalList);
 	}
 
 	/**
