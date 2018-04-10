@@ -48,7 +48,7 @@ class CharTokenizer{ // extends Tokenizer {
 
 		let tokens = string.split('')
 			.map((character) => {
-				return new Token(character, TokenList.TokenType.CHARACTER);
+				return new Token(character, TokenList.TokenTypes.CHARACTER);
 			});
 
 		let toReturn = new TokenList(this.getType(),tokens);
@@ -56,7 +56,7 @@ class CharTokenizer{ // extends Tokenizer {
 	}
 
 	getType() {
-		return TokenList.TokenType.CHARACTER;
+		return TokenList.TokenTypes.CHARACTER;
 	}
 
 	toString() {

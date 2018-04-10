@@ -1,26 +1,12 @@
-/*
- * CDDL HEADER START
- *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * See LICENSE.txt included in this distribution for the specific
- * language governing permissions and limitations under the License.
- *
- * CDDL HEADER END
- *
- * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
- */
-
 'use strict';
 export{
 	Submission
 };
 
 import {LineTokenizer} from '../token/tokenizer/LineTokenizer.js';
-import {TokenList}     from '../token/TokenList.js';
+import {TokenList} from '../token/TokenList.js';
 import {checkNotNull, checkArgument, hashCode} from '../util/misc.js';
+
 
 /**
  * Interface for Submissions.
@@ -31,7 +17,7 @@ import {checkNotNull, checkArgument, hashCode} from '../util/misc.js';
  *
  * Also contains factory methods for submissions
  */
-class Submission {
+export default class Submission {
 
 	/**
 	 * Construct a new Concrete Submission with given name and contents.
@@ -43,12 +29,8 @@ class Submission {
 	 * ConcreteSubmission with Token contents not equal to tokenized
 	 * String contents. This is not recommended and will most likely
 	 * break, at the very least, Preprocessors.
-	 *
-	 * @param name Name of new submission
-	 * @param content Content of submission, as string
-	 * @param tokens Content of submission, as token
 	 */
-	constructor(name, content, tokens) {
+	constructor(name, content, tokens = null) {
 		if(name instanceof Submission){
 			tokens = name.tokenList;
 			content = name.content;
@@ -60,165 +42,47 @@ class Submission {
 			checkArgument(name !== '', "Submission name cannot be empty");
 			checkNotNull(content);
 			checkArgument(typeof content === 'string' ,'content expected to be string');
-			checkNotNull(tokens);
-			checkArgument(tokens instanceof Array,'tokens expected to be an array');
+			if(tokens !== null){
+				checkArgument(Array.isArray(tokens),'tokens expected to be an array');
+			}
 		}
 
-		if(!(tokens instanceof TokenList)){
-			tokens = new TokenList(TokenList.TokenType.CHARACTER,tokens);
+		// Split the content
+		if(tokens === null){
+			let tokenizer = LineTokenizer.getInstance();
+			tokens = tokenizer.splitString(content);
+			if(tokens.length > 7500) {
+				console.warn("Warning: Submission " + name + " has very large token count (" + tokens.length + ")");
+			}
 		}
+
 
 		this.name = name;
 		this.content = content;
-		this.tokenList = TokenList.immutableCopy(tokens);
+		this.tokenList = tokens;
 	}
-
-
-	/**
-	 * Build the collection of submissions Checksims will be run on.
-	 *
-	 * TODO add unit tests
-	 *
-	 * @param submissionDirs Directories to build submissions from
-	 * @param glob Glob matcher to use when building submissions
-	 * @param tokenizer Tokenizer to use when building submissions
-	 * @param recursive Whether to recursively traverse when building submissions
-	 * @return Collection of submissions which will be used to run Checksims
-	 */
-	static submissionsFromZip(submissionDirs, glob){
-		if(submissionDirs === null){
-			return async function(){return Submission.NullSubmission;};
-		}
-		checkNotNull(submissionDirs);
-		checkArgument(Object.keys(submissionDirs.files).length > 0, "Must provide at least one submission directory!");
-		checkNotNull(glob);
-
-		// Divide entries by student
-		let studentSubs = {};
-		submissionDirs.forEach(function(name,entry){
-			let key = name.split('/');
-			key.shift();
-			let student = key.shift();
-			if(!entry.dir){
-				if(!(student in studentSubs)){
-					studentSubs[student] = [];
-				}
-				studentSubs[student].push(entry);
-			}
-		});
-
-		// Generate submissions to work on
-		let submissions = Object.entries(studentSubs).map(function(entry){
-			let student = entry[0];
-			let files = entry[1].filter(function(f){
-					let result = glob.test(f.name);
-					return result;
-				});
-			console.debug("Adding student: " + student);
-			let submission = Submission.submissionFromFiles(student, files);
-			return submission;
-		});
-
-		submissions = Promise.all(submissions)
-			.then(function(submissions){
-				submissions = submissions.filter(function(s){
-					return s;
-				});
-				return submissions;
-			});
-
-		return submissions;
-	}
-
-
-	/**
-	 * Turn a list of files and a name into a Submission.
-	 *
-	 * The contents of a submission are built deterministically by
-	 * reading in files in alphabetical order and appending
-	 * their contents.
-	 *
-	 * @param name Name of the new submission
-	 * @param files List of files to include in submission
-	 * @param splitter Tokenizer for files in the submission
-	 * @return A new submission formed from the contents of all given files, appended and tokenized
-	 * @throws IOException Thrown on error reading from file
-	 * @throws NoMatchingFilesException Thrown if no files are given
-	 */
-	static async submissionFromFiles(name, files){
-		checkNotNull(name);
-		checkArgument(name.length, "Submission name cannot be empty");
-		checkNotNull(files);
-		checkArgument(Array.isArray(files), "Submission files must be an array");
-
-		let splitter = LineTokenizer.getInstance();
-
-		if(files.length === 0) {
-			throw new Error("No matching files found, cannot create submission named '" + name + "'");
-		}
-
-		// To ensure submission generation is deterministic, sort files by name, and read them in that order
-		let orderedFiles = files.sort(function(file1, file2){
-			return file1.name.localeCompare(file2.name);
-		});
-
-		let tokenList = new TokenList(splitter.getType());
-
-		// Could do this with a .stream().forEach(...) but we'd have to handle the IOException inside
-		let fileContent = await Promise.all(orderedFiles
-			.map(function(f) {
-					return f.async("string")
-						.then(function (data) {
-							let content = data;
-							if(!content.endsWith("\n") && content != '') {
-								content += "\n";
-							}
-							return content;
-						});
-			}));
-
-		let contentString = fileContent.join('\n');
-
-		// Split the content
-		let tokens = splitter.splitString(contentString);
-		tokenList = tokenList.concat(tokens);
-
-		if(tokenList.length > 7500) {
-			console.warn("Warning: Submission " + name + " has very large token count (" + tokenList.size() + ")");
-		}
-
-		let submission = new Submission(name, contentString, tokenList);
-		return submission;
-	}
-
-
-	/**
-	 * A 'null' submission.
-	 *
-	 * This is an empty submission that can be used as a placeholder in
-	 * various processes where submissions are expected but no
-	 * Submissions are supplied. For example, common code will be
-	 * removed from comparison. Rather than checking for Null
-	 * everywhere, its just easier to have a "nothing to remove" thing.
-	 */
-	static get NullSubmission(){
-		if(!('_NullSubmission' in Submission)){
-			Submission._NullSubmission = new Submission(' ','',new TokenList(TokenList.TokenType.LINE));
-		}
-		return Submission._NullSubmission;
-	}
-
 
 
 	getContentAsTokens() {
+		console.trace('Deprecation Warning');
+		return this.ContentAsTokens;
+	}
+
+	get ContentAsTokens() {
 		return this.tokenList;
 	}
 
 	getContentAsString() {
+		console.trace('Deprecation Warning');
+		return this.ContentAsString;
+	}
+
+	get ContentAsString() {
 		return this.content;
 	}
 
 	getName() {
+		console.trace('Deprecation Warning');
 		return this.Name;
 	}
 
@@ -227,10 +91,20 @@ class Submission {
 	}
 
 	getNumTokens() {
+		console.trace('Deprecation Warning');
+		return this.NumTokens;
+	}
+
+	get NumTokens() {
 		return this.tokenList.size();
 	}
 
 	getTokenType() {
+		console.trace('Deprecation Warning');
+		return this.TokenType;
+	}
+
+	get TokenType() {
 		return this.tokenList.type;
 	}
 
@@ -244,11 +118,6 @@ class Submission {
 		return JSON.stringify(json);
 	}
 
-	static fromString(json){
-		json = JSON.parse(json);
-		let sub = new Submission(json.name, json.content, new TokenList(json.content));
-		return sub;
-	}
 
 	equals(other) {
 		if(!(other instanceof Submission)) {
@@ -264,10 +133,149 @@ class Submission {
 		return isEqual;
 	}
 
+
 	hashCode() {
 		if(!('pHash' in this)){
 			this.pHash = hashCode(this.name + this.content);
 		}
 		return this.pHash;
 	}
+
+
+	/**
+	 * Parses Submission from string
+	 */
+	static fromString(json){
+		json = JSON.parse(json);
+		let sub = new Submission(json.name, json.content, new TokenList(json.content));
+		return sub;
+	}
+
+
+	/**
+	 * A 'null' submission.
+	 *
+	 * This is an empty submission that can be used as a placeholder in
+	 * various processes where submissions are expected but no
+	 * Submissions are supplied. For example, common code will be
+	 * removed from comparison. Rather than checking for Null
+	 * everywhere, its just easier to have a "nothing to remove" thing.
+	 */
+	static get NullSubmission(){
+		if(!('_NullSubmission' in Submission)){
+			Submission._NullSubmission = new Submission(' ','',new TokenList(TokenList.TokenTypes.LINE));
+		}
+		return Submission._NullSubmission;
+	}
+
+
+	/**
+	 * Build the collection of submissions Checksims will be run on.
+	 */
+	static submissionsFromZip(submissionDirs, glob){
+		if(submissionDirs === null){
+			return async function(){return Submission.NullSubmission;};
+		}
+		checkNotNull(submissionDirs);
+		checkArgument(Object.keys(submissionDirs.files).length > 0, "Must provide at least one submission directory!");
+		checkNotNull(glob);
+
+		let files = {};
+		submissionDirs.forEach(function(name,entry){
+			if(!entry.dir){
+				let key = name;
+				files[key] = entry
+					.async("string")
+					.then(function (data) {
+						let content = data;
+						if(!content.endsWith("\n") && content !== '') {
+							content += "\n";
+						}
+						return content;
+					})
+					;
+			}
+		});
+
+		let submissions = Submission.submissionsFromFiles(files,glob);
+		return submissions;
+	}
+
+	static async submissionsFromFiles(files,glob){
+		if(files === null){
+			return async function(){return Submission.NullSubmission;};
+		}
+		checkNotNull(files);
+		checkArgument(Object.keys(files).length > 0, "Must provide at least one submission directory!");
+		checkNotNull(glob);
+
+		// Divide entries by student
+		let studentSubs = Object.entries(files).reduce(function(agg,entries){
+			let entry = entries[1];
+			let key = entries[0].split('/');
+			key.shift();
+			let student = key.shift();
+			if(glob.test(entries[0])){
+				if(!(student in agg)){
+					agg[student] = {};
+				}
+				let file = entry;
+				agg[student][key] = file;
+			}
+			return agg;
+		},{});
+
+		// Generate submissions to work on
+		let submissions = Object.entries(studentSubs).map(function(entry){
+			let student = entry[0];
+			let files = entry[1];
+			console.debug("Adding student: " + student);
+			let submission = Submission.submissionFromFiles(student, files);
+			return submission;
+		});
+
+		submissions = Promise.all(submissions)
+			.then(function(submissions){
+				submissions = submissions.filter(function(s){
+					return s;
+				});
+				return submissions;
+			});
+
+		return submissions;
+
+	}
+
+
+	/**
+	 * Turn a list of files and a name into a Submission.
+	 *
+	 * The contents of a submission are built deterministically by
+	 * reading in files in alphabetical order and appending
+	 * their contents.
+	 */
+	static async submissionFromFiles(name, files){
+		checkNotNull(name);
+		checkArgument(name.length, "Submission name cannot be empty");
+		checkNotNull(files);
+
+		// To ensure submission generation is deterministic, sort files by name, and read them in that order
+		let orderedFiles = Object.keys(files)
+			.sort(function(file1, file2){
+				return file1.localeCompare(file2);
+			})
+			.map(function(name){
+				return files[name];
+			})
+			;
+
+		// gather up all the content
+		let fileContent = await Promise.all(orderedFiles);
+		let contentString = fileContent.join('\n');
+
+		let submission = new Submission(name, contentString);
+		return submission;
+	}
+
+
 }

@@ -59,7 +59,7 @@ class LineTokenizer extends Tokenizer {
 				return str !== '';
 			})
 			.map((str) => {
-				return new Token(str, TokenList.TokenType.LINE);
+				return new Token(str, TokenList.TokenTypes.LINE);
 			})
 			;
 		let toReturn = new TokenList(this.getType(),tokens);
@@ -67,7 +67,7 @@ class LineTokenizer extends Tokenizer {
 	}
 
 	getType() {
-		return TokenList.TokenType.LINE;
+		return TokenList.TokenTypes.LINE;
 	}
 
 	toString() {

@@ -33,7 +33,7 @@ export default class TokenList extends Array{
 
 		checkNotNull(type);
 
-		let isType = Object.values(TokenList.TokenType).some(function(t){
+		let isType = Object.values(TokenList.TokenTypes).some(function(t){
 			return type === t;
 		});
 		checkArgument(isType,"Expected type to be of TokenType. Received " + type);
@@ -48,7 +48,7 @@ export default class TokenList extends Array{
 		this.type = type;
 	}
 
-	static get TokenType(){
+	static get TokenTypes(){
 		return {
 			CHARACTER: "character",
 			WHITESPACE: "whitespace",
@@ -75,9 +75,9 @@ export default class TokenList extends Array{
 
 		if(sepChar === null || sepChar === false){
 			switch(this.type) {
-				case TokenList.TokenType.CHARACTER: sepChar = ""; break;
-				case TokenList.TokenType.WHITESPACE: sepChar = " "; break;
-				case TokenList.TokenType.LINE: sepChar = "\n"; break;
+				case TokenList.TokenTypes.CHARACTER: sepChar = ""; break;
+				case TokenList.TokenTypes.WHITESPACE: sepChar = " "; break;
+				case TokenList.TokenTypes.LINE: sepChar = "\n"; break;
 				default: sepChar = ""; break;
 			}
 		}

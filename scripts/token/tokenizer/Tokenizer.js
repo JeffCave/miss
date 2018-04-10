@@ -51,11 +51,11 @@ class Tokenizer {
 	 */
 	static getTokenizer(type) {
 		switch(type) {
-			case TokenList.TokenType.CHARACTER:
+			case TokenList.TokenTypes.CHARACTER:
 				return CharTokenizer.getInstance();
-			case TokenList.TokenType.LINE:
+			case TokenList.TokenTypes.LINE:
 				return LineTokenizer.getInstance();
-			case TokenList.TokenType.WHITESPACE:
+			case TokenList.TokenTypes.WHITESPACE:
 				return WhitespaceTokenizer.getInstance();
 			default:
 				// TODO handle more gracefully
