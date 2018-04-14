@@ -219,6 +219,7 @@ class ChecksimsRunner {
 		let results = AlgorithmRunner.runAlgorithm(allPairs, algo);
 
 
+		console.log("Beginning similarity detection...");
 		let startTime = Date.now();
 		results = await Promise.all(results);
 		let endTime = Date.now();

@@ -34,7 +34,7 @@ export default async function MatrixEntry(base, comparedTo, similarTokens) {
 		checkNotNull(comparedTo);
 		checkArgument(similarTokens >= 0, "There cannot be a negative number of similar tokens");
 
-		let baseTokens = await base.ContentAsTokens();
+		let baseTokens = await base.ContentAsTokens;
 		// DEBUG: put this back
 		//checkArgument(similarTokens <= baseTokens.length, "Attempted to created MatrixEntry with " + similarTokens + " similar tokens --- only " + baseTokens.length + " tokens in base!");
 

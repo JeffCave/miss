@@ -188,7 +188,7 @@ class SimilarityMatrix {
 		// Start with the diagonal, filling with 100% similarity
 		for(let i = 0; i<orderedSubmissions.length; i++){
 			let s = orderedSubmissions[i];
-			let tokens = await s.ContentAsTokens();
+			let tokens = await s.ContentAsTokens;
 			matrix[i][i] = await MatrixEntry(s, s, tokens.length);
 		}
 

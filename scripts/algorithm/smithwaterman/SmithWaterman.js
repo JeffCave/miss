@@ -58,8 +58,8 @@ export default class SmithWaterman extends SimilarityDetector {
 		checkNotNull(a);
 		checkNotNull(b);
 
-		let aTokens = await a.ContentAsTokens();
-		let bTokens = await b.ContentAsTokens();
+		let aTokens = await a.ContentAsTokens;
+		let bTokens = await b.ContentAsTokens;
 
 		// Test for token type mismatch
 		if(aTokens.type !== bTokens.type) {
@@ -68,8 +68,8 @@ export default class SmithWaterman extends SimilarityDetector {
 				+ bTokens.type);
 		}
 
-		let aText = await a.ContentAsString();
-		let bText = await b.ContentAsString();
+		let aText = await a.ContentAsString;
+		let bText = await b.ContentAsString;
 		console.debug(aText);
 		console.debug(bText);
 

@@ -55,8 +55,8 @@ class LineSimilarityChecker extends SimilarityDetector {
 		checkArgument(a instanceof Submission, "Expecting to compare Submissions (a is " + (typeof a) + ")");
 		checkArgument(b instanceof Submission, "Expecting to compare Submissions (b is " + (typeof b) + ")");
 
-		let linesA = await a.ContentAsTokens();
-		let linesB = await b.ContentAsTokens();
+		let linesA = await a.ContentAsTokens;
+		let linesB = await b.ContentAsTokens;
 		let finalA = await TokenList.cloneTokenList(linesA);
 		let finalB = await TokenList.cloneTokenList(linesB);
 

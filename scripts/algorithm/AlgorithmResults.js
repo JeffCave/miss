@@ -64,7 +64,7 @@ export default async function AlgorithmResults(a, b, finalListA, finalListB) {
 		tokens = tokens.length;
 		d.identicalTokens = tokens;
 
-		let subTokens = await a.ContentAsTokens();
+		let subTokens = await a.ContentAsTokens;
 		if(subTokens.length === 0){
 			return 0;
 		}

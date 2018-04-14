@@ -88,20 +88,21 @@ export default class Submission {
 		});
 		content.content = Promise.all(allContent);
 
-		this.content = async function(){
+		let that = this;
+		this.content = (async function(){
 			let fileContent = await content.content;
 			let contentString = fileContent.join('\n');
 			return contentString;
-		};
-		this.tokenList = async function(){
+		})();
+		this.tokenList = (async function(){
 			let tokenizer = LineTokenizer.getInstance();
-			let contentString = await this.content();
+			let contentString = await that.content;
 			tokens = tokenizer.splitString(contentString);
 			if(tokens.length > 7500) {
 				console.warn("Warning: Submission " + name + " has very large token count (" + tokens.length + ")");
 			}
 			return tokens;
-		};
+		})();
 		this.name = name;
 	}
 
@@ -146,14 +147,14 @@ export default class Submission {
 			return false;
 		}
 
-		let aContent = await this.ContentAsString();
-		let bContent = await that.ContentAsString();
+		let aContent = await this.ContentAsString;
+		let bContent = await that.ContentAsString;
 		if(aContent !== bContent){
 			return false;
 		}
 
-		let aTokens = await this.ContentAsTokens();
-		let bTokens = await that.ContentAsTokens();
+		let aTokens = await this.ContentAsTokens;
+		let bTokens = await that.ContentAsTokens;
 		if(!aTokens.equals(bTokens)){
 			return false;
 		}
@@ -249,12 +250,12 @@ export default class Submission {
 		checkNotNull(glob);
 
 		// Divide entries by student
-		console.log(glob);
+		//console.debug(glob);
 		let studentSubs = Object.entries(files).reduce(function(agg,entries){
 			let key = entries[0];
 			let entry = entries[1];
 			let isMatch = glob.test(key);
-			console.log(isMatch + ':' + key);
+			//console.log(isMatch + ':' + key);
 			if(isMatch){
 				key = key.split('/');
 				key.shift();
@@ -272,7 +273,7 @@ export default class Submission {
 		let submissions = Object.entries(studentSubs).map(function(entry){
 			let student = entry[0];
 			let files = entry[1];
-			console.debug("Adding student: " + student);
+			//console.debug("Adding student: " + student);
 			let submission = Submission.submissionFromFiles(student, files);
 			return submission;
 		});

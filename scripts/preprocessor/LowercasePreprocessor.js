@@ -51,7 +51,7 @@ export default class LowercasePreprocessor extends SubmissionPreprocessor {
 		// Recreate the string body of the submission from this new list
 		let newBody = {
 			'lowerCased.txt': (async function(){
-				let contentLower = await submission.ContentAsString();
+				let contentLower = await submission.ContentAsString;
 				contentLower = contentLower.toLowerCase();
 				return contentLower
 			})()

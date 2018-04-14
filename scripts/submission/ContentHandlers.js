@@ -7,14 +7,19 @@ export const ContentHandlers = {
 	ignores:['png','gif','jar','exe'],
 	handlers:[
 		{
-			'type' : 'js',
-			'mime' : 'text/javascript',
-			'ext' : ['js'],
+			'type' : 'c',
+			'ext' : ['c','h','cpp','hpp'],
 			'tokenizer' : TokenList.TokenTypes.WHITESPACE
 		},
 		{
-			'type' : 'c',
-			'ext' : ['c','h','cpp','hpp'],
+			'type' : 'dna',
+			'ext' : ['fasta','dna'],
+			'tokenizer' : TokenList.TokenTypes.CHARACTER
+		},
+		{
+			'type' : 'js',
+			'mime' : 'text/javascript',
+			'ext' : ['js'],
 			'tokenizer' : TokenList.TokenTypes.WHITESPACE
 		},
 		{

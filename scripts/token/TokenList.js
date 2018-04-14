@@ -195,7 +195,7 @@ export default class TokenList extends Array{
 	}
 
 	size(){
-		console.debug('DEPRECATED: use "lenght" instead');
+		console.warn('DEPRECATED: use "length" instead');
 		return this.length;
 	}
 }

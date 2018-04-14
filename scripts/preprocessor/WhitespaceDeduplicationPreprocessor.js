@@ -53,7 +53,7 @@ class WhitespaceDeduplicationPreprocessor extends SubmissionPreprocessor {
 
 		let newBody = {
 			'whitespaceDeduplicated.txt': (async function(){
-				let content = await submission.ContentAsString();
+				let content = await submission.ContentAsString;
 				content = content.replace(/[ \t]+/g, " ");
 				content = content.replace(/(\r\n)+/g, "\n");
 				content = content.replace(/\n+/g, "\n");

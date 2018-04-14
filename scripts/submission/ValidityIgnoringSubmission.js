@@ -41,25 +41,25 @@ export default class ValidityIgnoringSubmission extends Submission {
 			return false;
 		}
 
-		let aContent = await this.ContentAsString();
-		let bContent = await that.ContentAsString();
+		let aContent = await this.ContentAsString;
+		let bContent = await that.ContentAsString;
 		if(aContent !== bContent){
 			return false;
 		}
 
-		let aTokens = await this.ContentAsTokens();
-		let bTokens = await that.ContentAsTokens();
+		let aTokens = await this.ContentAsTokens;
+		let bTokens = await that.ContentAsTokens;
 		if(!aTokens.equals(bTokens)){
 			return false;
 		}
 
-		let thisList = Array.from(await this.ContentAsTokens())
+		let thisList = Array.from(await this.ContentAsTokens)
 			.map(function(d){
 				let token = new ValidityIgnoringToken(d);
 				return token;
 			})
 			;
-		let thatList = Array.from(await that.ContentAsTokens())
+		let thatList = Array.from(await that.ContentAsTokens)
 			.map(function(d){
 				let token = new ValidityIgnoringToken(d);
 				return token;
