@@ -6,7 +6,7 @@ export{
 import {LineTokenizer} from '../token/tokenizer/LineTokenizer.js';
 import {TokenList} from '../token/TokenList.js';
 import {ContentHandlers} from '../submission/ContentHandlers.js';
-import {checkNotNull, checkArgument, hashCode} from '../util/misc.js';
+import {checkNotNull, checkArgument, hasher} from '../util/misc.js';
 
 
 /**
@@ -103,6 +103,12 @@ export default class Submission {
 			}
 			return tokens;
 		})();
+		this.hash= (async function(){
+			let content = await that.content;
+			let name = that.name;
+			let hash = hasher(name + content);
+			return hash;
+		})();
 		this.name = name;
 	}
 
@@ -160,14 +166,6 @@ export default class Submission {
 		}
 
 		return true;
-	}
-
-
-	async hashCode() {
-		if(!('pHash' in this)){
-			this.pHash = hashCode(this.name + await this.content);
-		}
-		return this.pHash;
 	}
 
 

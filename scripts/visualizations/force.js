@@ -3,7 +3,11 @@ global d3
 */
 
 export function d3ForceDirected(results){
-
+	const radius = 5;
+	const distance = 100;
+	//const lineColour = 'black';
+	//const lineColour = 'steelblue';
+	const lineColour = 'darkgray';
 
 	let graph = {
 		nodes: results.submissions,
@@ -11,7 +15,7 @@ export function d3ForceDirected(results){
 			let rtn = {
 				source:d.A.submission,
 				target:d.B.submission,
-				value:Math.max(d.A.percentMatched,d.B.percentMatched,0)
+				value:d.percentMatched,
 			};
 			return rtn;
 		}),
@@ -24,12 +28,19 @@ export function d3ForceDirected(results){
 	let color = d3.scaleOrdinal(d3.schemeCategory20);
 
 	let simulation = d3.forceSimulation()
-		.force("link", d3.forceLink().id(function(d) { return d.name; }).distance(function(d) { return 1-d.value; }).strength(function(d){
-			let rtn = d.value;
-			return rtn;
-		}))
+		.force("link", d3.forceLink()
+			.id(function(d) { return d.name; })
+			.distance(function(d) {
+				return (1-d.value)*distance;
+			})
+			.strength(function(d){
+					let rtn = d.value;
+					return rtn;
+				})
+		)
 		.force("charge", d3.forceManyBody())
 		.force("center", d3.forceCenter(width / 2, height / 2))
+		.force("collision", d3.forceCollide(radius))
 		;
 
 	let link = svg.append("g")
@@ -37,8 +48,10 @@ export function d3ForceDirected(results){
 		.selectAll("line")
 		.data(graph.links)
 		.enter().append("line")
-			.attr("stroke-width", "1px")
-			.attr("stroke", "black")
+			.attr("stroke-width", function(d){
+				return Math.floor((d.value * radius) + 1) + 'px';
+			})
+			.attr("stroke", lineColour)
 			.attr("opacity", function(d) {
 				return d.value;
 			})
@@ -49,7 +62,7 @@ export function d3ForceDirected(results){
 		.selectAll("circle")
 		.data(graph.nodes)
 		.enter().append("circle")
-			.attr("r", 5)
+			.attr("r", radius)
 			.attr("fill", function(d) { return color(d.group); })
 		.call(d3.drag()
 			.on("start", dragstarted)

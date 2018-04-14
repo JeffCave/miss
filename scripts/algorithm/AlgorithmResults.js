@@ -56,6 +56,8 @@ export default async function AlgorithmResults(a, b, finalListA, finalListB) {
 			let comp = a.submission.Name.localeCompare(b.submission.Name);
 			return comp;
 		});
+
+	results.percentMatched=0;
 	for(let r = 0; r<results.length; r++){
 		let d = results[r];
 		d.finalList = await TokenList.cloneTokenList(d.finalList);
@@ -70,9 +72,13 @@ export default async function AlgorithmResults(a, b, finalListA, finalListB) {
 		}
 		let pct = d.identicalTokens / subTokens.length;
 		d.percentMatched = pct;
+
+		results[String.fromCharCode(r+65)] = d;
+		results.percentMatched += d.percentMatched;
 	}
-	results.A = results[0];
-	results.B = results[1];
-	results.hashCode = hasher(a.hashCode() + b.hashCode());
+	results.percentMatched /= results.length;
+
+	results.hash = hasher(await a.hash + await b.hash);
+
 	return results;
 }
