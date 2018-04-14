@@ -27,7 +27,7 @@ import Token from '../token/Token.js';
  */
 export default class ValidityIgnoringToken extends Token {
 	constructor(wrappedToken) {
-		super(wrappedToken);
+		super(wrappedToken.Lexeme,wrappedToken.Type,wrappedToken.valid);
 	}
 
 	/**
@@ -44,10 +44,6 @@ export default class ValidityIgnoringToken extends Token {
 		if(!(other instanceof 'Token')) {
 			return false;
 		}
-		return other.getType().equals(this.getType()) && other.getLexeme() == this.getLexeme();
-	}
-
-	hashCode() {
-		return super.hashCode();
+		return other.getType() === this.getType() && other.getLexeme() === this.getLexeme();
 	}
 }

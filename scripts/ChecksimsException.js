@@ -12,11 +12,15 @@
  *
  * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
  */
+'use strict';
+export {
+	ChecksimsException
+};
 
 /**
  * Generic exception for project.
  */
-class ChecksimsException extends Error {
+export default class ChecksimsException extends Error {
 	constructor(message) {
 		super(message);
 	}

@@ -44,19 +44,24 @@ class WhitespaceDeduplicationPreprocessor extends SubmissionPreprocessor {
 	 * @param submission Submission to transform
 	 * @return Input submission with whitespace deduplicated
 	 */
-	process(submission) {
+	async process(submission) {
 		checkNotNull(submission);
+		if(submission instanceof Promise){
+			submission = await submission;
+		}
 		checkArgument(submission instanceof Submission, "'submission' expected to be of type 'Submission'");
 
-		let tabsAndSpacesDedup = submission.getContentAsString().replace(/[ \t]+/g, " ");
-		let unixNewlineDedup = tabsAndSpacesDedup.replace(/\n+/g, "\n");
-		let windowsNewlineDedup = unixNewlineDedup.replace(/(\r\n)+/g, "\n");
+		let newBody = {
+			'whitespaceDeduplicated.txt': (async function(){
+				let content = await submission.ContentAsString;
+				content = content.replace(/[ \t]+/g, " ");
+				content = content.replace(/(\r\n)+/g, "\n");
+				content = content.replace(/\n+/g, "\n");
+				return content;
+			})()
+		};
 
-		let tokenizer = Tokenizer.getTokenizer(submission.getTokenType());
-
-		let finalList = tokenizer.splitString(windowsNewlineDedup);
-
-		return new Submission(submission.getName(), windowsNewlineDedup, finalList);
+		return new Submission(submission.Name, newBody);
 	}
 
 	/**
@@ -66,15 +71,4 @@ class WhitespaceDeduplicationPreprocessor extends SubmissionPreprocessor {
 		return "deduplicate";
 	}
 
-	toString() {
-		return "Singleton instance of WhitespaceDeduplicationPreprocessor";
-	}
-
-	hashCode() {
-		return this.getName().hashCode();
-	}
-
-	equals(other) {
-		return other instanceof WhitespaceDeduplicationPreprocessor;
-	}
 }

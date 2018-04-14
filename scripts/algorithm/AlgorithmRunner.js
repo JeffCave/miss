@@ -46,8 +46,6 @@ export default class AlgorithmRunner {
 		checkNotNull(algorithm);
 		checkArgument(algorithm instanceof SimilarityDetector, "algorithm must be a SimilarityDetector");
 
-		let startTime = Date.now();
-
 		console.log("Performing similarity detection on " + submissions.length + " pairs using algorithm " + algorithm.getName());
 
 		// Perform parallel analysis of all submission pairs to generate a results list
@@ -55,11 +53,6 @@ export default class AlgorithmRunner {
 			return algorithm.detectSimilarity(pair[0], pair[1]);
 		})
 		;
-
-		let endTime = Date.now();
-		let timeElapsed = endTime - startTime;
-
-		console.log("Finished similarity detection in " + timeElapsed + " ms");
 
 		return results;
 	}

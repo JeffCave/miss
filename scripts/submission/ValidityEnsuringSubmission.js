@@ -34,25 +34,34 @@ export default class ValidityEnsuringSubmission extends Submission {
 		super(submission);
 	}
 
-	equals(other) {
+	async equals(other) {
 		if(!(other instanceof Submission)) {
 			return false;
 		}
 
-		let areEqual =
+		// just declare two values to be used when we need
+		// too fetch values for clarity
+		let a,b,areEqual;
+
+		areEqual =
 			other.getTokenType() !== this.getTokenType()
 			|| other.getName() !== this.getName()
-			|| other.getNumTokens() !== this.getNumTokens()
-			|| other.getContentAsString() !== this.getContentAsString()
+			|| other.NumTokens !== this.NumTokens
 			;
 		if(areEqual){
 			return false;
 		}
 
-		let thisList = this.getContentAsTokens().map((d)=> new ValidityEnsuringToken(d));
+		a = await this.getContentAsString;
+		b = await other.getContentAsString;
+		if(a !== b){
+			return false;
+		}
+
+		let thisList = this.ContentAsTokens.map((d)=> new ValidityEnsuringToken(d));
 		thisList = new TokenList(this.getTokenType(),thisList);
 
-		let otherList = other.getContentAsTokens().map((d)=> new ValidityEnsuringToken(d));
+		let otherList = other.ContentAsTokens.map((d)=> new ValidityEnsuringToken(d));
 		otherList = new TokenList(this.getTokenType(),otherList);
 
 		return thisList.equals(otherList);

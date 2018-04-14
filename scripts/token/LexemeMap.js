@@ -39,13 +39,11 @@ import {checkNotNull} from '../util/misc.js';
  * by Characters, not integers.
  */
 class LexemeMap {
-	constructor() {
-
-	}
 
 	static get lexemeMap(){
 		if(!('pLexemeMap' in LexemeMap)){
 			this.pLexemeMap = new Map();
+			LexemeMap.getLexemeForToken("");
 		}
 		return this.pLexemeMap;
 	}

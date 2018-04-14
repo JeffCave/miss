@@ -55,11 +55,13 @@ class LineTokenizer extends Tokenizer {
 		checkNotNull(content);
 		let tokens = content
 			.split("\n")
-			.filter(function(str){
-				return str !== '';
-			})
+			//.filter(function(str){
+			//	return str !== '';
+			//})
 			.map((str) => {
-				return new Token(str, TokenList.TokenType.LINE);
+				str = str.trim();
+				let token = new Token(str, TokenList.TokenTypes.LINE);
+				return token;
 			})
 			;
 		let toReturn = new TokenList(this.getType(),tokens);
@@ -67,7 +69,7 @@ class LineTokenizer extends Tokenizer {
 	}
 
 	getType() {
-		return TokenList.TokenType.LINE;
+		return TokenList.TokenTypes.LINE;
 	}
 
 	toString() {

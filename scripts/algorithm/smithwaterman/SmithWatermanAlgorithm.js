@@ -58,8 +58,8 @@ export default class SmithWatermanAlgorithm {
 		this.xList = TokenList.cloneTokenList(a);
 		this.yList = TokenList.cloneTokenList(b);
 
-		this.wholeArray = ArraySubset.from(1, 1, this.xList.size() + 1, this.yList.size() + 1);
-		this.wholeArrayBounds = ArraySubset.from(1, 1, this.xList.size(), this.yList.size());
+		this.wholeArray = ArraySubset.from(1, 1, this.xList.length + 1, this.yList.length + 1);
+		this.wholeArrayBounds = ArraySubset.from(1, 1, this.xList.length, this.yList.length);
 
 		// Create an appropriately sized 2-D array
 		this.s = [];

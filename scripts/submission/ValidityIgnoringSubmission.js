@@ -18,8 +18,8 @@ export {
 };
 
 import {Submission} from '../submission/Submission.js';
+import {TokenList} from '../token/TokenList.js';
 import {ValidityIgnoringToken} from '../token/ValidityIgnoringToken.js';
-
 
 /**
  * Submission which ignores validity - tokens are compared ignoring
@@ -32,34 +32,43 @@ export default class ValidityIgnoringSubmission extends Submission {
 		super(wrappedSubmission);
 	}
 
-	equals(other) {
-		if(!(other instanceof Submission)) {
-			return false;
-		}
-		let areNotEqual = false
-			//|| other.getTokenType() !== this.getTokenType()
-			|| other.getName() !== this.getName()
-			|| other.getNumTokens() !== this.getNumTokens()
-			|| other.getContentAsString() !== this.getContentAsString()
-			;
-		if(areNotEqual){
+	async equals(that) {
+		if(!(that instanceof Submission)) {
 			return false;
 		}
 
-		let thisList = this.getContentAsTokens()
+		if(that.Name !== this.Name){
+			return false;
+		}
+
+		let aContent = await this.ContentAsString;
+		let bContent = await that.ContentAsString;
+		if(aContent !== bContent){
+			return false;
+		}
+
+		let aTokens = await this.ContentAsTokens;
+		let bTokens = await that.ContentAsTokens;
+		if(!aTokens.equals(bTokens)){
+			return false;
+		}
+
+		let thisList = Array.from(await this.ContentAsTokens)
 			.map(function(d){
 				let token = new ValidityIgnoringToken(d);
 				return token;
 			})
 			;
-		let otherList = other.getContentAsTokens()
+		let thatList = Array.from(await that.ContentAsTokens)
 			.map(function(d){
 				let token = new ValidityIgnoringToken(d);
 				return token;
 			})
 			;
-
-		return thisList.equals(otherList);
+		thisList = new TokenList(aTokens.type,thisList);
+		thatList = new TokenList(bTokens.type,thatList);
+		let isEqual = thisList.equals(thatList);
+		return isEqual;
 	}
 
 	hashCode() {

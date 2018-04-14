@@ -24,21 +24,6 @@ import {TokenList} from '../../token/TokenList.js';
 import {checkNotNull, checkArgument, hasher} from '../../util/misc.js';
 
 /**
- * Internal class for record-keeping - used to record a line at a
- * specific location in a submission.
- */
-export default class SubmissionLine {
-	constructor(lineNum, submission) {
-		this.lineNum = lineNum;
-		this.submission = submission;
-	}
-	toString() {
-		return "Line " + this.lineNum + " from submission with name " + this.submission.getName();
-	}
-}
-
-
-/**
  * Implements a line-by-line similarity checker.
  */
 class LineSimilarityChecker extends SimilarityDetector {
@@ -55,10 +40,6 @@ class LineSimilarityChecker extends SimilarityDetector {
 		return "linecompare";
 	}
 
-	getDefaultTokenType() {
-		return TokenList.TokenType.LINE;
-	}
-
 	/**
 	 * Detect similarities using line similarity comparator.
 	 *
@@ -68,28 +49,22 @@ class LineSimilarityChecker extends SimilarityDetector {
 	 * @throws TokenTypeMismatchException Thrown comparing two submissions with different token types
 	 * @throws InternalAlgorithmError Thrown on error obtaining a hash algorithm instance
 	 */
-	detectSimilarity(a, b){
+	async detectSimilarity(a, b){
 		checkNotNull(a);
 		checkNotNull(b);
 		checkArgument(a instanceof Submission, "Expecting to compare Submissions (a is " + (typeof a) + ")");
 		checkArgument(b instanceof Submission, "Expecting to compare Submissions (b is " + (typeof b) + ")");
 
-		let linesA = a.getContentAsTokens();
-		let linesB = b.getContentAsTokens();
-		let finalA = TokenList.cloneTokenList(linesA);
-		let finalB = TokenList.cloneTokenList(linesB);
+		let linesA = await a.ContentAsTokens;
+		let linesB = await b.ContentAsTokens;
+		let finalA = await TokenList.cloneTokenList(linesA);
+		let finalB = await TokenList.cloneTokenList(linesB);
 
-		/*
-		if(a.getTokenType() !== b.getTokenType()) {
-			throw new Error("Token list type mismatch: submission " + a.getName() + " has type " +
-				linesA.type.toString() + ", while submission " + b.getName() + " has type "
-				+ linesB.type.toString());
-		}
-		else */
-		if(a.equals(b)) {
+		let isEqual = await a.equals(b);
+		if(isEqual) {
 			finalA.forEach((token) => token.setValid(false));
 			finalB.forEach((token) => token.setValid(false));
-			return new AlgorithmResults(a, b, finalA, finalB);
+			return AlgorithmResults(a, b, finalA, finalB);
 		}
 
 
@@ -108,15 +83,14 @@ class LineSimilarityChecker extends SimilarityDetector {
 		let identicalLinesB = 0;
 
 		// Check all the keys
-		Object.keys(lineDatabase).forEach(function(key){
-
+		Object.values(lineDatabase).forEach(function(val){
 			// If more than 1 line has the hash...
-			if(lineDatabase[key].length !== 1) {
+			if(val.length !== 1) {
 				let numLinesA = 0;
 				let numLinesB = 0;
 
 				// Count the number of that line in each submission
-				lineDatabase[key].forEach(function(s){
+				val.forEach(function(s){
 					if(s.submission.equals(a)) {
 						numLinesA++;
 					}
@@ -134,7 +108,7 @@ class LineSimilarityChecker extends SimilarityDetector {
 				}
 
 				// Set matches invalid
-				lineDatabase[key].forEach(function(s){
+				val.forEach(function(s){
 					if(s.submission.equals(a)) {
 						finalA[s.lineNum].setValid(false);
 					}
@@ -167,7 +141,7 @@ class LineSimilarityChecker extends SimilarityDetector {
 				);
 		}
 
-		let results =  new AlgorithmResults(a, b, finalA, finalB);
+		let results = AlgorithmResults(a, b, finalA, finalB);
 		return results;
 	}
 
@@ -178,20 +152,8 @@ class LineSimilarityChecker extends SimilarityDetector {
 				lineDatabase[hash] = [];
 			}
 
-			let line = new SubmissionLine(i, submitter);
+			let line = {lineNum:i, submission:submitter};
 			lineDatabase[hash].push(line);
 		});
-	}
-
-	toString() {
-		return "Sole instance of the Line Similarity Counter algorithm";
-	}
-
-	hashCode() {
-		return this.getName().hashCode();
-	}
-
-	equals(other) {
-		return (other instanceof LineSimilarityChecker);
 	}
 }

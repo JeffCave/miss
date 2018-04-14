@@ -33,7 +33,7 @@ export default class TokenList extends Array{
 
 		checkNotNull(type);
 
-		let isType = Object.values(TokenList.TokenType).some(function(t){
+		let isType = Object.values(TokenList.TokenTypes).some(function(t){
 			return type === t;
 		});
 		checkArgument(isType,"Expected type to be of TokenType. Received " + type);
@@ -48,7 +48,7 @@ export default class TokenList extends Array{
 		this.type = type;
 	}
 
-	static get TokenType(){
+	static get TokenTypes(){
 		return {
 			CHARACTER: "character",
 			WHITESPACE: "whitespace",
@@ -75,16 +75,13 @@ export default class TokenList extends Array{
 
 		if(sepChar === null || sepChar === false){
 			switch(this.type) {
-				case TokenList.TokenType.CHARACTER: sepChar = ""; break;
-				case TokenList.TokenType.WHITESPACE: sepChar = " "; break;
-				case TokenList.TokenType.LINE: sepChar = "\n"; break;
+				case TokenList.TokenTypes.CHARACTER: sepChar = ""; break;
+				case TokenList.TokenTypes.WHITESPACE: sepChar = " "; break;
+				case TokenList.TokenTypes.LINE: sepChar = "\n"; break;
 				default: sepChar = ""; break;
 			}
 		}
 		let b = Array.from(this)
-			.sort(function(a,b){
-				return a.lexeme - b.lexeme;
-			})
 			// TODO: This should not be necessary. Find a way to prevent NULL insertion to the list
 			.filter(function(d){
 				let keep = (d || false) !== false;
@@ -132,11 +129,16 @@ export default class TokenList extends Array{
 	 */
 	static cloneTokenList(cloneFrom) {
 		checkNotNull(cloneFrom);
-		let newList = Array.from(cloneFrom)
+		let cloned = cloneFrom.clone();
+		return cloned;
+	}
+
+	clone(){
+		let newList = Array.from(this)
 			.map(function(token){
 				return token.clone();
 			});
-		newList = new TokenList(cloneFrom.type, newList);
+		newList = new TokenList(this.type, newList);
 		return newList;
 	}
 
@@ -170,13 +172,18 @@ export default class TokenList extends Array{
 			return false;
 		}
 
-		// The super.equals() call here is bad practice because we can't *guarantee* it's a PredicatedList<Token>
-		// However, the instanceof TokenList should ensure that invariant is met
 		return true;
 	}
 
 	toString() {
-		return "Token list of type " + this.type.toString() + " containing " + super.toString();
+		let str = JSON.stringify(this);
+		return str;
+	}
+
+	static fromString(str){
+		let list = JSON.parse(str);
+		list = new TokenList(list.type,list);
+		return list;
 	}
 
 	hashCode() {
@@ -188,6 +195,7 @@ export default class TokenList extends Array{
 	}
 
 	size(){
+		console.warn('DEPRECATED: use "length" instead');
 		return this.length;
 	}
 }

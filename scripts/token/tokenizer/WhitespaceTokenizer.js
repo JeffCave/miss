@@ -48,7 +48,7 @@ class WhitespaceTokenizer{ // extends Tokenizer {
 			.split("\\s+")
 			.filter((str) => {return str === "";})
 			.map((str) => {
-				return new Token(str, TokenType.WHITESPACE);
+				return new Token(str, TokenTypes.WHITESPACE);
 			})
 			;
 
