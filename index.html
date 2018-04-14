@@ -22,15 +22,14 @@
 </head>
 <body>
  <fieldset>
-  <input name='zip' type="file" disabled/>
   <button name='run' disabled>Run</button>
   <details>
-   <summary>Files</summary>
+   <summary>Files: <input name='zip' type="file" disabled/></summary>
    <ul></ul>
   </details>
  </fieldset>
  <section id='results'>
-  <details data-type='force'>
+  <details data-type='force' open>
    <summary>Force</summary>
    <svg style="padding:0;height:300px;width:300px;list-style-type:none;position:relative;border:1px solid darkgray;" width="300" height="300"></svg>
    <ul class='result' style="padding:0;height:300px;width:300px;list-style-type:none;position:relative;display:none;"></ul>
