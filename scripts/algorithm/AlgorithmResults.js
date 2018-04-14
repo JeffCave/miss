@@ -18,12 +18,11 @@ export {
 };
 
 import {TokenList} from '../token/TokenList.js';
-import {checkNotNull,checkArgument} from '../util/misc.js';
+import {checkNotNull,hasher} from '../util/misc.js';
 
 /**
  * Results for a pairwise comparison algorithm.
  */
-export default class AlgorithmResults {
 
 	/**
 	 * Construct results for a pairwise similarity detection algorithm.
@@ -33,74 +32,47 @@ export default class AlgorithmResults {
 	 * @param finalListA Token list from submission A, with matched tokens set invalid
 	 * @param finalListB Token list from submission B, with matched tokens set invalid
 	 */
-	constructor(a, b, finalListA, finalListB) {
-		checkNotNull(a);
-		checkNotNull(b);
-		checkNotNull(finalListA);
-		checkNotNull(finalListB);
-		checkArgument(a.NumTokens === finalListA.length,
-			"Token size mismatch when creating algorithm results for submission \"" + a.Name
-			+ "\" --- expected " + a.NumTokens + ", got " + finalListA.length);
-		checkArgument(b.NumTokens === finalListB.length,
-			"Token size mismatch when creating algorithm results for submission \"" + b.Name
-			+ "\" --- expected " + b.NumTokens + ", got " + finalListB.length);
-
-		this.a = a;
-		this.b = b;
-		this.finalListA = TokenList.cloneTokenList(finalListA);
-		this.finalListB = TokenList.cloneTokenList(finalListB);
-
-		this.identicalTokensA = Array.from(this.finalListA).filter((token) => !token.isValid()).length;
-		this.identicalTokensB = Array.from(this.finalListB).filter((token) => !token.isValid()).length;
-
-		if(a.NumTokens === 0) {
-			this.percentMatchedA = 0.0;
-		}
-		else {
-			this.percentMatchedA = this.identicalTokensA / a.NumTokens;
-		}
-
-		if(b.NumTokens === 0) {
-			this.percentMatchedB = 0.0;
-		}
-		else {
-			this.percentMatchedB = this.identicalTokensB / b.NumTokens;
-		}
-	}
-
-	/**
-	 * @return Percentage similarity of submission A to submission B. Represented as a double from 0.0 to 1.0 inclusive
-	 */
-	getPercentMatchedA() {
-		return this.percentMatchedA;
-	}
-
-	/**
-	* @return Percentage similarity of submission B to submission A. Represented as a double from 0.0 to 1.0 inclusive
+export default async function AlgorithmResults(a, b, finalListA, finalListB) {
+	checkNotNull(a);
+	checkNotNull(b);
+	checkNotNull(finalListA);
+	checkNotNull(finalListB);
+	/*
+	 * No longer actually know how many tokens are in the submissions. The actual token lists would need to be resolved, and we haven't done that yet (still promises)
+	 *
+	checkArgument(a.NumTokens === finalListA.length,
+		"Token size mismatch when creating algorithm results for submission \"" + a.Name
+		+ "\" --- expected " + a.NumTokens + ", got " + finalListA.length);
+	checkArgument(b.NumTokens === finalListB.length,
+		"Token size mismatch when creating algorithm results for submission \"" + b.Name
+		+ "\" --- expected " + b.NumTokens + ", got " + finalListB.length);
 	*/
-	getPercentMatchedB() {
-		return this.percentMatchedB;
-	}
 
-	toString() {
-		return "Similarity results for submissions named " + this.a.getName() + " and " + this.b.getName();
-	}
+	let results = [
+			{submission: a, finalList: finalListA},
+			{submission: b, finalList: finalListB}
+		]
+		.sort(function(a,b){
+			let comp = a.submission.Name.localeCompare(b.submission.Name);
+			return comp;
+		});
+	for(let r = 0; r<results.length; r++){
+		let d = results[r];
+		d.finalList = await TokenList.cloneTokenList(d.finalList);
+		let tokens = Array.from(d.finalList);
+		tokens = tokens.filter((token) => !token.isValid());
+		tokens = tokens.length;
+		d.identicalTokens = tokens;
 
-	equals(other) {
-		if(!(other instanceof AlgorithmResults)) {
-			return false;
+		let subTokens = await a.ContentAsTokens();
+		if(subTokens.length === 0){
+			return 0;
 		}
-
-		let isEqual =
-			this.a.equals(other.a)
-			&& this.b.equals(other.b)
-			&& this.finalListA.equals(other.finalListA)
-			&& this.finalListB.equals(other.finalListB)
-			;
-		return isEqual;
+		let pct = d.identicalTokens / subTokens.length;
+		d.percentMatched = pct;
 	}
-
-	hashCode() {
-		return this.a.hashCode() ^ this.b.hashCode();
-	}
+	results.A = results[0];
+	results.B = results[1];
+	results.hashCode = hasher(a.hashCode() + b.hashCode());
+	return results;
 }

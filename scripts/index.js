@@ -81,7 +81,7 @@ class ChecksimsCommandLine {
 			throw new ChecksimsException("Error: did not obtain a valid output strategy!");
 		}
 
-		let resultsMatrix = SimilarityMatrix.generateMatrix(results);
+		let resultsMatrix = await SimilarityMatrix.generateMatrix(results);
 
 		// Output using all output printers
 		Promise.all(deduplicatedStrategies
@@ -122,8 +122,8 @@ class ChecksimsCommandLine {
 		html = html.concat(results.results
 			.map(function(d){
 				let rtn = [
-						{'name':d.a.name,'pct':d.percentMatchedA},
-						{'name':d.b.name,'pct':d.percentMatchedB}
+						{'name':d.A.submission.name,'pct':d.A.percentMatched},
+						{'name':d.B.submission.name,'pct':d.B.percentMatched}
 					].sort(function(a,b){
 						let diff = b.pct - a.pct;
 						return diff;

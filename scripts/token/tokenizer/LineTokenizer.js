@@ -59,7 +59,8 @@ class LineTokenizer extends Tokenizer {
 				return str !== '';
 			})
 			.map((str) => {
-				return new Token(str, TokenList.TokenTypes.LINE);
+				let token = new Token(str, TokenList.TokenTypes.LINE);
+				return token;
 			})
 			;
 		let toReturn = new TokenList(this.getType(),tokens);

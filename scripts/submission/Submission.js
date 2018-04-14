@@ -5,6 +5,7 @@ export{
 
 import {LineTokenizer} from '../token/tokenizer/LineTokenizer.js';
 import {TokenList} from '../token/TokenList.js';
+import {ContentHandlers} from '../submission/ContentHandlers.js';
 import {checkNotNull, checkArgument, hashCode} from '../util/misc.js';
 
 
@@ -30,36 +31,78 @@ export default class Submission {
 	 * String contents. This is not recommended and will most likely
 	 * break, at the very least, Preprocessors.
 	 */
-	constructor(name, content, tokens = null) {
+	constructor(name, files, tokens = null) {
 		if(name instanceof Submission){
-			tokens = name.tokenList;
-			content = name.content;
-			name = name.name;
+			this.tokenList = name.tokenList;
+			this.content = name.content;
+			this.name = name.name;
+			return;
 		}
-		else{
-			checkNotNull(name);
-			checkArgument(typeof name === 'string','name expected to be string');
-			checkArgument(name !== '', "Submission name cannot be empty");
-			checkNotNull(content);
-			checkArgument(typeof content === 'string' ,'content expected to be string');
-			if(tokens !== null){
-				checkArgument(Array.isArray(tokens),'tokens expected to be an array');
-			}
+		checkNotNull(name);
+		checkArgument(typeof name === 'string','name expected to be string');
+		checkArgument(name !== '', "Submission name cannot be empty");
+		checkNotNull(files);
+		checkArgument(typeof files === 'object','Expecting a list of promised files');
+		if(tokens !== null){
+			checkArgument(Array.isArray(tokens),'tokens expected to be an array');
 		}
 
-		// Split the content
-		if(tokens === null){
+
+		// Group the files by the various types we handle
+		let content = Object.entries(files)
+			.reduce(function(agg,file){
+				let name = file[0];
+				let content = file[1];
+				let ext = name.split('.').pop();
+				let handler = ContentHandlers.handlers.filter(function(d){
+					let match = d.ext.some(function(e){
+							let match = ext === e;
+							return match;
+						});
+					return match;
+				}).shift();
+				if(!handler){
+					handler = ContentHandlers.defaultHandler;
+				}
+				if(!agg[handler.type]){
+					agg[handler.type] = {files:{}};
+				}
+				agg[handler.type].files[name] = content;
+				return agg;
+			},{})
+			;
+		// now that they are grouped, create a promise to join them
+		// all together into a single block of content
+		let allContent = [];
+		Object.values(content).forEach(function(d){
+			let c = Object.entries(d.files)
+				.sort((entry)=>{return entry[0];})
+				.map((entry)=>{return entry[1];})
+				;
+			d.content = Promise.all(c)
+				.then(function(content){
+					content = content.join('\n');
+					return content;
+				});
+			allContent.push(d.content);
+		});
+		content.content = Promise.all(allContent);
+
+		this.content = async function(){
+			let fileContent = await content.content;
+			let contentString = fileContent.join('\n');
+			return contentString;
+		};
+		this.tokenList = async function(){
 			let tokenizer = LineTokenizer.getInstance();
-			tokens = tokenizer.splitString(content);
+			let contentString = await this.content();
+			tokens = tokenizer.splitString(contentString);
 			if(tokens.length > 7500) {
 				console.warn("Warning: Submission " + name + " has very large token count (" + tokens.length + ")");
 			}
-		}
-
-
+			return tokens;
+		};
 		this.name = name;
-		this.content = content;
-		this.tokenList = tokens;
 	}
 
 
@@ -94,24 +137,34 @@ export default class Submission {
 	}
 
 
-	equals(other) {
-		if(!(other instanceof Submission)) {
+	async equals(that) {
+		if(!(that instanceof Submission)) {
 			return false;
 		}
 
-		let isEqual =
-			other.Name === this.Name
-			&& other.NumTokens === this.NumTokens
-			&& other.ContentAsTokens.equals(this.tokenList)
-			&& other.ContentAsString === this.content
-			;
-		return isEqual;
+		if(that.Name !== this.Name){
+			return false;
+		}
+
+		let aContent = await this.ContentAsString();
+		let bContent = await that.ContentAsString();
+		if(aContent !== bContent){
+			return false;
+		}
+
+		let aTokens = await this.ContentAsTokens();
+		let bTokens = await that.ContentAsTokens();
+		if(!aTokens.equals(bTokens)){
+			return false;
+		}
+
+		return true;
 	}
 
 
-	hashCode() {
+	async hashCode() {
 		if(!('pHash' in this)){
-			this.pHash = hashCode(this.name + this.content);
+			this.pHash = hashCode(this.name + await this.content);
 		}
 		return this.pHash;
 	}
@@ -126,6 +179,12 @@ export default class Submission {
 		return sub;
 	}
 
+	clone(){
+		let json = this.toString();
+		json = Submission.fromString(json);
+		return json;
+	}
+
 
 	/**
 	 * A 'null' submission.
@@ -138,7 +197,12 @@ export default class Submission {
 	 */
 	static get NullSubmission(){
 		if(!('_NullSubmission' in Submission)){
-			Submission._NullSubmission = new Submission(' ','',new TokenList(TokenList.TokenTypes.LINE));
+			let content = {
+				'NullContent':new Promise((result)=>{
+					result('');
+				})
+			};
+			Submission._NullSubmission = new Submission(' ',content);
 		}
 		return Submission._NullSubmission;
 	}
@@ -185,12 +249,16 @@ export default class Submission {
 		checkNotNull(glob);
 
 		// Divide entries by student
+		console.log(glob);
 		let studentSubs = Object.entries(files).reduce(function(agg,entries){
+			let key = entries[0];
 			let entry = entries[1];
-			let key = entries[0].split('/');
-			key.shift();
-			let student = key.shift();
-			if(glob.test(entries[0])){
+			let isMatch = glob.test(key);
+			console.log(isMatch + ':' + key);
+			if(isMatch){
+				key = key.split('/');
+				key.shift();
+				let student = key.shift();
 				if(!(student in agg)){
 					agg[student] = {};
 				}
@@ -234,21 +302,7 @@ export default class Submission {
 		checkArgument(name.length, "Submission name cannot be empty");
 		checkNotNull(files);
 
-		// To ensure submission generation is deterministic, sort files by name, and read them in that order
-		let orderedFiles = Object.keys(files)
-			.sort(function(file1, file2){
-				return file1.localeCompare(file2);
-			})
-			.map(function(name){
-				return files[name];
-			})
-			;
-
-		// gather up all the content
-		let fileContent = await Promise.all(orderedFiles);
-		let contentString = fileContent.join('\n');
-
-		let submission = new Submission(name, contentString);
+		let submission = new Submission(name, files);
 		return submission;
 	}
 

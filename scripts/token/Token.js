@@ -134,7 +134,7 @@ export default class Token {
     static cloneToken(token) {
         checkNotNull(token);
 
-        return new ConcreteToken(token.getLexeme(), token.getType(), token.isValid());
+        return new Token(token.getLexeme(), token.getType(), token.isValid());
     }
 
 

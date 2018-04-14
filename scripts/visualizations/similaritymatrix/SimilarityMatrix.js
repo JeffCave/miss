@@ -151,7 +151,7 @@ class SimilarityMatrix {
 	 * @return Similarity Matrix built from given results
 	 * @throws InternalAlgorithmError Thrown on missing results, or results containing a submission not in the input
 	 */
-	static generateMatrix(results, inputSubmissions, archive = []){
+	static async generateMatrix(results, inputSubmissions, archive = []){
 		checkNotNull(results);
 		if('results' in results){
 			inputSubmissions = results.submissions;
@@ -186,14 +186,17 @@ class SimilarityMatrix {
 		// Generate the matrix
 
 		// Start with the diagonal, filling with 100% similarity
-		orderedSubmissions.forEach(function(s,i){
-			matrix[i][i] = new MatrixEntry(s, s, s.NumTokens);
-		});
+		for(let i = 0; i<orderedSubmissions.length; i++){
+			let s = orderedSubmissions[i];
+			let tokens = await s.ContentAsTokens();
+			matrix[i][i] = await MatrixEntry(s, s, tokens.length);
+		}
 
 		// Now go through all the results, and build appropriate two MatrixEntry objects for each
-		results.forEach(function(result){
-			let aIndex = orderedSubmissions.indexOf(result.a);
-			let bIndex = orderedSubmissions.indexOf(result.b);
+		for(let r=0; r<results.length; r++){
+			let result = results[r];
+			let aIndex = orderedSubmissions.indexOf(result.A.submission);
+			let bIndex = orderedSubmissions.indexOf(result.B.submission);
 
 			if (aIndex === -1) {
 				throw new Error("Processed Algorithm Result with submission not in given input submissions with name \"" + result.a.getName() + "\"");
@@ -202,9 +205,9 @@ class SimilarityMatrix {
 				throw new Error("Processed Algorithm Result with submission not in given input submissions with name \"" + result.b.getName() + "\"");
 			}
 
-			matrix[aIndex][bIndex] = new MatrixEntry(result.a, result.b, result.identicalTokensA);
-			matrix[bIndex][aIndex] = new MatrixEntry(result.b, result.a, result.identicalTokensB);
-		});
+			matrix[aIndex][bIndex] = await MatrixEntry(result.A.submission, result.B.submission, result.A.identicalTokens);
+			matrix[bIndex][aIndex] = await MatrixEntry(result.B.submission, result.A.submission, result.B.identicalTokens);
+		}
 
 		// Verification pass: Go through and ensure that the entire array was populated
 		for (let x = 0; x < orderedSubmissions.length; x++) {
@@ -217,7 +220,8 @@ class SimilarityMatrix {
 			}
 		}
 
-		return new SimilarityMatrix(matrix, orderedSubmissions, orderedSubmissions, results);
+		let sim = new SimilarityMatrix(matrix, orderedSubmissions, orderedSubmissions, results);
+		return sim;
 	}
 
 	/**

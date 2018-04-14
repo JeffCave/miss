@@ -27,6 +27,7 @@ function checkArgument(value = null, msg = ""){
 
 class Pair extends Set{
 	constructor(vals){
+		console.warn('Usage of class "Pair"');
 		super(vals);
 	}
 }
@@ -45,25 +46,35 @@ function hasher(value){
 	return hashed;
 }
 
+
+/**
+ * Implementation of Java String hashcode
+ *
+ * Based on reading at stack... there are some improvements to my original implementation
+ * https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript-jquery
+ */
 function hashCode(str){
-	const shiftSize = 6;
+	const shiftSize = 5;
 	const hashSize = 53;
 	const wrapSize = hashSize - shiftSize;
-	let hash = str.split('')
-		.map(function(d){
-			let c = d.toCharCodeAt(0);
-			return c;
-		})
-		.reduce(function(a,d){
-			let wrap =  a >> wrapSize;
-			a = a << shiftSize;
-			a = a ^ d;
-			a = a | wrap;
-			return a;
-		},0)
-		;
+	let hash = 0;
+	for(let i=0; i<str.length; i++){
+		let c = str.charCodeAt(i);
+		//console.debug("Hash: "+ hash.toString(2) + '-' + c.toString(2));
+		let wrap =  hash >>> wrapSize;
+		//console.debug(" - Wrap: " + wrap.toString(2));
+		hash = hash << shiftSize;
+		//console.debug(" - 1: " + hash.toString(2));
+		hash = hash ^ c;
+		//console.debug(" - 2: " + hash.toString(2) + ' ^ ' + c.toString(2));
+		hash = hash | wrap;
+		//console.debug(" - 3: " + hash.toString(2));
+	}
+	//console.debug("Done: "+ hash.toString(2));
 	return hash;
 }
+String.prototype.hashCode = hashCode;
+
 
 JSON.clone = function(obj){
 	return JSON.parse(JSON.stringify(obj));

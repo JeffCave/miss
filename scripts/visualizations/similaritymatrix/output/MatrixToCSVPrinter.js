@@ -70,7 +70,7 @@ class MatrixToCSVPrinter extends MatrixPrinter {
 			// Next, append all the matrix values, formatted as given
 			for(let y = 0; y < matrix.ySubmissions.length; y++) {
 				let entry = matrix.getEntryFor(x, y);
-				let pct = entry.getSimilarityPercent();
+				let pct = entry.similarityPercent;
 				row.push(pct);
 			}
 			builder.push(row);

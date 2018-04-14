@@ -82,9 +82,6 @@ export default class TokenList extends Array{
 			}
 		}
 		let b = Array.from(this)
-			.sort(function(a,b){
-				return a.lexeme - b.lexeme;
-			})
 			// TODO: This should not be necessary. Find a way to prevent NULL insertion to the list
 			.filter(function(d){
 				let keep = (d || false) !== false;
@@ -132,11 +129,16 @@ export default class TokenList extends Array{
 	 */
 	static cloneTokenList(cloneFrom) {
 		checkNotNull(cloneFrom);
-		let newList = Array.from(cloneFrom)
+		let cloned = cloneFrom.clone();
+		return cloned;
+	}
+
+	clone(){
+		let newList = Array.from(this)
 			.map(function(token){
 				return token.clone();
 			});
-		newList = new TokenList(cloneFrom.type, newList);
+		newList = new TokenList(this.type, newList);
 		return newList;
 	}
 
@@ -170,13 +172,18 @@ export default class TokenList extends Array{
 			return false;
 		}
 
-		// The super.equals() call here is bad practice because we can't *guarantee* it's a PredicatedList<Token>
-		// However, the instanceof TokenList should ensure that invariant is met
 		return true;
 	}
 
 	toString() {
-		return "Token list of type " + this.type.toString() + " containing " + super.toString();
+		let str = JSON.stringify(this);
+		return str;
+	}
+
+	static fromString(str){
+		let list = JSON.parse(str);
+		list = new TokenList(list.type,list);
+		return list;
 	}
 
 	hashCode() {
@@ -188,6 +195,7 @@ export default class TokenList extends Array{
 	}
 
 	size(){
+		console.debug('DEPRECATED: use "lenght" instead');
 		return this.length;
 	}
 }

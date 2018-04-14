@@ -25,7 +25,8 @@ import {PreprocessSubmissions} from './preprocessor/PreprocessSubmissions.js';
 import {PreprocessorRegistry} from './preprocessor/PreprocessorRegistry.js';
 import {PairGenerator} from './util/PairGenerator.js';
 import {Submission} from './submission/Submission.js';
-import {checkNotNull} from './util/misc.js';
+import {ChecksimsException} from './ChecksimsException.js';
+import {checkNotNull,checkArgument} from './util/misc.js';
 
 /**
  * CLI Entry point and main public API endpoint for Checksims.
@@ -39,7 +40,7 @@ class ChecksimsRunner {
 
 	get Filter(){
 		if(!('globPattern' in this)){
-			this.globPattern = new RegExp('.*','ig');
+			this.globPattern = new RegExp('.*','i');
 		}
 		return this.globPattern;
 	}
@@ -195,15 +196,35 @@ class ChecksimsRunner {
 			common = new CommonCodeLineRemovalPreprocessor(common);
 			return common;
 		})());
+		// Apply the preprocessors to the submissions
 		preprocessors = await Promise.all(preprocessors);
-		preprocessors.forEach(function(p){
-			submissions = Array.from(PreprocessSubmissions.process(p, submissions));
-			archiveSubmissions = Array.from(PreprocessSubmissions.process(p, archiveSubmissions));
-		});
+		let processed = [submissions,archiveSubmissions]
+			.map(function(group){
+				group = group.map(function(submission){
+					submission = new Promise(r=>{r(submission);});
+					submission = preprocessors.reduce(function(sub, preprocessor){
+							sub = preprocessor.process(sub);
+							return sub;
+						}, submission);
+					return submission;
+				});
+				return group;
+			});
+		submissions = await Promise.all(processed[0]);
+		archiveSubmissions = await Promise.all(processed[1]);
+
 		// Apply algorithm to submissions
 		let allPairs = await PairGenerator.generatePairsWithArchive(submissions, archiveSubmissions);
 		let algo = await this.Algorithm;
 		let results = AlgorithmRunner.runAlgorithm(allPairs, algo);
+
+
+		let startTime = Date.now();
+		results = await Promise.all(results);
+		let endTime = Date.now();
+		let timeElapsed = endTime - startTime;
+		console.log("Finished similarity detection in " + timeElapsed + " ms");
+
 
 		//TODO: do this with web workers
 		// All parallel jobs are done, shut down the parallel executor

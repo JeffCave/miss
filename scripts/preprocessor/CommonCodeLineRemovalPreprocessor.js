@@ -66,41 +66,38 @@ export default class CommonCodeLineRemovalPreprocessor extends SubmissionPreproc
 	 * @return Input submission with common code removed
 	 * @throws InternalAlgorithmError Thrown on error removing common code
 	 */
-	process(removeFrom) {
+	async process(removeFrom) {
 		console.debug("Performing common code removal on submission " + removeFrom.Name);
+		if(removeFrom instanceof Promise){
+			removeFrom = await removeFrom;
+		}
 
 		// Create new submissions with retokenized input
 		let computeIn = new Submission(removeFrom);
 		let computeCommon = new Submission(this.common);
 
 		// Use the new submissions to compute this
-		let results = CommonCodeLineRemovalPreprocessor.algorithm.detectSimilarity(computeIn, computeCommon);
+		let results = await CommonCodeLineRemovalPreprocessor.algorithm.detectSimilarity(computeIn, computeCommon);
 
 		// The results contains two TokenLists, representing the final state of the submissions after detection
 		// All common code should be marked invalid for the input submission's final list
-		let listWithCommonInvalid = results.finalListA;
-		let percentMatched = results.percentMatchedA;
-		let identTokens = results.identicalTokensA;
+		let listWithCommonInvalid = results.A.finalList;
 
 		let comparator = new ValidityIgnoringSubmission(computeIn);
-		if(comparator.equals(results.b)) {
-			listWithCommonInvalid = results.finalListB;
-			percentMatched = results.percentMatchedB;
-			identTokens = results.identicalTokensB;
+		if(comparator.equals(results.B.submission)) {
+			listWithCommonInvalid = results.B.finalList;
+			//percentMatched = results.percentMatchedB;
+			//identTokens = results.identicalTokensB;
 		}
 
 		// Recreate the string body of the submission from this new list
-		let newBody = listWithCommonInvalid.join(true);
-
-		// Retokenize the new body with the original tokenization
-		let oldType = removeFrom.TokenType;
-		let oldTokenizer = Tokenizer.getTokenizer(oldType);
-		let finalListGoodTokenization = oldTokenizer.splitString(newBody);
+		let newBody = {
+			'commonCodeRemoved.txt': (async function(){ return listWithCommonInvalid.join(true) })()
+		};
 
 		//console.trace("Submission " + removeFrom.getName() + " contained " + percentMatched.toFixed(2) + "% common code");
 		//console.trace("Removed " + identTokens + " common tokens (of " + removeFrom.NumTokens + " total)");
-
-		let submission = new Submission(removeFrom.Name, newBody, finalListGoodTokenization);
+		let submission = new Submission(removeFrom.Name, newBody);
 		return submission;
 	}
 
@@ -109,20 +106,5 @@ export default class CommonCodeLineRemovalPreprocessor extends SubmissionPreproc
 	 */
 	getName() {
 		return "commoncodeline";
-	}
-
-	toString() {
-		return "Common Code Line Removal preprocessor, removing common code submission " + this.common.getName();
-	}
-
-	hashCode() {
-		return hashCode(this.getName()) ^ hashCode(this.common.getName());
-	}
-
-	equals(other) {
-		if(!(other instanceof 'CommonCodeLineRemovalPreprocessor')) {
-			return false;
-		}
-		return other.common.equals(this.common);
 	}
 }

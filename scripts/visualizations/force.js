@@ -9,9 +9,9 @@ export function d3ForceDirected(results){
 		nodes: results.submissions,
 		links: results.results.map(function(d){
 			let rtn = {
-				source:d.a,
-				target:d.b,
-				value:Math.max(d.percentMatchedA,d.percentMatchedB,0)
+				source:d.A.submission,
+				target:d.B.submission,
+				value:Math.max(d.A.percentMatched,d.B.percentMatched,0)
 			};
 			return rtn;
 		}),

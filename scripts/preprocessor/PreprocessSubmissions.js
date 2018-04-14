@@ -44,7 +44,7 @@ export default class PreprocessSubmissions {
 
 		checkArgument(Array.isArray(submissions),"Expected a list of 'Submissions', not " + (typeof submissions));
 		submissions.forEach(function(submission){
-			checkArgument(submission instanceof Submission,"Expected a list of 'Submissions', not " + (typeof submission));
+			checkArgument(submission instanceof Submission,"Expected a list of 'Submissions', not " + (submission.constructor.name));
 		});
 		checkArgument(preprocessor instanceof SubmissionPreprocessor,"Expected instance of 'SubmissionPreprocessor'");
 

@@ -41,15 +41,25 @@ export default class LowercasePreprocessor extends SubmissionPreprocessor {
 		return "lowercase";
 	}
 
-	process(submission) {
+	async process(submission) {
 		checkNotNull(submission);
+		if(submission instanceof Promise){
+			submission = await submission;
+		}
 
-		let tokenizer = Tokenizer.getTokenizer(submission.TokenType);
 		// Lowercase the content of the submission, then retokenize
-		let contentLower = submission.ContentAsString.toLowerCase();
-		let tokenizedLower = tokenizer.splitString(contentLower);
+		// Recreate the string body of the submission from this new list
+		let newBody = {
+			'lowerCased.txt': (async function(){
+				let contentLower = await submission.ContentAsString();
+				contentLower = contentLower.toLowerCase();
+				return contentLower
+			})()
+		};
 
-		return new Submission(submission.Name, contentLower, tokenizedLower);
+
+		let sub = new Submission(submission.Name, newBody);
+		return sub;
 	}
 
 	toString() {
