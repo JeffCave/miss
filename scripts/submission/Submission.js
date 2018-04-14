@@ -207,41 +207,47 @@ export default class Submission {
 	}
 
 
-	/**
-	 * Build the collection of submissions Checksims will be run on.
-	 */
-	static submissionsFromZip(submissionDirs, glob){
-		if(submissionDirs === null){
-			return async function(){return Submission.NullSubmission;};
+	static async fileListFromZip(zip){
+		if(zip === null){
+			return {};
 		}
-		checkNotNull(submissionDirs);
-		checkArgument(Object.keys(submissionDirs.files).length > 0, "Must provide at least one submission directory!");
-		checkNotNull(glob);
+		let names = Object.keys(zip.files);
+		checkArgument(names.length > 0, "Must provide at least one submission directory!");
 
 		let files = {};
-		submissionDirs.forEach(function(name,entry){
-			if(!entry.dir){
-				let key = name;
-				files[key] = entry
-					.async("string")
-					.then(function (data) {
-						let content = data;
-						if(!content.endsWith("\n") && content !== '') {
-							content += "\n";
-						}
-						return content;
-					})
-					;
+		for(let f = 0; f < names.length; f++){
+			let name = names[f];
+			let file = zip.files[name];
+			if(file.dir){
+				continue;
 			}
-		});
-
-		let submissions = Submission.submissionsFromFiles(files,glob);
-		return submissions;
+			if((/\.zip$/i).test(name)){
+				file = await file.async('blob');
+				file = await JSZip.loadAsync(file);
+				file = await Submission.fileListFromZip(file);
+				Object.entries(file).forEach(function(z){
+					let a = name + "/" + z[0];
+					let b = z[1];
+					files[a] = b;
+				});
+			}
+			else{
+				files[name] = file
+					.async("string")
+					.then(function(file){
+						if(!file.endsWith("\n") && file !== '') {
+							file += "\n";
+						}
+						return file;
+					});
+			}
+		}
+		return files;
 	}
 
 	static async submissionsFromFiles(files,glob){
 		if(files === null){
-			return async function(){return Submission.NullSubmission;};
+			return Submission.NullSubmission;
 		}
 		checkNotNull(files);
 		checkArgument(Object.keys(files).length > 0, "Must provide at least one submission directory!");
@@ -249,32 +255,34 @@ export default class Submission {
 
 		// Divide entries by student
 		//console.debug(glob);
-		let studentSubs = Object.entries(files).reduce(function(agg,entries){
-			let key = entries[0];
-			let entry = entries[1];
-			let isMatch = glob.test(key);
-			//console.log(isMatch + ':' + key);
-			if(isMatch){
-				key = key.split('/');
-				key.shift();
-				let student = key.shift();
-				if(!(student in agg)){
-					agg[student] = {};
+		let studentSubs = Object.entries(files)
+			.reduce(function(agg,keyval){
+				let key = keyval[0];
+				let entry = keyval[1];
+				let isMatch = glob.test(key);
+				//console.log(isMatch + ':' + key);
+				if(isMatch){
+					key = key.split('/');
+					key.shift();
+					let student = key.shift();
+					if(!(student in agg)){
+						agg[student] = {};
+					}
+					let file = entry;
+					agg[student][key] = file;
 				}
-				let file = entry;
-				agg[student][key] = file;
-			}
-			return agg;
-		},{});
+				return agg;
+			},{});
 
 		// Generate submissions to work on
-		let submissions = Object.entries(studentSubs).map(function(entry){
-			let student = entry[0];
-			let files = entry[1];
-			//console.debug("Adding student: " + student);
-			let submission = Submission.submissionFromFiles(student, files);
-			return submission;
-		});
+		let submissions = Object.entries(studentSubs)
+			.map(function(entry){
+				let student = entry[0];
+				let files = entry[1];
+				//console.debug("Adding student: " + student);
+				let submission = Submission.submissionFromFiles(student, files);
+				return submission;
+			});
 
 		submissions = Promise.all(submissions)
 			.then(function(submissions){

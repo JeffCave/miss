@@ -4,6 +4,7 @@ import {ChecksimsRunner} from './ChecksimsRunner.js';
 import {d3ForceDirected} from './visualizations/force.js';
 import {SimilarityMatrix} from './visualizations/similaritymatrix/SimilarityMatrix.js';
 import {MatrixPrinterRegistry} from './visualizations/similaritymatrix/output/MatrixPrinterRegistry.js';
+import {Submission} from './submission/Submission.js';
 
 
 /**
@@ -13,9 +14,7 @@ import {MatrixPrinterRegistry} from './visualizations/similaritymatrix/output/Ma
  */
 class ChecksimsCommandLine {
 	constructor() {
-		this.submissions = null;
-		this.archive = null;
-		this.common = null;
+		this.runner = new ChecksimsRunner();
 	}
 
 	attachSubmissions(blob){
@@ -25,17 +24,12 @@ class ChecksimsCommandLine {
 		return JSZip
 			.loadAsync(blob)
 			.then(function(zip) {
-				parent.submissions = zip;
-				//zip.forEach(function (relativePath, zipEntry) {
-				//	// 2) print entries
-				//	console.log(zipEntry.name);
-				//	zipEntry
-				//		.async("string")
-				//		.on("data", function (data) { })
-				//		.on("error", function (e) { })
-				//		.on("end", function () { })
-				//		;
-				//});
+				let files = Submission.fileListFromZip(zip);
+				return files;
+			})
+			.then(function(zip){
+				parent.runner.Submissions = zip;
+				return zip;
 			})
 			.catch(function (e) {
 				console.error("Error reading " + blob.name + ": " + e.message);
@@ -174,8 +168,8 @@ class ChecksimsCommandLine {
 	 * @param args CLI arguments to parse
 	 */
 	async runHtml(htmlContainers){
-		let checkSims = new ChecksimsRunner();
-		checkSims.Submissions = this.submissions;
+		let checkSims = this.runner;
+
 		checkSims.CommonCode = this.common;
 		checkSims.ArchiveSubmissions = this.archive;
 		let results = await checkSims.runChecksims();
@@ -191,6 +185,10 @@ window.addEventListener('load',function(){
 	let checker = new ChecksimsCommandLine();
 	let button = document.querySelector('button');
 	let upload = document.querySelector("input[name='zip']");
+
+	button.disabled = true;
+	upload.disabled = false;
+
 	let outputFlds = Array.from(document.querySelectorAll('#results > details'))
 		.reduce(function(a,d){
 			if(d.dataset.type){
@@ -209,24 +207,14 @@ window.addEventListener('load',function(){
 			if (!file.type === 'application/x-zip-compressed'){
 				return;
 			}
-			checker
-				.attachSubmissions(file)
-				.then(function(){
+			checker.attachSubmissions(file)
+				.then(function(files){
 					button.disabled = false;
 					let ul = document.querySelector("ul");
-					let entries = [];
-					checker.submissions.forEach(function(path,entry) {
-						entries.push(entry);
-					});
-					ul.innerHTML = entries.sort((a,b)=>{
-							a = a.name;
-							b = b.name;
-							if(a===b) return 0;
-							if(a<b) return -1;
-							return 1;
-						})
-						.map((entry)=>{
-							return '<li>'+entry.name+'</li>';
+					ul.innerHTML = Object.keys(files)
+						.sort()
+						.map((file)=>{
+							return '<li>'+file+'</li>';
 						})
 						.join('')
 						;

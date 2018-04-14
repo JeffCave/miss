@@ -21,7 +21,6 @@ export {
 import {AlgorithmRunner} from './algorithm/AlgorithmRunner.js';
 import {AlgorithmRegistry} from './algorithm/AlgorithmRegistry.js';
 import {CommonCodeLineRemovalPreprocessor} from './preprocessor/CommonCodeLineRemovalPreprocessor.js';
-import {PreprocessSubmissions} from './preprocessor/PreprocessSubmissions.js';
 import {PreprocessorRegistry} from './preprocessor/PreprocessorRegistry.js';
 import {PairGenerator} from './util/PairGenerator.js';
 import {Submission} from './submission/Submission.js';
@@ -87,7 +86,7 @@ class ChecksimsRunner {
 	 */
 	set Submissions(newSubmissions) {
 		checkNotNull(newSubmissions);
-		this.submissions = Submission.submissionsFromZip(newSubmissions, this.Filter);
+		this.submissions = Submission.submissionsFromFiles(newSubmissions, this.Filter);
 	}
 
 
@@ -106,7 +105,7 @@ class ChecksimsRunner {
 			this.archiveSubmissions = [];
 		}
 		else{
-			this.archiveSubmissions = Submission.submissionsFromZip(newArchiveSubmissions, this.Filter);
+			this.archiveSubmissions = Submission.submissionsFromFiles(newArchiveSubmissions, this.Filter);
 		}
 	}
 
@@ -126,7 +125,7 @@ class ChecksimsRunner {
 			newCommonCode = null;
 		}
 		// All right, parse common code
-		this.commonCode = Submission.submissionsFromZip(newCommonCode, this.Filter);
+		this.commonCode = Submission.submissionsFromFiles(newCommonCode, this.Filter);
 	}
 
 
@@ -192,7 +191,7 @@ class ChecksimsRunner {
 		// Common code removal first, always
 		let the = this;
 		preprocessors.unshift((async function(resolve){
-			let common = await the.CommonCode();
+			let common = await the.CommonCode;
 			common = new CommonCodeLineRemovalPreprocessor(common);
 			return common;
 		})());
