@@ -88,20 +88,10 @@ export default class Submission {
 		});
 		content.content = Promise.all(allContent);
 
-		let that = this;
 		this.content = (async function(){
 			let fileContent = await content.content;
 			let contentString = fileContent.join('\n');
 			return contentString;
-		})();
-		this.tokenList = (async function(){
-			let tokenizer = LineTokenizer.getInstance();
-			let contentString = await that.content;
-			tokens = tokenizer.splitString(contentString);
-			if(tokens.length > 7500) {
-				console.warn("Warning: Submission " + name + " has very large token count (" + tokens.length + ")");
-			}
-			return tokens;
 		})();
 
 		this.name = name;
@@ -109,7 +99,20 @@ export default class Submission {
 
 
 	get ContentAsTokens() {
-		return this.tokenList;
+		if(!('_tokenList' in this)){
+			let tokenizer = LineTokenizer.getInstance();
+			let self = this;
+			this._tokenList = this.content
+				.then(function(contentString){
+					let tokens = tokenizer.splitString(contentString);
+					if(tokens.length > 7500) {
+						console.warn("Warning: Submission " + self.name + " has very large token count (" + tokens.length + ")");
+					}
+					return tokens;
+				})
+				;
+		}
+		return this._tokenList;
 	}
 
 	get ContentAsString() {
@@ -118,14 +121,6 @@ export default class Submission {
 
 	get Name(){
 		return this.name;
-	}
-
-	get NumTokens() {
-		return this.tokenList.size();
-	}
-
-	get TokenType() {
-		return this.tokenList.type;
 	}
 
 	get hash(){
