@@ -31,8 +31,6 @@ const LexemeMap = [];
  *
  */
 LexemeMap.getLexemeForToken = function(token) {
-	checkNotNull(token);
-
 	if(token in LexemeMap) {
 		let val = LexemeMap[token];
 		return val;
@@ -55,3 +53,7 @@ LexemeMap.getTokenForLexeme = function(lexeme) {
 	}
 	return LexemeMap[lexeme];
 };
+
+
+LexemeMap.getLexemeForToken("");
+

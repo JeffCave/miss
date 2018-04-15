@@ -62,7 +62,7 @@ export default async function AlgorithmResults(a, b, finalListA, finalListB) {
 		let d = results[r];
 		d.finalList = await TokenList.cloneTokenList(d.finalList);
 		let tokens = Array.from(d.finalList);
-		tokens = tokens.filter((token) => !token.isValid());
+		tokens = tokens.filter((token) => !token.valid);
 		tokens = tokens.length;
 		d.identicalTokens = tokens;
 

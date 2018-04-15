@@ -17,6 +17,7 @@ export {
 	TokenList
 };
 
+import {LexemeMap} from '../token/LexemeMap.js';
 import {checkNotNull,checkArgument} from '../util/misc.js';
 
 /**
@@ -88,8 +89,8 @@ export default class TokenList extends Array{
 				return keep;
 			})
 			.map(function(token){
-				if(!onlyValid || token.isValid()) {
-					return token.getTokenAsString();
+				if(!onlyValid || token.valid) {
+					return LexemeMap[token.lexeme];
 				}
 			})
 			.join(sepChar)
@@ -136,7 +137,7 @@ export default class TokenList extends Array{
 	clone(){
 		let newList = Array.from(this)
 			.map(function(token){
-				return token.clone();
+				return JSON.clone(token);
 			});
 		newList = new TokenList(this.type, newList);
 		return newList;
@@ -157,10 +158,10 @@ export default class TokenList extends Array{
 		}
 
 		other = Array.from(other).map(function(token){
-			return token.getLexeme();
+			return token.lexeme;
 		});
 		let areSame = Array.from(this).every(function(token){
-			let lexeme = token.getLexeme();
+			let lexeme = token.lexeme;
 			let index = other.indexOf(lexeme);
 			if(0 > index){
 				return false;

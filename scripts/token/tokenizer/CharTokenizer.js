@@ -17,7 +17,7 @@ export {
 	CharTokenizer
 };
 
-import {Token}     from '../Token.js';
+import {newToken}     from '../Token.js';
 import {TokenList} from '../TokenList.js';
 
 import {checkNotNull} from '../../util/misc.js';
@@ -48,7 +48,7 @@ class CharTokenizer{ // extends Tokenizer {
 
 		let tokens = string.split('')
 			.map((character) => {
-				return new Token(character, TokenList.TokenTypes.CHARACTER);
+				return newToken(character, TokenList.TokenTypes.CHARACTER);
 			});
 
 		let toReturn = new TokenList(this.getType(),tokens);

@@ -17,7 +17,7 @@ export {
 	ValidityEnsuringToken
 };
 
-import {Token} from './Token.js';
+import {newToken} from './Token.js';
 
 
 /**
@@ -25,7 +25,7 @@ import {Token} from './Token.js';
  *
  * Decorates other tokens to override their equals() methods
  */
-export default class ValidityEnsuringToken extends Token {
+export default class ValidityEnsuringToken extends newToken {
 	constructor(wrappedToken) {
 		super(wrappedToken.Lexeme,wrappedToken.Type,wrappedToken.Valid);
 	}

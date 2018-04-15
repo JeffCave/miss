@@ -19,7 +19,7 @@ export {
 	LineTokenizer
 };
 
-import {Token} from '../../token/Token.js';
+import {newToken} from '../../token/Token.js';
 import {Tokenizer} from '../../token/tokenizer/Tokenizer.js';
 import {TokenList} from '../../token/TokenList.js';
 import {checkNotNull} from '../../util/misc.js';
@@ -60,7 +60,7 @@ class LineTokenizer extends Tokenizer {
 			//})
 			.map((str) => {
 				str = str.trim();
-				let token = new Token(str, TokenList.TokenTypes.LINE);
+				let token = newToken(str, TokenList.TokenTypes.LINE);
 				return token;
 			})
 			;
