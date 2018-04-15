@@ -103,12 +103,7 @@ export default class Submission {
 			}
 			return tokens;
 		})();
-		this.hash= (async function(){
-			let content = await that.content;
-			let name = that.name;
-			let hash = hasher(name + content);
-			return hash;
-		})();
+
 		this.name = name;
 	}
 
@@ -131,6 +126,22 @@ export default class Submission {
 
 	get TokenType() {
 		return this.tokenList.type;
+	}
+
+	get hash(){
+		if(!('_hash' in this)){
+			let self = this;
+			this._hash= new Promise(function(r){
+					let content = self.content;
+					r(content);
+				})
+				.then(function(content){
+					let name = self.name;
+					let hash = hasher(name + content);
+					return hash;
+				});
+		}
+		return this._hash;
 	}
 
 	toString() {

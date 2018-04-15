@@ -40,6 +40,14 @@ textarea{
 	height:300px;
 }
 
+
+
+fieldset > button{
+	float: right;
+}
+
+
+
 #results > details > * {
 	margin:2em;
 }
@@ -49,6 +57,16 @@ textarea{
 	color:white;
 	font-weight:bold;
 }
+#results > details[data-type='force'] svg {
+	padding:0;
+	height:300px;
+	width:300px;
+	list-style-type:none;
+	position:relative;
+	border:1px solid darkgray;
+}
+
+
 #results > details[data-type='html'] thead th, #results > details[data-type='html'] thead th > span {
 	writing-mode: vertical-rl;
 }
