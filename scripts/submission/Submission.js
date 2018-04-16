@@ -33,7 +33,6 @@ export default class Submission {
 	 */
 	constructor(name, files, tokens = null) {
 		if(name instanceof Submission){
-			this.tokenList = name.tokenList;
 			this.content = name.content;
 			this.name = name.name;
 			return;
@@ -50,6 +49,13 @@ export default class Submission {
 
 		// Group the files by the various types we handle
 		let content = Object.entries(files)
+			.filter(function(d){
+				let ext = d[0].split('.').pop();
+				let ignore = ContentHandlers.ignores.every(function(e){
+						return ext !== e;
+					});
+				return ignore;
+			})
 			.reduce(function(agg,file){
 				let name = file[0];
 				let content = file[1];
@@ -86,14 +92,8 @@ export default class Submission {
 				});
 			allContent.push(d.content);
 		});
-		content.content = Promise.all(allContent);
 
-		this.content = (async function(){
-			let fileContent = await content.content;
-			let contentString = fileContent.join('\n');
-			return contentString;
-		})();
-
+		this.content = allContent;
 		this.name = name;
 	}
 
@@ -102,7 +102,7 @@ export default class Submission {
 		if(!('_tokenList' in this)){
 			let tokenizer = LineTokenizer.getInstance();
 			let self = this;
-			this._tokenList = this.content
+			this._tokenList = this.ContentAsString
 				.then(function(contentString){
 					let tokens = tokenizer.splitString(contentString);
 					if(tokens.length > 7500) {
@@ -116,7 +116,16 @@ export default class Submission {
 	}
 
 	get ContentAsString() {
-		return this.content;
+		if(!('_content' in this)){
+			let self = this;
+			this._content = Promise.all(self.content)
+				.then(function(fileContent){
+					let contentString = fileContent.join('\n');
+					return contentString;
+				})
+				;
+		}
+		return this._content;
 	}
 
 	get Name(){
@@ -275,6 +284,7 @@ export default class Submission {
 						agg[student] = {};
 					}
 					let file = entry;
+					key = key.join('/');
 					agg[student][key] = file;
 				}
 				return agg;
