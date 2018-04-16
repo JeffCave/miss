@@ -31,12 +31,39 @@ function DoStuff(){
 }
 
 
+/*
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nunc
+quam. Ut quis congue ex, sit amet viverra ex. Proin iaculis sem vitae
+tincidunt euismod. In varius pretium arcu at ornare. Duis ut orci ac
+lacus convallis ultricies. Nunc feugiat dolor urna, et vestibulum
+nisl pellentesque vel. Mauris et ullamcorper sem, at molestie purus.
+Phasellus eget placerat purus, ut suscipit lectus. Aliquam ligula ex,
+ultricies ac ex quis, lacinia sollicitudin augue. Aliquam ut egestas
+lorem. Nam urna dolor, finibus non ex vitae, euismod vulputate enim.
+Fusce mattis ligula odio, vel aliquet diam volutpat et. Fusce aliquet
+rutrum libero et dictum.
+*/
+function DoOtherStuff(){
+
+	Array.from(document.querySelectorAll('main > ul li')).forEach(function(li){
+		let text = li.innerText.split(':');
+		let html = '<meter min="0" max="100" value="{{average}}"></meter> {{name}}'
+			.replace(/{{average}}/g,text[1])
+			.replace(/{{name}}/g,text[0])
+			;
+		li.innerHTML = html;
+	});
+}
+
+
 /**
  * wait for the page to load before starting everything
  */
 window.addEventListener('load',function(){
 
-	document.querySelector('#dostuff').addEventListener('click', DoStuff);
+	let stuff = document.querySelector('#dostuff');
+	stuff.addEventListener('click', DoStuff);
+	stuff.addEventListener('click', DoOtherStuff);
 
 	state.elems.board = document.querySelector('main > ul');
 
