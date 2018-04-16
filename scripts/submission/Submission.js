@@ -3,6 +3,10 @@ export{
 	Submission
 };
 
+/*
+global JSZip
+*/
+
 import {LineTokenizer} from '../token/tokenizer/LineTokenizer.js';
 import {TokenList} from '../token/TokenList.js';
 import {ContentHandlers} from '../submission/ContentHandlers.js';

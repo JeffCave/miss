@@ -17,7 +17,10 @@ export const ContentHandlers = {
 		{
 			'type' : 'dna',
 			'ext' : ['fasta','dna'],
-			'tokenizer' : TokenList.TokenTypes.CHARACTER
+			'tokenizer' : TokenList.TokenTypes.CHARACTER,
+			'preprocessors': [
+					'lowercase'
+				]
 		},
 		{
 			'type' : 'js',
@@ -58,7 +61,9 @@ ContentHandlers.handlers.forEach(function(d){ContentHandlers.handlers[d.type] = 
 	// encrypted
 	'gpg',
 	// libraries and executables
-	'jar','exe','dll','suo'
+	'jar','exe','dll','suo','pyc','pyw',
+	// other
+	'doc','docx',
 ].forEach(function(ext){
 	let pattern = "\\." + ext + '$';
 	pattern = new RegExp(pattern,'i');
