@@ -177,24 +177,13 @@ class ChecksimsRunner {
 		console.log("Got " + archiveSubmissions.length + " archive submissions to test.");
 
 		// Apply all preprocessors
-		let registry = await PreprocessorRegistry.getInstance();
-		let preprocessors = registry.getSupportedImplementationNames();
-		preprocessors = preprocessors
-			.filter(function(name){
-				return name !== 'commoncodeline';
-			});
-		preprocessors = preprocessors
-			.map(function(name){
-				let implementation = registry.getImplementationInstance(name);
-				return implementation;
-			});
+		let registry = PreprocessorRegistry;
+		let preprocessors = Object.values(registry.processors);
 		// Common code removal first, always
 		let the = this;
-		preprocessors.unshift((async function(resolve){
-			let common = await the.CommonCode;
-			common = new CommonCodeLineRemovalPreprocessor(common);
-			return common;
-		})());
+		let common = await the.CommonCode;
+		common = CommonCodeLineRemovalPreprocessor(common);
+		preprocessors.unshift(common);
 		// Apply the preprocessors to the submissions
 		preprocessors = await Promise.all(preprocessors);
 		let processed = [submissions,archiveSubmissions]
@@ -202,7 +191,7 @@ class ChecksimsRunner {
 				group = group.map(function(submission){
 					submission = new Promise(r=>{r(submission);});
 					submission = preprocessors.reduce(function(sub, preprocessor){
-							sub = preprocessor.process(sub);
+							sub = preprocessor(sub);
 							return sub;
 						}, submission);
 					return submission;

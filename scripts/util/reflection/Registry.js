@@ -17,9 +17,6 @@ export{
 	Registry
 };
 
-import {CommonCodeLineRemovalPreprocessor} from '../../preprocessor/CommonCodeLineRemovalPreprocessor.js';
-import {LowercasePreprocessor} from '../../preprocessor/LowercasePreprocessor.js';
-import {WhitespaceDeduplicationPreprocessor} from '../../preprocessor/WhitespaceDeduplicationPreprocessor.js';
 import {SmithWaterman} from '../../algorithm/smithwaterman/SmithWaterman.js';
 import {LineSimilarityChecker} from '../../algorithm/linesimilarity/LineSimilarityChecker.js';
 import {MatrixToCSVPrinter} from '../../visualizations/similaritymatrix/output/MatrixToCSVPrinter.js';
