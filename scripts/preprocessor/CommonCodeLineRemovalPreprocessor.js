@@ -17,7 +17,8 @@ export {
 	CommonCodeLineRemovalPreprocessor
 };
 
-import {LineSimilarityChecker} from '../algorithm/linesimilarity/LineSimilarityChecker.js';
+import '../algorithm/linesimilarity/LineSimilarityChecker.js';
+import {AlgorithmRegistry} from '../algorithm/AlgorithmRegistry.js';
 import {Submission} from '../submission/Submission.js';
 import {ValidityIgnoringSubmission} from '../submission/ValidityIgnoringSubmission.js';
 import {checkNotNull,checkArgument} from '../util/misc.js';
@@ -34,7 +35,7 @@ export default function CommonCodeLineRemovalPreprocessor(common){
 	checkNotNull(common);
 	checkArgument(common instanceof Submission, "Common Code expected to be of type 'Submission'");
 
-	let algorithm = LineSimilarityChecker.getInstance();
+	let algorithm = AlgorithmRegistry.processors["linecompare"];
 
 	/**
 	 * Perform common code removal using Line Comparison.
@@ -54,7 +55,7 @@ export default function CommonCodeLineRemovalPreprocessor(common){
 		let computeCommon = new Submission(common);
 
 		// Use the new submissions to compute this
-		let results = await algorithm.detectSimilarity(computeIn, computeCommon);
+		let results = await algorithm(computeIn, computeCommon);
 
 		// The results contains two TokenLists, representing the final state of the submissions after detection
 		// All common code should be marked invalid for the input submission's final list

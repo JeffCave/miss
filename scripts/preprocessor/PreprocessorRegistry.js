@@ -8,7 +8,7 @@ export {
  */
 const PreprocessorRegistry = {
 	def : 'null',
-	processors: []
+	processors: {}
 };
 
 

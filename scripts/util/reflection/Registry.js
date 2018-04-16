@@ -17,8 +17,6 @@ export{
 	Registry
 };
 
-import {SmithWaterman} from '../../algorithm/smithwaterman/SmithWaterman.js';
-import {LineSimilarityChecker} from '../../algorithm/linesimilarity/LineSimilarityChecker.js';
 import {MatrixToCSVPrinter} from '../../visualizations/similaritymatrix/output/MatrixToCSVPrinter.js';
 import {MatrixToHTMLPrinter} from '../../visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
 
