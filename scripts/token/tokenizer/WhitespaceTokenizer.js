@@ -17,7 +17,7 @@ export {
 	WhitespaceTokenizer
 };
 
-import {Token} from '../../token/Token.js';
+import {newToken} from '../../token/Token.js';
 import {checkNotNull} from '../../util/misc.js';
 
 /**
@@ -48,7 +48,7 @@ class WhitespaceTokenizer{ // extends Tokenizer {
 			.split("\\s+")
 			.filter((str) => {return str === "";})
 			.map((str) => {
-				return new Token(str, TokenTypes.WHITESPACE);
+				return newToken(str, TokenTypes.WHITESPACE);
 			})
 			;
 

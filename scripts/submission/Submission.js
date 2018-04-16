@@ -33,7 +33,6 @@ export default class Submission {
 	 */
 	constructor(name, files, tokens = null) {
 		if(name instanceof Submission){
-			this.tokenList = name.tokenList;
 			this.content = name.content;
 			this.name = name.name;
 			return;
@@ -50,6 +49,13 @@ export default class Submission {
 
 		// Group the files by the various types we handle
 		let content = Object.entries(files)
+			.filter(function(d){
+				let ext = d[0].split('.').pop();
+				let ignore = ContentHandlers.ignores.every(function(e){
+						return ext !== e;
+					});
+				return ignore;
+			})
 			.reduce(function(agg,file){
 				let name = file[0];
 				let content = file[1];
@@ -86,51 +92,60 @@ export default class Submission {
 				});
 			allContent.push(d.content);
 		});
-		content.content = Promise.all(allContent);
 
-		let that = this;
-		this.content = (async function(){
-			let fileContent = await content.content;
-			let contentString = fileContent.join('\n');
-			return contentString;
-		})();
-		this.tokenList = (async function(){
-			let tokenizer = LineTokenizer.getInstance();
-			let contentString = await that.content;
-			tokens = tokenizer.splitString(contentString);
-			if(tokens.length > 7500) {
-				console.warn("Warning: Submission " + name + " has very large token count (" + tokens.length + ")");
-			}
-			return tokens;
-		})();
-		this.hash= (async function(){
-			let content = await that.content;
-			let name = that.name;
-			let hash = hasher(name + content);
-			return hash;
-		})();
+		this.content = allContent;
 		this.name = name;
 	}
 
 
 	get ContentAsTokens() {
-		return this.tokenList;
+		if(!('_tokenList' in this)){
+			let tokenizer = LineTokenizer.getInstance();
+			let self = this;
+			this._tokenList = this.ContentAsString
+				.then(function(contentString){
+					let tokens = tokenizer.splitString(contentString);
+					if(tokens.length > 7500) {
+						console.warn("Warning: Submission " + self.name + " has very large token count (" + tokens.length + ")");
+					}
+					return tokens;
+				})
+				;
+		}
+		return this._tokenList;
 	}
 
 	get ContentAsString() {
-		return this.content;
+		if(!('_content' in this)){
+			let self = this;
+			this._content = Promise.all(self.content)
+				.then(function(fileContent){
+					let contentString = fileContent.join('\n');
+					return contentString;
+				})
+				;
+		}
+		return this._content;
 	}
 
 	get Name(){
 		return this.name;
 	}
 
-	get NumTokens() {
-		return this.tokenList.size();
-	}
-
-	get TokenType() {
-		return this.tokenList.type;
+	get hash(){
+		if(!('_hash' in this)){
+			let self = this;
+			this._hash= new Promise(function(r){
+					let content = self.content;
+					r(content);
+				})
+				.then(function(content){
+					let name = self.name;
+					let hash = hasher(name + content);
+					return hash;
+				});
+		}
+		return this._hash;
 	}
 
 	toString() {
@@ -269,6 +284,7 @@ export default class Submission {
 						agg[student] = {};
 					}
 					let file = entry;
+					key = key.join('/');
 					agg[student][key] = file;
 				}
 				return agg;

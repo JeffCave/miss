@@ -360,7 +360,7 @@ export default class SmithWatermanAlgorithm {
 		let newCandidates = {};
 
 		for(let x = toCompute.getOrigin().getX(); x < toCompute.getMax().getX(); x++) {
-			let xToken = new ValidityEnsuringToken(this.xList[x - 1]);
+			let xToken = this.xList[x - 1];
 
 			for(let y = toCompute.getOrigin().getY(); y < toCompute.getMax().getY(); y++) {
 				let prevX = x - 1;
@@ -370,7 +370,8 @@ export default class SmithWatermanAlgorithm {
 				let newM;
 
 				// Token Match - increment S table
-				if(xToken.isValid() && xToken.equals(this.yList[prevY])) {
+				let yToken = this.yList[prevY];
+				if(yToken.valid && xToken.valid && xToken.lexeme === yToken.lexeme && xToken.type === yToken.type) {
 					let sPred = this.s[prevX][prevY];
 					let mPred = this.m[prevX][prevY];
 
@@ -488,8 +489,8 @@ export default class SmithWatermanAlgorithm {
 			coordinate = Coordinate.from(coordinate);
 			let x = coordinate.getX() - 1;
 			let y = coordinate.getY() - 1;
-			the.xList[x].setValid(false);
-			the.yList[y].setValid(false);
+			the.xList[x].valid = false;
+			the.yList[y].valid = false;
 		});
 	}
 
@@ -512,7 +513,9 @@ export default class SmithWatermanAlgorithm {
 		let largestPredecessor = 1;
 		while(largestPredecessor > 0) {
 			// Only add the current coordinate if the tokens at the given point match
-			if(new ValidityEnsuringToken(this.xList[x - 1]).equals(this.yList[y - 1])) {
+			let yToken = this.xList[x - 1];
+			let xToken = this.yList[y - 1];
+			if(yToken.valid && xToken.valid && xToken.lexeme === yToken.lexeme && xToken.type === yToken.type) {
 				matchCoordinates.add(Coordinate.from(x, y).toString());
 
 				// If they match, the predecessor is always the upper-left diagonal

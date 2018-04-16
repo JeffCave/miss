@@ -61,16 +61,14 @@ export default async function AlgorithmResults(a, b, finalListA, finalListB) {
 	for(let r = 0; r<results.length; r++){
 		let d = results[r];
 		d.finalList = await TokenList.cloneTokenList(d.finalList);
-		let tokens = Array.from(d.finalList);
-		tokens = tokens.filter((token) => !token.isValid());
-		tokens = tokens.length;
-		d.identicalTokens = tokens;
 
-		let subTokens = await a.ContentAsTokens;
-		if(subTokens.length === 0){
-			return 0;
-		}
-		let pct = d.identicalTokens / subTokens.length;
+		d.identicalTokens = Array.from(d.finalList).reduce((sum,token)=>{
+			sum = sum +	(!token.valid);
+			return sum;
+		},0);
+
+		let subTokens = await d.submission.ContentAsTokens;
+		let pct = (subTokens.length === 0) ? 0 : d.identicalTokens / subTokens.length;
 		d.percentMatched = pct;
 
 		results[String.fromCharCode(r+65)] = d;

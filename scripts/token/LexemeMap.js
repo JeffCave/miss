@@ -1,24 +1,3 @@
-/*
- * CDDL HEADER START
- *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * See LICENSE.txt included in this distribution for the specific
- * language governing permissions and limitations under the License.
- *
- * CDDL HEADER END
- *
- * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
- */
-'use strict';
-export{
-	LexemeMap
-};
-
-import {checkNotNull} from '../util/misc.js';
-
 /**
  * Maps lexemes (integers) to the original token contents.
  *
@@ -38,73 +17,43 @@ import {checkNotNull} from '../util/misc.js';
  * present, though in the future it is desired to add Tokens backed
  * by Characters, not integers.
  */
-class LexemeMap {
+'use strict';
+export{
+	LexemeMap
+};
 
-	static get lexemeMap(){
-		if(!('pLexemeMap' in LexemeMap)){
-			this.pLexemeMap = new Map();
-			LexemeMap.getLexemeForToken("");
-		}
-		return this.pLexemeMap;
+import {checkNotNull} from '../util/misc.js';
+
+
+const LexemeMap = [];
+
+/**
+ *
+ */
+LexemeMap.getLexemeForToken = function(token) {
+	if(token in LexemeMap) {
+		let val = LexemeMap[token];
+		return val;
 	}
 
-	static get lexemeIndex(){
-		if(!('pLexemeIndex' in LexemeMap)){
-			this.pLexemeIndex = 0;
-		}
-		return this.pLexemeIndex;
+	let index = LexemeMap.length;
+	LexemeMap[token] = index;
+	LexemeMap.push(token);
+
+	return index;
+};
+
+
+/**
+ * Throws RuntimeException if lexeme does not map to any key.
+ */
+LexemeMap.getTokenForLexeme = function(lexeme) {
+	if(lexeme < 0 || lexeme > (LexemeMap.length-1)) {
+		throw new Error("Lexeme " + lexeme + " does not map to any value!");
 	}
+	return LexemeMap[lexeme];
+};
 
-	static set lexemeIndex(value){
-		this.pLexemeIndex = value;
-	}
 
-	/**
-	 * @param token Token to get lexeme for
-	 * @return Lexeme representing this token. If no such lexeme existed prior, it is created and mapped to the token.
-	 */
-	static getLexemeForToken(token) {
-		checkNotNull(token);
+LexemeMap.getLexemeForToken("");
 
-		if(this.lexemeMap.has(token)) {
-			let val = this.lexemeMap.get(token);
-			return val;
-		}
-		let newLexeme = this.lexemeIndex;
-		this.lexemeIndex = this.lexemeIndex + 1;
-		this.lexemeMap.set(token, newLexeme);
-
-		return newLexeme;
-	}
-
-	/**
-	 * Throws RuntimeException if lexeme does not map to any key.
-	 *
-	 * TODO Investigate conversion to checked exception?
-	 *
-	 * @param lexeme Lexeme being requested
-	 * @return Token of given type
-	 */
-	static getTokenForLexeme(lexeme) {
-		let inverse = Array.from(this.lexemeMap.entries());
-		inverse = inverse.filter(function(d){
-				return d[1] === lexeme;
-			});
-		inverse = inverse.shift();
-		if(typeof inverse === 'undefined') {
-			throw new Error("Lexeme " + lexeme + " does not map to any value!");
-		}
-
-		return inverse[0];
-	}
-
-	/**
-	 * Used to reset state for unit tests.
-	 *
-	 * CAUTION! This will obliterate the existing token mappings! DO NOT CALL IN PRODUCTION CODE!
-	 */
-	static resetMappings() {
-		this.lexemeMap.clear();
-		this.lexemeIndex = 0;
-	}
-}

@@ -21,6 +21,7 @@ import {AlgorithmResults} from '../../algorithm/AlgorithmResults.js';
 import {SimilarityDetector} from '../../algorithm/SimilarityDetector.js';
 import {Submission} from '../../submission/Submission.js';
 import {TokenList} from '../../token/TokenList.js';
+import {LexemeMap} from '../../token/LexemeMap.js';
 import {checkNotNull, checkArgument, hasher} from '../../util/misc.js';
 
 /**
@@ -125,8 +126,8 @@ class LineSimilarityChecker extends SimilarityDetector {
 			}
 		});
 
-		let invalTokensA = Array.from(finalA).filter((token) => !token.isValid()).length;
-		let invalTokensB = Array.from(finalB).filter((token) => !token.isValid()).length;
+		let invalTokensA = Array.from(finalA).filter((token) => !token.valid).length;
+		let invalTokensB = Array.from(finalB).filter((token) => !token.valid).length;
 
 		if(invalTokensA !== identicalLinesA) {
 			throw new Error(
@@ -147,7 +148,7 @@ class LineSimilarityChecker extends SimilarityDetector {
 
 	addLinesToMap(lines, lineDatabase, submitter, hasher) {
 		lines.forEach(function(token,i){
-			let hash = hasher(token.getTokenAsString());
+			let hash = hasher(LexemeMap[token.lexeme]);
 			if(!(hash in lineDatabase)) {
 				lineDatabase[hash] = [];
 			}
