@@ -86,7 +86,7 @@ class ChecksimsCommandLine {
 			if(name in htmlContainers){
 				console.log("Generating " + name + " output");
 				let output = MatrixPrinterRegistry.processors[name];
-				output = await output(resultsMatrix);
+				output = output(resultsMatrix);
 				htmlContainers[name].querySelector('.result').innerHTML = output;
 			}
 		}
