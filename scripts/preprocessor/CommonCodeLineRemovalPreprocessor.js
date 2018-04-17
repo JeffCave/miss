@@ -17,47 +17,25 @@ export {
 	CommonCodeLineRemovalPreprocessor
 };
 
-import {LineSimilarityChecker} from '../algorithm/linesimilarity/LineSimilarityChecker.js';
+import '../algorithm/linesimilarity/LineSimilarityChecker.js';
+import {AlgorithmRegistry} from '../algorithm/AlgorithmRegistry.js';
 import {Submission} from '../submission/Submission.js';
 import {ValidityIgnoringSubmission} from '../submission/ValidityIgnoringSubmission.js';
-import {Tokenizer} from '../token/tokenizer/Tokenizer.js';
-import {SubmissionPreprocessor} from '../preprocessor/SubmissionPreprocessor.js';
 import {checkNotNull,checkArgument} from '../util/misc.js';
 
 
 //PreprocessorRegistry.addPreprocessor('CommonCodeLineRemovalPreprocessor');
 /**
- * Common Code Removal via Line Comparison.
+ * Create a Common Code Removal preprocessor using Line Compare.
+ *
+ * @param common Common code to remove
  */
-export default class CommonCodeLineRemovalPreprocessor extends SubmissionPreprocessor {
+export default function CommonCodeLineRemovalPreprocessor(common){
 
-	static get algorithm(){
-		if(!('_algorithm' in CommonCodeLineRemovalPreprocessor)){
-			CommonCodeLineRemovalPreprocessor._algorithm = LineSimilarityChecker.getInstance();
-		}
-		return CommonCodeLineRemovalPreprocessor._algorithm;
-	}
+	checkNotNull(common);
+	checkArgument(common instanceof Submission, "Common Code expected to be of type 'Submission'");
 
-	/**
-	 * @return Dummy instance of CommonCodeLineRemovalPreprocessor with empty common code
-	 */
-	static getInstance() {
-		let submission = Submission.NullSubmission;
-		let instance = new CommonCodeLineRemovalPreprocessor(submission);
-		return instance;
-	}
-
-	/**
-	 * Create a Common Code Removal preprocessor using Line Compare.
-	 *
-	 * @param common Common code to remove
-	 */
-	constructor(common) {
-		checkNotNull(common);
-		checkArgument(common instanceof Submission, "Common Code expected to be of type 'Submission'");
-		super();
-		this.common = common;
-	}
+	let algorithm = AlgorithmRegistry.processors["linecompare"];
 
 	/**
 	 * Perform common code removal using Line Comparison.
@@ -66,7 +44,7 @@ export default class CommonCodeLineRemovalPreprocessor extends SubmissionPreproc
 	 * @return Input submission with common code removed
 	 * @throws InternalAlgorithmError Thrown on error removing common code
 	 */
-	async process(removeFrom) {
+	return async function(removeFrom) {
 		console.debug("Performing common code removal on submission " + removeFrom.Name);
 		if(removeFrom instanceof Promise){
 			removeFrom = await removeFrom;
@@ -74,10 +52,10 @@ export default class CommonCodeLineRemovalPreprocessor extends SubmissionPreproc
 
 		// Create new submissions with retokenized input
 		let computeIn = new Submission(removeFrom);
-		let computeCommon = new Submission(this.common);
+		let computeCommon = new Submission(common);
 
 		// Use the new submissions to compute this
-		let results = await CommonCodeLineRemovalPreprocessor.algorithm.detectSimilarity(computeIn, computeCommon);
+		let results = await algorithm(computeIn, computeCommon);
 
 		// The results contains two TokenLists, representing the final state of the submissions after detection
 		// All common code should be marked invalid for the input submission's final list
@@ -99,12 +77,6 @@ export default class CommonCodeLineRemovalPreprocessor extends SubmissionPreproc
 		//console.trace("Removed " + identTokens + " common tokens (of " + removeFrom.NumTokens + " total)");
 		let submission = new Submission(removeFrom.Name, newBody);
 		return submission;
-	}
+	};
 
-	/**
-	 * @return Name of the implementation as it will be seen in the registry
-	 */
-	getName() {
-		return "commoncodeline";
-	}
 }

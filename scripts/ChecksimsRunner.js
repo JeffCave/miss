@@ -18,7 +18,7 @@ export {
 	ChecksimsRunner
 };
 
-import {AlgorithmRunner} from './algorithm/AlgorithmRunner.js';
+import './algorithm/smithwaterman/SmithWaterman.js';
 import {AlgorithmRegistry} from './algorithm/AlgorithmRegistry.js';
 import {CommonCodeLineRemovalPreprocessor} from './preprocessor/CommonCodeLineRemovalPreprocessor.js';
 import {PreprocessorRegistry} from './preprocessor/PreprocessorRegistry.js';
@@ -54,7 +54,7 @@ class ChecksimsRunner {
 	 */
 	get Algorithm() {
 		if(!('algorithm' in this)){
-			this.algorithm = AlgorithmRegistry.getInstance().getImplementationInstance('smithwaterman');
+			this.algorithm = AlgorithmRegistry.processors['smithwaterman'];
 		}
 		return this.algorithm;
 	}
@@ -65,7 +65,7 @@ class ChecksimsRunner {
 	set Algorithm(newAlgorithm) {
 		checkNotNull(newAlgorithm);
 		if(typeof newAlgorithm === 'string'){
-			newAlgorithm = AlgorithmRegistry.getInstance().getImplementationInstance(newAlgorithm);
+			newAlgorithm = AlgorithmRegistry.processors[newAlgorithm];
 		}
 
 		this.algorithm = newAlgorithm;
@@ -177,24 +177,13 @@ class ChecksimsRunner {
 		console.log("Got " + archiveSubmissions.length + " archive submissions to test.");
 
 		// Apply all preprocessors
-		let registry = await PreprocessorRegistry.getInstance();
-		let preprocessors = registry.getSupportedImplementationNames();
-		preprocessors = preprocessors
-			.filter(function(name){
-				return name !== 'commoncodeline';
-			});
-		preprocessors = preprocessors
-			.map(function(name){
-				let implementation = registry.getImplementationInstance(name);
-				return implementation;
-			});
+		let registry = PreprocessorRegistry;
+		let preprocessors = Object.values(registry.processors);
 		// Common code removal first, always
 		let the = this;
-		preprocessors.unshift((async function(resolve){
-			let common = await the.CommonCode;
-			common = new CommonCodeLineRemovalPreprocessor(common);
-			return common;
-		})());
+		let common = await the.CommonCode;
+		common = CommonCodeLineRemovalPreprocessor(common);
+		preprocessors.unshift(common);
 		// Apply the preprocessors to the submissions
 		preprocessors = await Promise.all(preprocessors);
 		let processed = [submissions,archiveSubmissions]
@@ -202,7 +191,7 @@ class ChecksimsRunner {
 				group = group.map(function(submission){
 					submission = new Promise(r=>{r(submission);});
 					submission = preprocessors.reduce(function(sub, preprocessor){
-							sub = preprocessor.process(sub);
+							sub = preprocessor(sub);
 							return sub;
 						}, submission);
 					return submission;
@@ -215,8 +204,12 @@ class ChecksimsRunner {
 		// Apply algorithm to submissions
 		let allPairs = await PairGenerator.generatePairsWithArchive(submissions, archiveSubmissions);
 		let algo = await this.Algorithm;
-		let results = AlgorithmRunner.runAlgorithm(allPairs, algo);
-
+		console.log("Performing similarity detection on " + submissions.length + " pairs");
+		// Perform parallel analysis of all submission pairs to generate a results list
+		let results = allPairs.map(function(pair){
+			return algo(pair[0], pair[1]);
+		})
+		;
 
 		console.log("Beginning similarity detection...");
 		let startTime = Date.now();

@@ -3,6 +3,10 @@ export{
 	Submission
 };
 
+/*
+global JSZip
+*/
+
 import {LineTokenizer} from '../token/tokenizer/LineTokenizer.js';
 import {TokenList} from '../token/TokenList.js';
 import {ContentHandlers} from '../submission/ContentHandlers.js';
@@ -50,11 +54,12 @@ export default class Submission {
 		// Group the files by the various types we handle
 		let content = Object.entries(files)
 			.filter(function(d){
-				let ext = d[0].split('.').pop();
-				let ignore = ContentHandlers.ignores.every(function(e){
-						return ext !== e;
+				let fname = d[0];
+				let anyIgnores = ContentHandlers.ignores.some(function(e){
+						let isIgnore = e.test(fname);
+						return isIgnore;
 					});
-				return ignore;
+				return !anyIgnores;
 			})
 			.reduce(function(agg,file){
 				let name = file[0];

@@ -1,11 +1,14 @@
 'use strict';
 
+import {ChecksimsException} from './ChecksimsException.js';
 import {ChecksimsRunner} from './ChecksimsRunner.js';
 import {d3ForceDirected} from './visualizations/force.js';
 import {SimilarityMatrix} from './visualizations/similaritymatrix/SimilarityMatrix.js';
 import {MatrixPrinterRegistry} from './visualizations/similaritymatrix/output/MatrixPrinterRegistry.js';
 import {Submission} from './submission/Submission.js';
 
+import './visualizations/similaritymatrix/output/MatrixToCSVPrinter.js';
+import './visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
 
 /**
  * Parses Checksims' command-line options.
@@ -78,28 +81,15 @@ class ChecksimsCommandLine {
 		let resultsMatrix = await SimilarityMatrix.generateMatrix(results);
 
 		// Output using all output printers
-		Promise.all(deduplicatedStrategies
-			.map(function(name){
-				return MatrixPrinterRegistry.getInstance().getImplementationInstance(name);
-			}))
-			.then(function(outputs){
-				outputs = outputs
-					.reduce(function(a,p){
-						console.log("Generating " + p.getName() + " output");
-						a[p.getName()] = p.printMatrix(resultsMatrix);
-						return a;
-					},{})
-					;
-
-				// Output for all specified strategies
-				Object.entries(outputs).forEach(function(strategy){
-					let key = strategy[0];
-					let val = strategy[1];
-					if(key in htmlContainers){
-						htmlContainers[key].querySelector('.result').innerHTML = val;
-					}
-				});
-		});
+		for(let i = 0; i < deduplicatedStrategies.length; i++){
+			let name = deduplicatedStrategies[i];
+			if(name in htmlContainers){
+				console.log("Generating " + name + " output");
+				let output = MatrixPrinterRegistry.processors[name];
+				output = output(resultsMatrix);
+				htmlContainers[name].querySelector('.result').innerHTML = output;
+			}
+		}
 	}
 
 	renderListTable(results,htmlContainers){

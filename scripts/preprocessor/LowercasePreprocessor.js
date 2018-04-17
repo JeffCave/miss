@@ -1,76 +1,31 @@
-/*
- * CDDL HEADER START
- *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * See LICENSE.txt included in this distribution for the specific
- * language governing permissions and limitations under the License.
- *
- * CDDL HEADER END
- *
- * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
- */
 'use strict';
-export {
-	LowercasePreprocessor
-};
 
-import {SubmissionPreprocessor} from './SubmissionPreprocessor.js';
+import {PreprocessorRegistry} from './PreprocessorRegistry.js';
 import {Submission} from '../submission/Submission.js';
-import {Tokenizer} from '../token/tokenizer/Tokenizer.js';
 import {checkNotNull} from '../util/misc.js';
 
-/**
- * Lowercases tokens to prevent case from interfering with comparisons.
- */
-export default class LowercasePreprocessor extends SubmissionPreprocessor {
+(function(){
 
-	/**
-	 * @return Singleton instance of LowercasePreprocessor
-	 */
-	static getInstance() {
-		if(!('instance' in LowercasePreprocessor)) {
-			LowercasePreprocessor.instance = new LowercasePreprocessor();
-		}
-		return LowercasePreprocessor.instance;
+PreprocessorRegistry.processors['lowercase'] = async function(submission){
+
+	checkNotNull(submission);
+	if(submission instanceof Promise){
+		submission = await submission;
 	}
 
-	getName() {
-		return "lowercase";
-	}
-
-	async process(submission) {
-		checkNotNull(submission);
-		if(submission instanceof Promise){
-			submission = await submission;
-		}
-
-		// Lowercase the content of the submission, then retokenize
-		// Recreate the string body of the submission from this new list
-		let newBody = {
-			'lowerCased.txt': (async function(){
-				let contentLower = await submission.ContentAsString;
-				contentLower = contentLower.toLowerCase();
-				return contentLower
-			})()
-		};
+	// Lowercase the content of the submission, then retokenize
+	// Recreate the string body of the submission from this new list
+	let newBody = {
+		'lowerCased.txt': (async function(){
+			let contentLower = await submission.ContentAsString;
+			contentLower = contentLower.toLowerCase();
+			return contentLower
+		})()
+	};
 
 
-		let sub = new Submission(submission.Name, newBody);
-		return sub;
-	}
-
-	toString() {
-		return "Singleton instance of LowercasePreprocessor";
-	}
-
-	hashCode() {
-		return Number.parseInt(this.getName().hashCode(),10);
-	}
-
-	equals(other) {
-		return other instanceof LowercasePreprocessor;
-	}
+	let sub = new Submission(submission.Name, newBody);
+	return sub;
 }
+
+})();

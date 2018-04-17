@@ -1,92 +1,10 @@
-/*
- * CDDL HEADER START
- *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * See LICENSE.txt included in this distribution for the specific
- * language governing permissions and limitations under the License.
- *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at LICENSE.txt.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
- * CDDL HEADER END
- *
- * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
- */
 'use strict';
-export {
-	MatrixToHTMLPrinter
-};
 
 import {checkNotNull} from '../../../util/misc.js';
-import {MatrixPrinter} from '../../../visualizations/similaritymatrix/output/MatrixPrinter.js';
+import {MatrixPrinterRegistry} from '../../../visualizations/similaritymatrix/output/MatrixPrinterRegistry.js';
 
 
-/**
- * Print a Similarity Matrix to HTML.
- */
-export default class MatrixToHTMLPrinter extends MatrixPrinter {
-	static get templateLocation(){
-		return "scripts/visualizations/similaritymatrix/output/htmlOutput.tmpl.html";
-	}
-
-	/**
-	* @return Singleton instance of MatrixToHTMLPrinter
-	*/
-	static getInstance() {
-		if(!('instance' in MatrixToHTMLPrinter)){
-			MatrixToHTMLPrinter.instance = new MatrixToHTMLPrinter();
-		}
-
-		return MatrixToHTMLPrinter.instance;
-	}
-
-	/**
-	 * Print a Similarity Matrix as a color-coded HTML page.
-	 *
-	 * Uses Velocity templating
-	 *
-	 * @param matrix Matrix to print
-	 * @return HTML representation of given matrix
-	 * @throws InternalAlgorithmError Thrown on internal error processing matrix
-	 */
-	printMatrix(matrix){
-		checkNotNull(matrix);
-
-		let template = MatrixToHTMLPrinter.template;
-		let context = {
-			"matrix": matrix,
-			"toFixed": function() {
-				return function(num, render) {
-					return (parseFloat(render(num))*100).toFixed(0);
-				};
-			}
-		};
-		let output = Mustache.render (template, context);
-		return output;
-	}
-
-	getName() {
-		return "html";
-	}
-
-	toString() {
-		return "Singleton instance of MatrixToHTMLPrinter";
-	}
-
-	hashCode() {
-		return this.getName().hashCode();
-	}
-
-	equals(other) {
-		return (other instanceof MatrixToHTMLPrinter);
-	}
-}
+(function(){
 
 
 // As odd as it may seem, this is meant to be global, and blocking.
@@ -101,13 +19,45 @@ export default class MatrixToHTMLPrinter extends MatrixPrinter {
 // asynchronously. It doesn't, so idiosynchracies will need to exist.
 //
 //TODO: change this to be non blocking
+let template = 'scripts/visualizations/similaritymatrix/output/htmlOutput.tmpl.html';
 var xhr = new XMLHttpRequest();
-xhr.open('GET', MatrixToHTMLPrinter.templateLocation, false);
+xhr.open('GET', template, false);
 xhr.send();
 if (xhr.status === 200) {
-	MatrixToHTMLPrinter.template = xhr.responseText;
+	template = xhr.responseText;
 }
 else{
 	throw new Error("Could not resolve resource for HTML output template!");
 }
+
+
+/**
+ * Print a Similarity Matrix as a color-coded HTML page.
+ *
+ * Uses Velocity templating
+ *
+ * @param matrix Matrix to print
+ * @return HTML representation of given matrix
+ * @throws InternalAlgorithmError Thrown on internal error processing matrix
+ */
+MatrixPrinterRegistry.processors['html'] = function(matrix){
+
+	checkNotNull(matrix);
+
+	let context = {
+		"matrix": matrix,
+		"toFixed": function() {
+			return function(num, render) {
+				return (parseFloat(render(num))*100).toFixed(0);
+			};
+		}
+	};
+	let output = Mustache.render (template, context);
+	return output;
+};
+
+
+
+})();
+
 
