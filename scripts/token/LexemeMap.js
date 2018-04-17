@@ -22,8 +22,6 @@ export{
 	LexemeMap
 };
 
-import {checkNotNull} from '../util/misc.js';
-
 
 const LexemeMap = [];
 

@@ -70,7 +70,10 @@ export default function CommonCodeLineRemovalPreprocessor(common){
 
 		// Recreate the string body of the submission from this new list
 		let newBody = {
-			'commonCodeRemoved.txt': (async function(){ return listWithCommonInvalid.join(true) })()
+			'commonCodeRemoved.txt': (async function(){
+				let content = listWithCommonInvalid.join(true);
+				return content;
+			})()
 		};
 
 		//console.trace("Submission " + removeFrom.getName() + " contained " + percentMatched.toFixed(2) + "% common code");

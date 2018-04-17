@@ -19,7 +19,7 @@ PreprocessorRegistry.processors['lowercase'] = async function(submission){
 		'lowerCased.txt': (async function(){
 			let contentLower = await submission.ContentAsString;
 			contentLower = contentLower.toLowerCase();
-			return contentLower
+			return contentLower;
 		})()
 	};
 

@@ -12,7 +12,7 @@ export const ContentHandlers = {
 		{
 			'type' : 'c',
 			'ext' : ['c','h','cpp','hpp'],
-			'tokenizer' : TokenList.TokenTypes.WHITESPACE
+			'tokenizer' : TokenList.TokenTypes.LINE
 		},
 		{
 			'type' : 'dna',
@@ -26,7 +26,7 @@ export const ContentHandlers = {
 			'type' : 'js',
 			'mime' : 'text/javascript',
 			'ext' : ['js'],
-			'tokenizer' : TokenList.TokenTypes.WHITESPACE
+			'tokenizer' : TokenList.TokenTypes.LINE
 		},
 		{
 			'type' : 'text',

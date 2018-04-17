@@ -7,8 +7,11 @@ export{
 global JSZip
 */
 
-import {LineTokenizer} from '../token/tokenizer/LineTokenizer.js';
+import '../token/tokenizer/LineTokenizer.js';
+import '../token/tokenizer/CharTokenizer.js';
+import '../token/tokenizer/WhitespaceTokenizer.js';
 import {TokenList} from '../token/TokenList.js';
+import {TokenizerRegistry} from '../token/TokenizerRegistry.js';
 import {ContentHandlers} from '../submission/ContentHandlers.js';
 import {checkNotNull, checkArgument, hasher} from '../util/misc.js';
 
@@ -35,8 +38,9 @@ export default class Submission {
 	 * String contents. This is not recommended and will most likely
 	 * break, at the very least, Preprocessors.
 	 */
-	constructor(name, files, tokens = null) {
+	constructor(name, files) {
 		if(name instanceof Submission){
+			this.allContent = name.allContent;
 			this.content = name.content;
 			this.name = name.name;
 			return;
@@ -46,10 +50,6 @@ export default class Submission {
 		checkArgument(name !== '', "Submission name cannot be empty");
 		checkNotNull(files);
 		checkArgument(typeof files === 'object','Expecting a list of promised files');
-		if(tokens !== null){
-			checkArgument(Array.isArray(tokens),'tokens expected to be an array');
-		}
-
 
 		// Group the files by the various types we handle
 		let content = Object.entries(files)
@@ -98,24 +98,44 @@ export default class Submission {
 			allContent.push(d.content);
 		});
 
-		this.content = allContent;
+		this.allContent = allContent;
+		this.content = content;
 		this.name = name;
 	}
 
 
 	get ContentAsTokens() {
 		if(!('_tokenList' in this)){
-			let tokenizer = LineTokenizer.getInstance();
 			let self = this;
-			this._tokenList = this.ContentAsString
-				.then(function(contentString){
-					let tokens = tokenizer.splitString(contentString);
-					if(tokens.length > 7500) {
-						console.warn("Warning: Submission " + self.name + " has very large token count (" + tokens.length + ")");
-					}
-					return tokens;
-				})
-				;
+			let tokenlists = {};
+			Object.entries(this.content).forEach(function(d){
+				let type = d[0];
+				type = ContentHandlers.handlers[type].tokenizer;
+				let content = d[1];
+				content = Object.values(content.files);
+				tokenlists[type] = Promise.all(content)
+					.then(function(contentString){
+						contentString = contentString.join('\n');
+						let tokenizer = TokenizerRegistry.processors[type];
+						let tokens = tokenizer.split(contentString);
+						if(tokens.length > 7500) {
+							console.warn("Warning: Submission " + self.name + " has very large token count (" + tokens.length + ")");
+						}
+						return tokens;
+					});
+			});
+			tokenlists = Object.values(tokenlists);
+			this._tokenList = Promise.all(tokenlists)
+				.then(function(tokens){
+					let tokenlist = new TokenList('mixed',[]);
+					tokens.forEach(function(t){
+						t.forEach(function(d){
+							tokenlist.push(d);
+						});
+					});
+					return tokenlist;
+				});
+
 		}
 		return this._tokenList;
 	}
@@ -123,7 +143,7 @@ export default class Submission {
 	get ContentAsString() {
 		if(!('_content' in this)){
 			let self = this;
-			this._content = Promise.all(self.content)
+			this._content = Promise.all(self.allContent)
 				.then(function(fileContent){
 					let contentString = fileContent.join('\n');
 					return contentString;

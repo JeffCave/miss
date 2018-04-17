@@ -19,6 +19,8 @@ export {
 };
 
 import './algorithm/smithwaterman/SmithWaterman.js';
+import './preprocessor/LowercasePreprocessor.js';
+import './preprocessor/WhitespaceDeduplicationPreprocessor.js';
 import {AlgorithmRegistry} from './algorithm/AlgorithmRegistry.js';
 import {CommonCodeLineRemovalPreprocessor} from './preprocessor/CommonCodeLineRemovalPreprocessor.js';
 import {PreprocessorRegistry} from './preprocessor/PreprocessorRegistry.js';

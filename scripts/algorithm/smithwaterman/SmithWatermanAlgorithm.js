@@ -18,7 +18,6 @@ export {
 };
 
 import {TokenList} from '../../token/TokenList.js';
-import {ValidityEnsuringToken} from '../../token/ValidityEnsuringToken.js';
 import {ArraySubset} from '../../algorithm/smithwaterman/ArraySubset.js';
 import {Coordinate} from '../../util/Coordinate.js';
 import {checkNotNull,checkArgument} from '../../util/misc.js';
