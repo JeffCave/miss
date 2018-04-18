@@ -17,6 +17,7 @@ let TOKENTYPE = 'words';
  */
 TokenizerRegistry.processors[TOKENTYPE] = {
 	seperator: ' ',
+	tokentype: TOKENTYPE,
 	split: function(string) {
 		checkNotNull(string);
 

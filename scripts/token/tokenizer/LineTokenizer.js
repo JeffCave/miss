@@ -6,7 +6,7 @@ import {checkNotNull} from '../../util/misc.js';
 
 (function(){
 
-const TOKENTYPE = TokenList.TokenTypes.LINE;
+const TOKENTYPE = 'line';
 
 /**
  * Split string into newline-delineated tokens.
@@ -16,6 +16,7 @@ const TOKENTYPE = TokenList.TokenTypes.LINE;
  */
 TokenizerRegistry.processors[TOKENTYPE] = {
 	seperator: '\n',
+	tokentype: TOKENTYPE,
 	split: function(content) {
 		checkNotNull(content);
 		let tokens = content

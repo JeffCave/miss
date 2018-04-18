@@ -1,17 +1,3 @@
-/*
- * CDDL HEADER START
- *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * See LICENSE.txt included in this distribution for the specific
- * language governing permissions and limitations under the License.
- *
- * CDDL HEADER END
- *
- * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
- */
 'use strict';
 export {
 	TokenList
@@ -35,7 +21,7 @@ export default class TokenList extends Array{
 
 		checkNotNull(type);
 
-		let isType = Object.values(TokenList.TokenTypes)
+		let isType = Object.keys(TokenizerRegistry.processors)
 			.concat('mixed')
 			.some(function(t){
 				return type === t;
@@ -50,14 +36,6 @@ export default class TokenList extends Array{
 		}
 
 		this.type = type;
-	}
-
-	static get TokenTypes(){
-		return {
-			CHARACTER: "character",
-			WHITESPACE: "whitespace",
-			LINE: "line"
-		};
 	}
 
 	/**
@@ -93,9 +71,9 @@ export default class TokenList extends Array{
 					rtnToken = TokenizerRegistry.processors[token.type].seperator;
 				}
 				rtnToken = LexemeMap[token.lexeme] + rtnToken;
-				return rtnToken;
+				return token;
 			})
-			.join('')
+			.join('\n')
 			;
 
 		return b;

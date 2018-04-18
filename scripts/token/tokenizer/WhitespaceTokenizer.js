@@ -1,14 +1,20 @@
 'use strict';
 import {TokenizerRegistry} from '../../token/TokenizerRegistry.js';
-import {TokenList} from '../../token/TokenList.js';
 import {newToken} from '../../token/Token.js';
 import {checkNotNull} from '../../util/misc.js';
+
+(function(){
+
+
+let TOKENTYPE = 'whitespace';
+
 
 /**
  * Split a file into tokens based on spaces.
  */
-TokenizerRegistry.processors[TokenList.TokenTypes.WHITESPACE] = {
+TokenizerRegistry.processors[TOKENTYPE] = {
 	seperator: ' ',
+	tokentype: TOKENTYPE,
 	split: function(string) {
 		checkNotNull(string);
 
@@ -18,10 +24,13 @@ TokenizerRegistry.processors[TokenList.TokenTypes.WHITESPACE] = {
 				return str !== "";
 			})
 			.map((str) => {
-				return newToken(str, TokenList.TokenTypes.WHITESPACE);
+				return newToken(str, TOKENTYPE);
 			})
 			;
 
 		return toReturn;
 	}
 };
+
+
+})();

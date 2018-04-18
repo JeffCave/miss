@@ -8,13 +8,14 @@ import {checkNotNull} from '../../util/misc.js';
 
 (function(){
 
-let TOKENTYPE = TokenList.TokenTypes.CHARACTER;
+let TOKENTYPE = 'character';
 
 /**
  * Split a file into a list of character tokens.
  */
 TokenizerRegistry.processors[TOKENTYPE] = {
 	seperator: '',
+	tokentype: TOKENTYPE,
 	split: function(content) {
 		checkNotNull(content);
 

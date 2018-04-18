@@ -37,6 +37,13 @@ export default function CommonCodeLineRemovalPreprocessor(common){
 
 	let algorithm = AlgorithmRegistry.processors["linecompare"];
 
+
+	if(common.Name === 'null'){
+		return async function(inbound) {
+			return ""+inbound;
+		};
+	}
+
 	/**
 	 * Perform common code removal using Line Comparison.
 	 *
@@ -46,10 +53,12 @@ export default function CommonCodeLineRemovalPreprocessor(common){
 	 */
 	return async function(inbound) {
 		console.debug("Performing common code removal ");
+
 		if(inbound instanceof Promise){
 			inbound = await inbound;
 		}
 
+		console.warn('Common code removal non-functional');
 		return inbound;
 
 		// Create new submissions with retokenized input

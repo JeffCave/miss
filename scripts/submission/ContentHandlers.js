@@ -1,6 +1,6 @@
 'use script';
 
-import {TokenList} from '../token/TokenList.js';
+import {TokenizerRegistry} from '../token/TokenizerRegistry.js';
 
 export const ContentHandlers = {
 	defaultHandler:'text',
@@ -12,27 +12,27 @@ export const ContentHandlers = {
 		{
 			'type' : 'c',
 			'ext' : ['c','h','cpp','hpp'],
-			'tokenizer' : TokenList.TokenTypes.LINE,
+			'tokenizer' : TokenizerRegistry.processors.line.tokentype,
 			'preprocessors': ['lowercase','deduplicate']
 		},
 		{
 			'type' : 'dna',
 			'ext' : ['fasta','dna'],
-			'tokenizer' : TokenList.TokenTypes.CHARACTER,
+			'tokenizer' : TokenizerRegistry.processors.character.tokentype,
 			'preprocessors': ['lowercase','deduplicate']
 		},
 		{
 			'type' : 'js',
 			'mime' : 'text/javascript',
 			'ext' : ['js'],
-			'tokenizer' : TokenList.TokenTypes.LINE,
+			'tokenizer' : TokenizerRegistry.processors.line.tokentype,
 			'preprocessors': ['lowercase','deduplicate']
 		},
 		{
 			'type' : 'text',
 			'mime' : 'text/*',
 			'ext' : ['txt'],
-			'tokenizer' : TokenList.TokenTypes.WHITESPACE,
+			'tokenizer' : TokenizerRegistry.processors.whitespace.tokentype,
 			'preprocessors': ['lowercase','deduplicate']
 		}
 	]
