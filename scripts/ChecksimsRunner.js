@@ -19,6 +19,8 @@ export {
 };
 
 import './algorithm/smithwaterman/SmithWaterman.js';
+import './preprocessor/LowercasePreprocessor.js';
+import './preprocessor/WhitespaceDeduplicationPreprocessor.js';
 import {AlgorithmRegistry} from './algorithm/AlgorithmRegistry.js';
 import {CommonCodeLineRemovalPreprocessor} from './preprocessor/CommonCodeLineRemovalPreprocessor.js';
 import {PreprocessorRegistry} from './preprocessor/PreprocessorRegistry.js';
@@ -176,30 +178,16 @@ class ChecksimsRunner {
 		}
 		console.log("Got " + archiveSubmissions.length + " archive submissions to test.");
 
-		// Apply all preprocessors
-		let registry = PreprocessorRegistry;
-		let preprocessors = Object.values(registry.processors);
 		// Common code removal first, always
 		let the = this;
 		let common = await the.CommonCode;
 		common = CommonCodeLineRemovalPreprocessor(common);
-		preprocessors.unshift(common);
 		// Apply the preprocessors to the submissions
-		preprocessors = await Promise.all(preprocessors);
-		let processed = [submissions,archiveSubmissions]
-			.map(function(group){
-				group = group.map(function(submission){
-					submission = new Promise(r=>{r(submission);});
-					submission = preprocessors.reduce(function(sub, preprocessor){
-							sub = preprocessor(sub);
-							return sub;
-						}, submission);
-					return submission;
-				});
-				return group;
+		[submissions,archiveSubmissions].forEach(function(group){
+			group.forEach(function(submission){
+				submission.Common = common;
 			});
-		submissions = await Promise.all(processed[0]);
-		archiveSubmissions = await Promise.all(processed[1]);
+		});
 
 		// Apply algorithm to submissions
 		let allPairs = await PairGenerator.generatePairsWithArchive(submissions, archiveSubmissions);

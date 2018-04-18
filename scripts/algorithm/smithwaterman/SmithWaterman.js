@@ -25,6 +25,8 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(a, b) {
 	let aTokens = await a.ContentAsTokens;
 	let bTokens = await b.ContentAsTokens;
 
+	//console.debug('Creating a SmithWaterman for ' + a.Name + ' and ' + b.Name);
+
 	// Test for token type mismatch
 	if(aTokens.type !== bTokens.type) {
 		throw new Error("Token list type mismatch: submission " + a.Name + " has type " +
@@ -32,10 +34,10 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(a, b) {
 			+ bTokens.type);
 	}
 
-	let aText = await a.ContentAsString;
-	let bText = await b.ContentAsString;
-	console.debug(aText);
-	console.debug(bText);
+	//let aText = await a.ContentAsString;
+	//let bText = await b.ContentAsString;
+	//console.debug(aText);
+	//console.debug(bText);
 
 	// Handle a 0-token submission (no similarity)
 	if(aTokens.length === 0 || aTokens.length === 0) {

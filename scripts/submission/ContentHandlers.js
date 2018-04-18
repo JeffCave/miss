@@ -1,38 +1,39 @@
 'use script';
 
-import {TokenList} from '../token/TokenList.js';
+import {TokenizerRegistry} from '../token/TokenizerRegistry.js';
 
 export const ContentHandlers = {
 	defaultHandler:'text',
 	ignores:[
-		// ignore system files and folders
-		/\/\./, /\/__MACOSX\//,
+			// ignore system files and folders
+			/\/\./, /\/__MACOSX\//,
 		],
 	handlers:[
 		{
 			'type' : 'c',
 			'ext' : ['c','h','cpp','hpp'],
-			'tokenizer' : TokenList.TokenTypes.WHITESPACE
+			'tokenizer' : TokenizerRegistry.processors.line.tokentype,
+			'preprocessors': ['lowercase','deduplicate']
 		},
 		{
 			'type' : 'dna',
 			'ext' : ['fasta','dna'],
-			'tokenizer' : TokenList.TokenTypes.CHARACTER,
-			'preprocessors': [
-					'lowercase'
-				]
+			'tokenizer' : TokenizerRegistry.processors.character.tokentype,
+			'preprocessors': ['lowercase','deduplicate']
 		},
 		{
 			'type' : 'js',
 			'mime' : 'text/javascript',
 			'ext' : ['js'],
-			'tokenizer' : TokenList.TokenTypes.WHITESPACE
+			'tokenizer' : TokenizerRegistry.processors.line.tokentype,
+			'preprocessors': ['lowercase','deduplicate']
 		},
 		{
 			'type' : 'text',
 			'mime' : 'text/*',
 			'ext' : ['txt'],
-			'tokenizer' : TokenList.TokenTypes.WHITESPACE
+			'tokenizer' : TokenizerRegistry.processors.whitespace.tokentype,
+			'preprocessors': ['lowercase','deduplicate']
 		}
 	]
 };

@@ -1,17 +1,3 @@
-/*
- * CDDL HEADER START
- *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * See LICENSE.txt included in this distribution for the specific
- * language governing permissions and limitations under the License.
- *
- * CDDL HEADER END
- *
- * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
- */
 'use strict';
 export {
 	TokenList
@@ -19,6 +5,7 @@ export {
 
 import {LexemeMap} from '../token/LexemeMap.js';
 import {checkNotNull,checkArgument} from '../util/misc.js';
+import {TokenizerRegistry} from '../token/TokenizerRegistry.js';
 
 /**
  * A list of tokens of a specific type.
@@ -34,9 +21,11 @@ export default class TokenList extends Array{
 
 		checkNotNull(type);
 
-		let isType = Object.values(TokenList.TokenTypes).some(function(t){
-			return type === t;
-		});
+		let isType = Object.keys(TokenizerRegistry.processors)
+			.concat('mixed')
+			.some(function(t){
+				return type === t;
+			});
 		checkArgument(isType,"Expected type to be of TokenType. Received " + type);
 
 		if(Array.isArray(baseList)){
@@ -47,14 +36,6 @@ export default class TokenList extends Array{
 		}
 
 		this.type = type;
-	}
-
-	static get TokenTypes(){
-		return {
-			CHARACTER: "character",
-			WHITESPACE: "whitespace",
-			LINE: "line"
-		};
 	}
 
 	/**
@@ -72,28 +53,27 @@ export default class TokenList extends Array{
 			let swap = onlyValid;
 			onlyValid = sepChar;
 			sepChar = swap;
-		}
-
-		if(sepChar === null || sepChar === false){
-			switch(this.type) {
-				case TokenList.TokenTypes.CHARACTER: sepChar = ""; break;
-				case TokenList.TokenTypes.WHITESPACE: sepChar = " "; break;
-				case TokenList.TokenTypes.LINE: sepChar = "\n"; break;
-				default: sepChar = ""; break;
+			if(sepChar === false){
+				sepChar = null;
 			}
 		}
+
 		let b = Array.from(this)
 			// TODO: This should not be necessary. Find a way to prevent NULL insertion to the list
 			.filter(function(d){
 				let keep = (d || false) !== false;
-				return keep;
+				let valid = (!onlyValid || d.valid);
+				return keep && valid;
 			})
 			.map(function(token){
-				if(!onlyValid || token.valid) {
-					return LexemeMap[token.lexeme];
+				let rtnToken = sepChar;
+				if(rtnToken === null){
+					rtnToken = TokenizerRegistry.processors[token.type].seperator;
 				}
+				rtnToken = LexemeMap[token.lexeme] + rtnToken;
+				return token;
 			})
-			.join(sepChar)
+			.join('\n')
 			;
 
 		return b;

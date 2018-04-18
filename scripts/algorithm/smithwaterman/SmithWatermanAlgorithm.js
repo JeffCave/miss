@@ -18,7 +18,6 @@ export {
 };
 
 import {TokenList} from '../../token/TokenList.js';
-import {ValidityEnsuringToken} from '../../token/ValidityEnsuringToken.js';
 import {ArraySubset} from '../../algorithm/smithwaterman/ArraySubset.js';
 import {Coordinate} from '../../util/Coordinate.js';
 import {checkNotNull,checkArgument} from '../../util/misc.js';
@@ -31,6 +30,10 @@ export default class SmithWatermanAlgorithm {
 		return 5;
 	}
 
+	get MAXCOMPARE(){
+		// 1GB?
+		return 1024**3;
+	}
 	get threshold(){
 		return SmithWatermanAlgorithm.threshold;
 	}
@@ -62,6 +65,13 @@ export default class SmithWatermanAlgorithm {
 		this.wholeArrayBounds = ArraySubset.from(1, 1, this.xList.length, this.yList.length);
 
 		// Create an appropriately sized 2-D array
+		let totalspace = this.wholeArray.getMax().getX() * this.wholeArray.getMax().getY();
+		if(totalspace > this.MAXCOMPARE){
+			totalspace /= 1024**3;
+			console.warn("Total allocation of space looks scary ("+totalspace+"GB). Not even attempting.");
+			this.massive = true;
+			return;
+		}
 		this.s = [];
 		for(let i = 0; i<this.wholeArray.getMax().getX(); i++){
 			let a = [];
@@ -85,6 +95,9 @@ export default class SmithWatermanAlgorithm {
 	 * @throws leternalAlgorithmError Thrown if leternal error causes violation of preconditions
 	 */
 	computeSmithWatermanAlignmentExhaustive(){
+		if(this.massive){
+			return [0,0];
+		}
 		// Keep computing while we have results over threshold
 		for(let localCandidates = this.computeArraySubset(this.wholeArray);	Object.keys(localCandidates).length > 0; localCandidates = this.computeArraySubset(this.wholeArray)) {
 
@@ -313,13 +326,13 @@ export default class SmithWatermanAlgorithm {
 			let newSet = new Set();
 
 			allCandidates.forEach(function(coord){
-                // Unclear how this candidate got added, but it's no longer valid
-                // This shouldn't happen, so log it as well
-                // TODO investigate why this is happening
-                if(this.s[coord.getX()][coord.getY()] < this.threshold) {
-                    console.trace("Potential algorithm error - filtered match lower than threshold at " + coord);
-                    return;
-                }
+				// Unclear how this candidate got added, but it's no longer valid
+				// This shouldn't happen, so log it as well
+				// TODO investigate why this is happening
+				if(this.s[coord.getX()][coord.getY()] < this.threshold) {
+					console.trace("Potential algorithm error - filtered match lower than threshold at " + coord);
+					return;
+				}
 
                 // Identify the origin of the result
                 let originOfCandidate = this.getFirstMatchCoordinate(this.getMatchCoordinates(coord));

@@ -37,6 +37,13 @@ export default function CommonCodeLineRemovalPreprocessor(common){
 
 	let algorithm = AlgorithmRegistry.processors["linecompare"];
 
+
+	if(common.Name === 'null'){
+		return async function(inbound) {
+			return ""+inbound;
+		};
+	}
+
 	/**
 	 * Perform common code removal using Line Comparison.
 	 *
@@ -44,18 +51,23 @@ export default function CommonCodeLineRemovalPreprocessor(common){
 	 * @return Input submission with common code removed
 	 * @throws InternalAlgorithmError Thrown on error removing common code
 	 */
-	return async function(removeFrom) {
-		console.debug("Performing common code removal on submission " + removeFrom.Name);
-		if(removeFrom instanceof Promise){
-			removeFrom = await removeFrom;
+	return async function(inbound) {
+		console.debug("Performing common code removal ");
+
+		if(inbound instanceof Promise){
+			inbound = await inbound;
 		}
 
+		console.warn('Common code removal non-functional');
+		return inbound;
+
 		// Create new submissions with retokenized input
-		let computeIn = new Submission(removeFrom);
-		let computeCommon = new Submission(common);
+		let computeIn = new Submission("temp",{
+			"temp.txt": new Promise(function(){ return inbound; })
+		});
 
 		// Use the new submissions to compute this
-		let results = await algorithm(computeIn, computeCommon);
+		let results = await algorithm(computeIn, common);
 
 		// The results contains two TokenLists, representing the final state of the submissions after detection
 		// All common code should be marked invalid for the input submission's final list
@@ -64,19 +76,11 @@ export default function CommonCodeLineRemovalPreprocessor(common){
 		let comparator = new ValidityIgnoringSubmission(computeIn);
 		if(comparator.equals(results.B.submission)) {
 			listWithCommonInvalid = results.B.finalList;
-			//percentMatched = results.percentMatchedB;
-			//identTokens = results.identicalTokensB;
 		}
 
 		// Recreate the string body of the submission from this new list
-		let newBody = {
-			'commonCodeRemoved.txt': (async function(){ return listWithCommonInvalid.join(true) })()
-		};
-
-		//console.trace("Submission " + removeFrom.getName() + " contained " + percentMatched.toFixed(2) + "% common code");
-		//console.trace("Removed " + identTokens + " common tokens (of " + removeFrom.NumTokens + " total)");
-		let submission = new Submission(removeFrom.Name, newBody);
-		return submission;
+		let content = listWithCommonInvalid.join(true);
+		return content;
 	};
 
 }

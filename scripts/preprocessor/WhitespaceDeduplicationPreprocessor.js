@@ -12,25 +12,16 @@ import {checkNotNull,checkArgument} from '../util/misc.js';
 
 (function(){
 
-PreprocessorRegistry.processors['deduplicate'] = async function(submission) {
-	checkNotNull(submission);
-	if(submission instanceof Promise){
-		submission = await submission;
+PreprocessorRegistry.processors['deduplicate'] = async function(inbound) {
+	checkNotNull(inbound);
+	if(inbound instanceof Promise){
+		inbound = await inbound;
 	}
-	checkArgument(submission instanceof Submission, "'submission' expected to be of type 'Submission'");
-
-	let newBody = {
-		'whitespaceDeduplicated.txt': (async function(){
-			let content = await submission.ContentAsString;
-			content = content.replace(/[ \t]+/g, " ");
-			content = content.replace(/(\r\n)+/g, "\n");
-			content = content.replace(/\n+/g, "\n");
-			return content;
-		})()
-	};
-
-	return new Submission(submission.Name, newBody);
-
+	let content = inbound;
+	content = content.replace(/[ \t]+/g, " ");
+	content = content.replace(/(\r\n)+/g, "\n");
+	content = content.replace(/\n+/g, "\n");
+	return content;
 };
 
 
