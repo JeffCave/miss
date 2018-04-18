@@ -4,13 +4,18 @@ import {TokenList} from '../../token/TokenList.js';
 import {newToken} from '../../token/Token.js';
 import {checkNotNull} from '../../util/misc.js';
 
+(function(){
+
+
+let TOKENTYPE = 'words';
+
 /**
  * Split a file into tokens based on words.
  *
  * Words are any collection of letters or numbers seperated by whitespace, or
  * punctuation. Words should also include hyphenated words (a hyphen with no space to either side)
  */
-TokenizerRegistry.processors[TokenList.TokenTypes.WHITESPACE] = {
+TokenizerRegistry.processors[TOKENTYPE] = {
 	seperator: ' ',
 	split: function(string) {
 		checkNotNull(string);
@@ -23,10 +28,13 @@ TokenizerRegistry.processors[TokenList.TokenTypes.WHITESPACE] = {
 				return str !== "";
 			})
 			.map((str) => {
-				return newToken(str, TokenList.TokenTypes.WHITESPACE);
+				return newToken(str, TOKENTYPE);
 			})
 			;
 
 		return toReturn;
 	}
 };
+
+
+})();
