@@ -1,14 +1,14 @@
 'use strict';
 
-import {ChecksimsException} from './ChecksimsException.js';
-import {ChecksimsRunner} from './ChecksimsRunner.js';
-import {d3ForceDirected} from './visualizations/force.js';
-import {SimilarityMatrix} from './visualizations/similaritymatrix/SimilarityMatrix.js';
-import {MatrixPrinterRegistry} from './visualizations/similaritymatrix/output/MatrixPrinterRegistry.js';
-import {Submission} from './submission/Submission.js';
+import {ChecksimsException} from './Checksims/ChecksimsException.js';
+import {ChecksimsRunner} from './Checksims/ChecksimsRunner.js';
+import {d3ForceDirected} from './Checksims/visualizations/force.js';
+import {SimilarityMatrix} from './Checksims/visualizations/similaritymatrix/SimilarityMatrix.js';
+import {MatrixPrinterRegistry} from './Checksims/visualizations/similaritymatrix/output/MatrixPrinterRegistry.js';
+import {Submission} from './Checksims/submission/Submission.js';
 
-import './visualizations/similaritymatrix/output/MatrixToCSVPrinter.js';
-import './visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
+import './Checksims/visualizations/similaritymatrix/output/MatrixToCSVPrinter.js';
+import './Checksims/visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
 
 /**
  * Parses Checksims' command-line options.
