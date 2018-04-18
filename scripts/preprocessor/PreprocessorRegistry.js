@@ -8,15 +8,12 @@ export {
  */
 const PreprocessorRegistry = {
 	def : 'null',
-	processors: {}
-};
-
-
-PreprocessorRegistry.processors['null'] = async function(submission){
-	if(submission instanceof Promise){
-		submission = await submission;
+	processors: {
+		'null' :  async function(inbound){
+			inbound = inbound.slice(0);
+			return inbound;
+		}
 	}
-	return submission;
 };
 
 

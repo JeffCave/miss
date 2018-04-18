@@ -10,9 +10,10 @@ global JSZip
 import '../token/tokenizer/LineTokenizer.js';
 import '../token/tokenizer/CharTokenizer.js';
 import '../token/tokenizer/WhitespaceTokenizer.js';
+import {ContentHandlers} from '../submission/ContentHandlers.js';
+import {PreprocessorRegistry} from '../preprocessor/PreprocessorRegistry.js';
 import {TokenList} from '../token/TokenList.js';
 import {TokenizerRegistry} from '../token/TokenizerRegistry.js';
-import {ContentHandlers} from '../submission/ContentHandlers.js';
 import {checkNotNull, checkArgument, hasher} from '../util/misc.js';
 
 
@@ -101,6 +102,15 @@ export default class Submission {
 		this.allContent = allContent;
 		this.content = content;
 		this.name = name;
+		this.common = PreprocessorRegistry.processors.null;
+	}
+
+	set Common(common){
+		this.common = common;
+	}
+
+	get Common(){
+		return this.common;
 	}
 
 
@@ -109,14 +119,30 @@ export default class Submission {
 			let self = this;
 			let tokenlists = {};
 			Object.entries(this.content).forEach(function(d){
-				let type = d[0];
-				type = ContentHandlers.handlers[type].tokenizer;
+				let handler = ContentHandlers.handlers[d[0]];
+				let type = handler.tokenizer;
+				let preprocessors = handler.preprocessors.map(function(p){
+						let proc = PreprocessorRegistry.processors[p];
+						return proc;
+					})
+					;
+				preprocessors.unshift(self.Common);
+				let tokenizer = TokenizerRegistry.processors[type];
 				let content = d[1];
 				content = Object.values(content.files);
 				tokenlists[type] = Promise.all(content)
 					.then(function(contentString){
 						contentString = contentString.join('\n');
-						let tokenizer = TokenizerRegistry.processors[type];
+						return (async function(){
+							let cString = contentString;
+							for(let p=0; p<preprocessors.length; p++){
+								let processor = preprocessors[p];
+								cString = await processor(cString);
+							}
+							return cString;
+						})();
+					})
+					.then(function(contentString){
 						let tokens = tokenizer.split(contentString);
 						if(tokens.length > 7500) {
 							console.warn("Warning: Submission " + self.name + " has very large token count (" + tokens.length + ")");
@@ -237,7 +263,7 @@ export default class Submission {
 	static get NullSubmission(){
 		if(!('_NullSubmission' in Submission)){
 			let content = {
-				'NullContent':new Promise((result)=>{
+				'NullContent.txt':new Promise((result)=>{
 					result('');
 				})
 			};

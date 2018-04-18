@@ -5,34 +5,35 @@ import {TokenList} from '../token/TokenList.js';
 export const ContentHandlers = {
 	defaultHandler:'text',
 	ignores:[
-		// ignore system files and folders
-		/\/\./, /\/__MACOSX\//,
+			// ignore system files and folders
+			/\/\./, /\/__MACOSX\//,
 		],
 	handlers:[
 		{
 			'type' : 'c',
 			'ext' : ['c','h','cpp','hpp'],
-			'tokenizer' : TokenList.TokenTypes.LINE
+			'tokenizer' : TokenList.TokenTypes.LINE,
+			'preprocessors': ['lowercase','deduplicate']
 		},
 		{
 			'type' : 'dna',
 			'ext' : ['fasta','dna'],
 			'tokenizer' : TokenList.TokenTypes.CHARACTER,
-			'preprocessors': [
-					'lowercase'
-				]
+			'preprocessors': ['lowercase','deduplicate']
 		},
 		{
 			'type' : 'js',
 			'mime' : 'text/javascript',
 			'ext' : ['js'],
-			'tokenizer' : TokenList.TokenTypes.LINE
+			'tokenizer' : TokenList.TokenTypes.LINE,
+			'preprocessors': ['lowercase','deduplicate']
 		},
 		{
 			'type' : 'text',
 			'mime' : 'text/*',
 			'ext' : ['txt'],
-			'tokenizer' : TokenList.TokenTypes.WHITESPACE
+			'tokenizer' : TokenList.TokenTypes.WHITESPACE,
+			'preprocessors': ['lowercase','deduplicate']
 		}
 	]
 };
