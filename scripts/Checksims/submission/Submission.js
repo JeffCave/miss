@@ -100,7 +100,8 @@ export default class Submission {
 		});
 
 		this.allContent = allContent;
-		this.content = content;
+		this.typedContent = content;
+		this.content = files;
 		this.name = name;
 		this.common = PreprocessorRegistry.processors.null;
 	}
@@ -118,7 +119,7 @@ export default class Submission {
 		if(!('_tokenList' in this)){
 			let self = this;
 			let tokenlists = {};
-			Object.entries(this.content).forEach(function(d){
+			Object.entries(this.typedContent).forEach(function(d){
 				let handler = ContentHandlers.handlers[d[0]];
 				let type = handler.tokenizer;
 				let preprocessors = handler.preprocessors.map(function(p){
@@ -311,7 +312,7 @@ export default class Submission {
 		return files;
 	}
 
-	static async submissionsFromFiles(files,glob){
+	static submissionsFromFiles(files,glob){
 		if(files === null){
 			return Submission.NullSubmission;
 		}
@@ -351,14 +352,6 @@ export default class Submission {
 				return submission;
 			});
 
-		submissions = Promise.all(submissions)
-			.then(function(submissions){
-				submissions = submissions.filter(function(s){
-					return s;
-				});
-				return submissions;
-			});
-
 		return submissions;
 
 	}
@@ -371,7 +364,7 @@ export default class Submission {
 	 * reading in files in alphabetical order and appending
 	 * their contents.
 	 */
-	static async submissionFromFiles(name, files){
+	static submissionFromFiles(name, files){
 		checkNotNull(name);
 		checkArgument(name.length, "Submission name cannot be empty");
 		checkNotNull(files);

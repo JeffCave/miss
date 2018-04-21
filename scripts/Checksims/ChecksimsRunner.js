@@ -23,7 +23,6 @@ import './preprocessor/LowercasePreprocessor.js';
 import './preprocessor/WhitespaceDeduplicationPreprocessor.js';
 import {AlgorithmRegistry} from './algorithm/AlgorithmRegistry.js';
 import {CommonCodeLineRemovalPreprocessor} from './preprocessor/CommonCodeLineRemovalPreprocessor.js';
-import {PreprocessorRegistry} from './preprocessor/PreprocessorRegistry.js';
 import {PairGenerator} from './util/PairGenerator.js';
 import {Submission} from './submission/Submission.js';
 import {ChecksimsException} from './ChecksimsException.js';
@@ -80,15 +79,26 @@ class ChecksimsRunner {
 	 * @return Set of submissions to run on
 	 */
 	get Submissions() {
+		if(!this.submissions){
+			this.submissions = [];
+		}
 		return this.submissions;
 	}
 	/**
 	 * @param newSubmissions New set of submissions to work on. Must contain at least 1 submission.
 	 * @return This configuration
 	 */
-	set Submissions(newSubmissions) {
+	addSubmissions(newSubmissions) {
 		checkNotNull(newSubmissions);
-		this.submissions = Submission.submissionsFromFiles(newSubmissions, this.Filter);
+		if(newSubmissions instanceof Submission){
+			newSubmissions = [newSubmissions];
+		}
+		if(!Array.isArray(newSubmissions)){
+			newSubmissions = Submission.submissionsFromFiles(newSubmissions, this.Filter);
+		}
+		newSubmissions.forEach(d=>{
+			this.Submissions.push(d);
+		});
 	}
 
 

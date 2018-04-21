@@ -2,7 +2,6 @@
 
 import {ChecksimsException} from './Checksims/ChecksimsException.js';
 import {ChecksimsRunner} from './Checksims/ChecksimsRunner.js';
-import {d3ForceDirected} from './Checksims/visualizations/force.js';
 import {SimilarityMatrix} from './Checksims/visualizations/similaritymatrix/SimilarityMatrix.js';
 import {MatrixPrinterRegistry} from './Checksims/visualizations/similaritymatrix/output/MatrixPrinterRegistry.js';
 import {Submission} from './Checksims/submission/Submission.js';
@@ -10,28 +9,38 @@ import {Submission} from './Checksims/submission/Submission.js';
 import './Checksims/visualizations/similaritymatrix/output/MatrixToCSVPrinter.js';
 import './Checksims/visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
 
+import {d3ForceDirected} from './widgets/force.js';
+import * as Files from '/scripts/widgets/filesystem.js';
+
 /**
  * Parses Checksims' command-line options.
  *
  * TODO: Consider changing from a  class? Having the CommandLine as an instance variable would greatly simplify
  */
-class ChecksimsCommandLine {
+class indexPage {
 	constructor() {
 		this.runner = new ChecksimsRunner();
+		this.files = {};
+
+		let elem = document.querySelector('#subtest');
+		Files.DisplaySubmissions(elem,this.runner.Submissions);
+		elem = document.querySelector('#filetest');
+		Files.DisplayFiles(elem,this);
 	}
 
 	attachSubmissions(blob){
 		let parent = this;
 		this.submissions = null;
 		// 1) read the Blob
+		let self = this;
 		return JSZip
 			.loadAsync(blob)
 			.then(function(zip) {
-				let files = Submission.fileListFromZip(zip);
-				return files;
+				self.files = Submission.fileListFromZip(zip);
+				return self.files;
 			})
 			.then(function(zip){
-				parent.runner.Submissions = zip;
+				parent.runner.addSubmissions(zip);
 				return zip;
 			})
 			.catch(function (e) {
@@ -172,7 +181,7 @@ class ChecksimsCommandLine {
 
 
 window.addEventListener('load',function(){
-	let checker = new ChecksimsCommandLine();
+	let checker = new indexPage();
 	let button = document.querySelector('button');
 	let upload = document.querySelector("input[name='zip']");
 
@@ -200,14 +209,6 @@ window.addEventListener('load',function(){
 			checker.attachSubmissions(file)
 				.then(function(files){
 					button.disabled = false;
-					let ul = document.querySelector("ul");
-					ul.innerHTML = Object.keys(files)
-						.sort()
-						.map((file)=>{
-							return '<li>'+file+'</li>';
-						})
-						.join('')
-						;
 				})
 				;
 		});
