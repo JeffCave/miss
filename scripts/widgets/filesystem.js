@@ -55,10 +55,18 @@ function walk(path){
 
 
 function DisplayFiles(element,files){
+	let holder = document.querySelector('script[name="filetest"]');
+
 	let templates = {
 		ul: '<ul></ul>',
-		li: "<ul>{{#children}}<li>{{name}}{{>li}}</li>{{/children}}</ul>"
+		li: holder.innerHTML
 	};
+
+	let newElem = document.createElement('div');
+	holder.parentNode.insertBefore(newElem,holder);
+	holder.parentNode.removeChild(holder);
+	holder = newElem;
+
 	Object.observe(files,function(changes){
 		//console.log("Changes: ", changes);
 		let data = changes
@@ -74,7 +82,7 @@ function DisplayFiles(element,files){
 		data.object.files.then(function(files){
 			data = walk(files);
 			data = {"children": data};
-			element.innerHTML = Mustache.render(templates.li,data,templates);
+			holder.innerHTML = Mustache.render(templates.li,data,templates);
 		});
 	});
 
