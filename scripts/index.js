@@ -22,26 +22,54 @@ class indexPage {
 		this.runner = new ChecksimsRunner();
 		this.files = {};
 
-		let elem = document.querySelector('#subtest');
-		Files.DisplaySubmissions(elem,this.runner.Submissions);
-		elem = document.querySelector('#filetest');
+		Files.DisplaySubmissions('script[name="subtest"]',this.runner.Submissions);
+		let elem = document.querySelector('#filetest');
 		Files.DisplayFiles(elem,this);
+
+		let parent = this;
+		let adder = document.querySelector('#submissions > span');
+		adder.addEventListener('dragover',function(event){
+			event.preventDefault();
+			event.target.style.backgroundColor="green";
+		});
+		adder.addEventListener('dragleave',function(event){
+			event.target.style.backgroundColor="transparent";
+		});
+		adder.addEventListener('drop',function(event){
+			event.target.style.backgroundColor="blue";
+			let path = event.dataTransfer.getData("text/plain");
+			path = new RegExp("^" + path);
+			let files = Object.entries(parent.files)
+				.filter(function(d){
+					let isMatch = path.test(d[0]);
+					return isMatch;
+				})
+				.reduce(function(a,d){
+					let p = d[0].replace(path,'');
+					a[p] = d[1];
+					return a;
+				},{})
+				;
+			path = event.dataTransfer.getData("text/plain");
+			path = path.split('/').pop();
+			let submission = new Submission(path,files);
+			parent.runner.addSubmissions(submission);
+		});
 	}
 
 	attachSubmissions(blob){
 		let parent = this;
 		this.submissions = null;
 		// 1) read the Blob
-		let self = this;
 		return JSZip
 			.loadAsync(blob)
 			.then(function(zip) {
-				self.files = Submission.fileListFromZip(zip);
-				return self.files;
-			})
-			.then(function(zip){
-				parent.runner.addSubmissions(zip);
+				zip = Submission.fileListFromZip(zip);
 				return zip;
+			})
+			.then(function(files){
+				parent.files = files;
+				return files;
 			})
 			.catch(function (e) {
 				console.error("Error reading " + blob.name + ": " + e.message);
@@ -158,6 +186,7 @@ class indexPage {
 		this.renderListTable(results,htmlContainers);
 		this.renderListForce(results,htmlContainers);
 	}
+
 
 	/**
 	 * Parse CLI arguments and run Checksims from them.

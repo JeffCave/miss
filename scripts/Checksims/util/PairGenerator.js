@@ -34,7 +34,10 @@ class PairGenerator {
 	 */
 	static async generatePairs(submissions) {
 		checkNotNull(submissions);
-		checkArgument(submissions.length >= 2, "Cannot generate pairs with less than 2 submissions!");
+		if(submissions.length < 2){
+			return [];
+		}
+
 
 		let pairs = [];
 

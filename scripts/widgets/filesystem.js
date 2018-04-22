@@ -1,7 +1,8 @@
 'use strict';
 export {
 	DisplaySubmissions,
-	DisplayFiles
+	DisplayFiles,
+	walk
 };
 
 /*
@@ -14,7 +15,7 @@ function walk(path){
 		let curr = obj;
 		let last = null;
 		let n = null;
-		path.forEach(function(node){
+		path.forEach(function(node,i,path){
 			if(!(node in curr)){
 				curr[node] = {};
 			}
@@ -26,15 +27,22 @@ function walk(path){
 		return obj;
 	}
 
-	function unwalk(obj){
+	function unwalk(obj,parent={}){
 		let entries = Object.entries(obj);
 		let list = obj;
 		if(typeof list === 'object'){
 			list = entries.map(d=>{
-				return {
+				let item = {
 					"name": d[0],
-					"children": unwalk(d[1])
+					"parent": parent
 				};
+				item.path = [item.name];
+				if(parent.path){
+					item.path = parent.path.concat(item.path);
+				}
+				item.children = unwalk(d[1],item);
+				item.path = item.path.join('/');
+				return item;
 			})
 			.sort(function(a,b){
 				return a.name.localeCompare(b.name);
@@ -52,7 +60,6 @@ function walk(path){
 	rtn = unwalk(rtn);
 	return rtn;
 }
-
 
 function DisplayFiles(element,files){
 	let holder = document.querySelector('script[name="filetest"]');
@@ -79,32 +86,53 @@ function DisplayFiles(element,files){
 			return;
 		}
 
-		data.object.files.then(function(files){
-			data = walk(files);
-			data = {"children": data};
-			holder.innerHTML = Mustache.render(templates.li,data,templates);
+		function dragstart(event){
+			let path = event.target.dataset.path;
+			event.dataTransfer.setData("text/plain", path);
+		}
+
+		let files = data.object.files;
+		data = walk(files);
+		data = {"children": data};
+		holder.innerHTML = Mustache.render(templates.li,data,templates);
+
+		let elems = holder.querySelectorAll('details');
+		elems = Array.from(elems);
+		elems.forEach(function(e){
+			e.addEventListener('dragstart',dragstart);
 		});
+
 	});
 
 }
 
 export default function DisplaySubmissions(element,submissions){
-	let dom = d3.select(element);
+	let holder = document.querySelector(element);
 
 	let templates = {
 		ul: '<ul></ul>',
-		li: dom.html()
+		li: holder.innerHTML
 	};
-	dom.html('');
+
+	let newElem = document.createElement('ul');
+	holder.parentNode.insertBefore(newElem,holder);
+	holder.parentNode.removeChild(holder);
+	holder = newElem;
+	let dom = d3.select(holder);
 
 	Object.observe(submissions,function(changes){
 		//console.log("Changes: ", changes);
 		let data = changes
 			.pop()
 			.object
+			;
+		if(!data){
+			return;
+		}
+
+		data = Object.values(data)
 			.sort((a,b)=>{return a.name.localeCompare(b.name);})
 			;
-
 		let binding = dom.selectAll('li')
 			.data(data,function(d){
 				return d.name;
@@ -114,8 +142,8 @@ export default function DisplaySubmissions(element,submissions){
 			.enter()
 				.append('li')
 			.merge(binding)
-				.text(function(d){
-					let html = d.name;
+				.html(function(d){
+					let html = Mustache.render(templates.li,d,templates);
 					return html;
 				})
 			.exit()

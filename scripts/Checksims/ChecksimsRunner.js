@@ -80,7 +80,7 @@ class ChecksimsRunner {
 	 */
 	get Submissions() {
 		if(!this.submissions){
-			this.submissions = [];
+			this.submissions = {};
 		}
 		return this.submissions;
 	}
@@ -88,7 +88,7 @@ class ChecksimsRunner {
 	 * @param newSubmissions New set of submissions to work on. Must contain at least 1 submission.
 	 * @return This configuration
 	 */
-	addSubmissions(newSubmissions) {
+	async addSubmissions(newSubmissions) {
 		checkNotNull(newSubmissions);
 		if(newSubmissions instanceof Submission){
 			newSubmissions = [newSubmissions];
@@ -96,9 +96,16 @@ class ChecksimsRunner {
 		if(!Array.isArray(newSubmissions)){
 			newSubmissions = Submission.submissionsFromFiles(newSubmissions, this.Filter);
 		}
-		newSubmissions.forEach(d=>{
-			this.Submissions.push(d);
-		});
+		for(let d=0; d<newSubmissions.length; d++){
+			let newSub = newSubmissions[d];
+			if(newSub.name in this.Submissions){
+				let hash = await newSub.hash;
+				if(this.Submissions[newSub.name] === hash){
+					continue;
+				}
+			}
+			this.Submissions[newSub.name] = newSub;
+		}
 	}
 
 
@@ -181,11 +188,11 @@ class ChecksimsRunner {
 	async runChecksims(){
 		let allSubmissions = await Promise.all([this.Submissions,this.archiveSubmissions]);
 
-		let submissions = allSubmissions[0];
+		let submissions = Object.values(allSubmissions[0]);
 		let archiveSubmissions = allSubmissions[1];
-		if(2 > submissions.length + archiveSubmissions.length) {
-			throw new ChecksimsException("Did not get at least 2 student submissions! Cannot run Checksims!");
-		}
+//		if(2 > submissions.length + archiveSubmissions.length) {
+//			throw new ChecksimsException("Did not get at least 2 student submissions! Cannot run Checksims!");
+//		}
 		console.log("Got " + archiveSubmissions.length + " archive submissions to test.");
 
 		// Common code removal first, always
@@ -194,10 +201,10 @@ class ChecksimsRunner {
 		common = CommonCodeLineRemovalPreprocessor(common);
 		// Apply the preprocessors to the submissions
 		[submissions,archiveSubmissions].forEach(function(group){
-			group.forEach(function(submission){
-				submission.Common = common;
+				group.forEach(function(submission){
+					submission.Common = common;
+				});
 			});
-		});
 
 		// Apply algorithm to submissions
 		let allPairs = await PairGenerator.generatePairsWithArchive(submissions, archiveSubmissions);

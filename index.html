@@ -23,30 +23,28 @@
 
 </head>
 <body>
- <button name='run' disabled>Run</button>
  <fieldset>
   <legend>Files</legend>
   Files: <input name='zip' type="file" disabled/>
   <script type='text/mustache' name='filetest'>
    {{#children}}
-    <details style='margin-left:1em;'>
-     <summary><input type='checkbox' />{{name}}</summary>
+    <details style='margin-left:1em;' draggable='true' data-path='{{path}}'>
+     <summary>{{name}}</summary>
      {{>li}}
     </details>
    {{/children}}
   </script>
  </fieldset>
- <fieldset>
+ <fieldset id='submissions'>
   <legend>Submissions</legend>
-  <details>
-   <summary>Submissions</summary>
-   <ul id='subtest'>
-    {{#.}}
-     <li>{{name}}</li>
-    {{/.}}
-   </ul>
-  </details>
+   <span>&#10133;</span>
+   <script type='text/mustache' name='subtest'>
+    <input type='checkbox' />
+    <span style='opacity:0.5;'>&#128190;</span>
+    {{name}}
+   </script>
  </fieldset>
+ <button name='run' disabled>Run</button>
  <section id='results'>
   <details data-type='force' open>
    <summary>Force</summary>

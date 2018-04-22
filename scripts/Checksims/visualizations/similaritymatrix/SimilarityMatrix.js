@@ -47,7 +47,7 @@ class SimilarityMatrix {
 		checkArgument(ySubmissions.length !== 0, "Cannot make similarity matrix with empty list of submissions to compare to!");
 		checkArgument(xSubmissions.length === entries.length, "Array size mismatch when creating Similarity Matrix - X direction, found " + xSubmissions.length + ", expecting " + entries.length);
 		checkArgument(ySubmissions.length === entries[0].length, "Array size mismatch when creating Similarity Matrix - Y direction, found " + ySubmissions.length + ", expecting " + entries[0].length);
-		checkArgument(builtFrom.length !== 0, "Must provide Algorithm Results used to build similarity matrix - instead got empty set!");
+		//checkArgument(builtFrom.length !== 0, "Must provide Algorithm Results used to build similarity matrix - instead got empty set!");
 
 		this.entries = entries;
 		this.xSubmissions = xSubmissions;
@@ -153,6 +153,9 @@ class SimilarityMatrix {
 	 */
 	static async generateMatrix(results, inputSubmissions, archive = []){
 		checkNotNull(results);
+		if(typeof inputSubmissions === 'object'){
+			inputSubmissions = Object.values(inputSubmissions);
+		}
 		if('results' in results){
 			inputSubmissions = results.submissions;
 			archive = results.archives;
@@ -160,8 +163,8 @@ class SimilarityMatrix {
 		}
 
 		checkNotNull(inputSubmissions);
-		checkArgument(inputSubmissions.length !== 0, "Must provide at least 1 submission to build matrix from");
-		checkArgument(results.length !== 0, "Must provide at least 1 AlgorithmResults to build matrix from!");
+		//checkArgument(inputSubmissions.length !== 0, "Must provide at least 1 submission to build matrix from");
+		//checkArgument(results.length !== 0, "Must provide at least 1 AlgorithmResults to build matrix from!");
 
 		if(archive.length > 0){
 			return SimilarityMatrix.generateMatrixArchive(results, inputSubmissions, archive);
