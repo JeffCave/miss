@@ -46,31 +46,39 @@ export function d3ForceDirected(results){
 		.force("collision", d3.forceCollide(radius))
 		;
 
-	let link = d3.select("g.links")
+	let linkData = d3.select("g.links")
 		.selectAll("line")
 		.data(graph.links,function(d){
 			return [d.source.name,d.target.name].join('.');
 		})
+		;
+	linkData.exit().remove();
+	let link = linkData
 		.enter().append("line")
+			.attr("stroke", lineColour)
+		.merge(linkData)
 			.attr("stroke-width", function(d){
 				return Math.floor((d.value * radius) + 1) + 'px';
 			})
-			.attr("stroke", lineColour)
 			.attr("opacity", function(d) {
 				return d.value;
 			})
 		;
 
-	let node = svg.select("g.nodes")
-		.selectAll("circle")
+	let nodeData = svg.select("g.nodes").selectAll("circle")
 		.data(graph.nodes)
+		;
+	nodeData.exit().remove();
+	let node = nodeData
 		.enter().append("circle")
+			.call(d3.drag()
+				.on("start", dragstarted)
+				.on("drag", dragged)
+				.on("end", dragended))
+		.merge(nodeData)
 			.attr("r", radius)
 			.attr("fill", function(d) { return color(d.group); })
-		.call(d3.drag()
-			.on("start", dragstarted)
-			.on("drag", dragged)
-			.on("end", dragended))
+//		.exit().remove()
 		;
 
 	node.append("title").text(function(d) { return d.id; });
