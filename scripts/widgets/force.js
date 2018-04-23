@@ -21,6 +21,9 @@ export function d3ForceDirected(results){
 		}),
 	};
 
+	d3.select("svg").selectAll("g.links").data(['links']).enter().append("g").attr("class", "links");
+	d3.select("svg").selectAll("g.nodes").data(['nodes']).enter().append("g").attr("class", "nodes");
+
 	let svg = d3.select("svg");
 	let width = +svg.attr("width");
 	let height = +svg.attr("height");
@@ -43,10 +46,11 @@ export function d3ForceDirected(results){
 		.force("collision", d3.forceCollide(radius))
 		;
 
-	let link = svg.append("g")
-		.attr("class", "links")
+	let link = d3.select("g.links")
 		.selectAll("line")
-		.data(graph.links)
+		.data(graph.links,function(d){
+			return [d.source.name,d.target.name].join('.');
+		})
 		.enter().append("line")
 			.attr("stroke-width", function(d){
 				return Math.floor((d.value * radius) + 1) + 'px';
@@ -57,8 +61,7 @@ export function d3ForceDirected(results){
 			})
 		;
 
-	let node = svg.append("g")
-			.attr("class", "nodes")
+	let node = svg.select("g.nodes")
 		.selectAll("circle")
 		.data(graph.nodes)
 		.enter().append("circle")

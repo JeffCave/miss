@@ -190,9 +190,7 @@ class ChecksimsRunner {
 
 		let submissions = Object.values(allSubmissions[0]);
 		let archiveSubmissions = allSubmissions[1];
-//		if(2 > submissions.length + archiveSubmissions.length) {
-//			throw new ChecksimsException("Did not get at least 2 student submissions! Cannot run Checksims!");
-//		}
+
 		console.log("Got " + archiveSubmissions.length + " archive submissions to test.");
 
 		// Common code removal first, always
