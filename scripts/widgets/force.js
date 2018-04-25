@@ -2,6 +2,7 @@
 global d3
 */
 
+
 export function d3ForceDirected(results){
 	const radius = 5;
 	const distance = 100;
@@ -81,12 +82,17 @@ export function d3ForceDirected(results){
 //		.exit().remove()
 		;
 
-	node.append("title").text(function(d) { return d.id; });
+	node.append("title").text(function(d,i) {
+		return i;
+
+	});
 
 	simulation.nodes(graph.nodes).on("tick", ticked);
 	simulation.force("link").links(graph.links);
 
 	function ticked() {
+		let link = d3.select("g.links").selectAll("line");
+		let node = d3.select("g.nodes").selectAll("circle");
 		link
 			.attr("x1", function(d) { return d.source.x; })
 			.attr("y1", function(d) { return d.source.y; })
