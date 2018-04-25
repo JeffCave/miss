@@ -123,7 +123,7 @@ class indexPage {
 			if(name in htmlContainers){
 				console.log("Generating " + name + " output");
 				let output = MatrixPrinterRegistry.processors[name];
-				output = output(resultsMatrix);
+				output = await output(resultsMatrix);
 				htmlContainers[name].querySelector('.result').innerHTML = output;
 			}
 		}
