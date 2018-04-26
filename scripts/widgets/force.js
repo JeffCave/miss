@@ -2,7 +2,6 @@
 global d3
 */
 
-
 export function d3ForceDirected(results){
 	const radius = 5;
 	const distance = 100;
@@ -31,21 +30,28 @@ export function d3ForceDirected(results){
 
 	let color = d3.scaleOrdinal(d3.schemeCategory20);
 
-	let simulation = d3.forceSimulation()
-		.force("link", d3.forceLink()
-			.id(function(d) { return d.name; })
-			.distance(function(d) {
-				return (1-d.value)*distance;
-			})
-			.strength(function(d){
-					let rtn = d.value;
-					return rtn;
+	let simulation = svg.node().simulation;
+	if(!simulation){
+		simulation = d3.forceSimulation()
+			.force("link", d3.forceLink()
+				.id(function(d) { return d.name; })
+				.distance(function(d) {
+					return (1-d.value)*distance;
 				})
-		)
-		.force("charge", d3.forceManyBody())
-		.force("center", d3.forceCenter(width / 2, height / 2))
-		.force("collision", d3.forceCollide(radius))
-		;
+				.strength(function(d){
+						let rtn = d.value;
+						return rtn;
+					})
+			)
+			.force("charge", d3.forceManyBody())
+			.force("center", d3.forceCenter(width / 2, height / 2))
+			.force("collision", d3.forceCollide(radius))
+			.stop()
+			;
+		svg.node().simulation = simulation;
+	}
+	simulation.force("link").links(graph.links);
+	simulation.nodes(graph.nodes).on("tick", ticked);
 
 	let linkData = d3.select("g.links")
 		.selectAll("line")
@@ -54,7 +60,7 @@ export function d3ForceDirected(results){
 		})
 		;
 	linkData.exit().remove();
-	let link = linkData
+	let links = linkData
 		.enter().append("line")
 			.attr("stroke", lineColour)
 		.merge(linkData)
@@ -70,8 +76,10 @@ export function d3ForceDirected(results){
 		.data(graph.nodes)
 		;
 	nodeData.exit().remove();
-	let node = nodeData
+	let nodes = nodeData
 		.enter().append("circle")
+			.attr("cx", width/2)
+			.attr("cy", height/2)
 			.call(d3.drag()
 				.on("start", dragstarted)
 				.on("drag", dragged)
@@ -79,31 +87,55 @@ export function d3ForceDirected(results){
 		.merge(nodeData)
 			.attr("r", radius)
 			.attr("fill", function(d) { return color(d.group); })
-//		.exit().remove()
 		;
 
-	node.append("title").text(function(d,i) {
-		return i;
-
+	nodes.each(function(pDatum){
+		d3.select(this)
+			.selectAll('title')
+			.data([pDatum.name])
+			.enter().append("title")
+				.text(function(d,i) {
+					return d;
+				});
 	});
 
-	simulation.nodes(graph.nodes).on("tick", ticked);
-	simulation.force("link").links(graph.links);
+	// we have made changes to the data, better restart the simulation
+	simulation.alpha(1).restart();
 
 	function ticked() {
 		let link = d3.select("g.links").selectAll("line");
 		let node = d3.select("g.nodes").selectAll("circle");
-		link
-			.attr("x1", function(d) { return d.source.x; })
-			.attr("y1", function(d) { return d.source.y; })
-			.attr("x2", function(d) { return d.target.x; })
-			.attr("y2", function(d) { return d.target.y; })
-			;
+
+		function boundWidth(val){
+			if(val < radius){
+				val = radius;
+			}
+			else if(val > width-radius){
+				val = width-radius;
+			}
+			return val;
+		}
+		function boundHeight(val){
+			if(val < radius){
+				val = radius;
+			}
+			else if(val > width-radius){
+				val = width-radius;
+			}
+			return val;
+		}
 
 		node
-			.attr("cx", function(d) { return d.x; })
-			.attr("cy", function(d) { return d.y; })
+			.attr("cx", function(d) { return boundWidth(d.x);  })
+			.attr("cy", function(d) { return boundHeight(d.y); })
 			;
+		link
+			.attr("x1", function(d) { return boundWidth(d.source.x); })
+			.attr("y1", function(d) { return boundHeight(d.source.y); })
+			.attr("x2", function(d) { return boundWidth(d.target.x); })
+			.attr("y2", function(d) { return boundHeight(d.target.y); })
+			;
+
 	}
 
 	function dragstarted(d) {
