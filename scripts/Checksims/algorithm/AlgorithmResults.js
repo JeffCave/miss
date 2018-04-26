@@ -76,6 +76,7 @@ export default async function AlgorithmResults(a, b, finalListA, finalListB) {
 	}
 	results.percentMatched /= results.length;
 
+	results.name = [a.name,b.name].sort().join('.');
 	results.hash = hasher(await a.hash + await b.hash);
 
 	return results;

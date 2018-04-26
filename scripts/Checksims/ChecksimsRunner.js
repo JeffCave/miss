@@ -197,14 +197,32 @@ class ChecksimsRunner {
 		let algo = await this.Algorithm;
 		console.log("Performing similarity detection on " + submissions.length + " pairs");
 		// Perform parallel analysis of all submission pairs to generate a results list
-		let results = allPairs.map(function(pair){
-			return algo(pair[0], pair[1]);
-		})
-		;
+		let currentResults = Object.keys(this.results);
+		let results = allPairs
+			.filter(function(pair){
+				let name = pair.map((d)=>d.name).sort().join('.');
+				let existingPosition = currentResults.indexOf(name);
+				if(existingPosition >= 0){
+					currentResults.splice(existingPosition,1);
+					return false;
+				}
+				return true;
+			})
+			.map(function(pair){
+				return algo(pair[0], pair[1]);
+			})
+			;
 
 		console.log("Beginning similarity detection...");
 		let startTime = Date.now();
-		this.results = await Promise.all(results);
+		let self = this;
+		this.results = await Promise.all(results)
+			.then(function(results){
+				return results.reduce(function(a,d){
+					a[d.name] = d;
+					return a;
+				},self.results);
+			});
 		let endTime = Date.now();
 		let timeElapsed = endTime - startTime;
 		console.log("Finished similarity detection in " + timeElapsed + " ms");
@@ -215,7 +233,7 @@ class ChecksimsRunner {
 		//ParallelAlgorithm.shutdownExecutor();
 
 		let report = {
-			"results" : this.results,
+			"results" : Object.values(this.results),
 			"submissions":submissions,
 			"archives":archiveSubmissions
 		};
