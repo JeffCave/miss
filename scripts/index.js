@@ -26,7 +26,7 @@ class indexPage {
 		let elem = document.querySelector('#filetest');
 		Files.DisplayFiles(elem,this);
 
-		let parent = this;
+		let self = this;
 		let adder = document.querySelector('#submissions > span');
 		adder.addEventListener('dragover',function(event){
 			event.preventDefault();
@@ -39,7 +39,7 @@ class indexPage {
 			event.target.style.backgroundColor="blue";
 			let path = event.dataTransfer.getData("text/plain");
 			path = new RegExp("^" + path);
-			let files = Object.entries(parent.files)
+			let files = Object.entries(self.files)
 				.filter(function(d){
 					let isMatch = path.test(d[0]);
 					return isMatch;
@@ -53,8 +53,31 @@ class indexPage {
 			path = event.dataTransfer.getData("text/plain");
 			path = path.split('/').pop();
 			let submission = new Submission(path,files);
-			parent.runner.addSubmissions(submission);
+			self.runner.addSubmissions(submission);
 		});
+
+
+		Object.observe(this.runner.submissions,function(changes){
+			self.runner.runChecksims()
+				.then(function(results){
+					self.renderResults(results,self.Containers);
+				});
+
+		});
+	}
+
+	get Containers(){
+		if(!('_containers' in this)){
+			this._containers = Array.from(document.querySelectorAll('#results > details'))
+				.reduce(function(a,d){
+					if(d.dataset.type){
+						a[d.dataset.type] = d;
+					}
+					return a;
+				},{})
+				;
+		}
+		return this._containers;
 	}
 
 	attachSubmissions(blob){
@@ -195,7 +218,10 @@ class indexPage {
 	 *
 	 * @param args CLI arguments to parse
 	 */
-	async runHtml(htmlContainers){
+	async runHtml(htmlContainers = null){
+		if(!htmlContainers){
+			htmlContainers = this.Containers;
+		}
 		let checkSims = this.runner;
 
 		checkSims.CommonCode = this.common;
@@ -214,21 +240,7 @@ window.addEventListener('load',function(){
 	let button = document.querySelector('button');
 	let upload = document.querySelector("input[name='zip']");
 
-	button.disabled = true;
 	upload.disabled = false;
-
-	let outputFlds = Array.from(document.querySelectorAll('#results > details'))
-		.reduce(function(a,d){
-			if(d.dataset.type){
-				a[d.dataset.type] = d;
-			}
-			return a;
-		},{})
-		;
-
-	button.addEventListener('click',function(e){
-		checker.runHtml(outputFlds);
-	});
 
 	upload.addEventListener('change',function(e){
 		Array.from(e.target.files).forEach(function(file){
@@ -237,7 +249,7 @@ window.addEventListener('load',function(){
 			}
 			checker.attachSubmissions(file)
 				.then(function(files){
-					button.disabled = false;
+					console.log('Submissions attached');
 				})
 				;
 		});

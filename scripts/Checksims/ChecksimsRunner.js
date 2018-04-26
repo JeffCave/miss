@@ -1,18 +1,3 @@
-/*
- * CDDL HEADER START
- *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * See LICENSE.txt included in this distribution for the specific
- * language governing permissions and limitations under the License.
- *
- * CDDL HEADER END
- *
- * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
- */
-
 'use strict';
 export {
 	ChecksimsRunner
@@ -25,7 +10,6 @@ import {AlgorithmRegistry} from './algorithm/AlgorithmRegistry.js';
 import {CommonCodeLineRemovalPreprocessor} from './preprocessor/CommonCodeLineRemovalPreprocessor.js';
 import {PairGenerator} from './util/PairGenerator.js';
 import {Submission} from './submission/Submission.js';
-import {ChecksimsException} from './ChecksimsException.js';
 import {checkNotNull,checkArgument} from './util/misc.js';
 
 /**
@@ -35,7 +19,7 @@ class ChecksimsRunner {
 
 	constructor() {
 		this.numThreads = 1;
-		this.commonCode = async function(){return Submission.NullSubmission;};
+		this.results = {};
 	}
 
 	get Filter(){
@@ -84,6 +68,7 @@ class ChecksimsRunner {
 		}
 		return this.submissions;
 	}
+
 	/**
 	 * @param newSubmissions New set of submissions to work on. Must contain at least 1 submission.
 	 * @return This configuration
@@ -113,6 +98,9 @@ class ChecksimsRunner {
 	 * @return Set of archive submissions to run on
 	 */
 	get ArchiveSubmissions() {
+		if(!('archiveSubmissions' in this)){
+			this.archiveSubmissions = [];
+		}
 		return this.archiveSubmissions;
 	}
 	/**
@@ -133,6 +121,9 @@ class ChecksimsRunner {
 	 * @return Set of archive submissions to run on
 	 */
 	get CommonCode() {
+		if(!('commonCode' in this)){
+			this.commonCode = (async function(){return Submission.NullSubmission;})();
+		}
 		return this.commonCode;
 	}
 	/**
@@ -140,9 +131,6 @@ class ChecksimsRunner {
 	 * @return This configuration
 	 */
 	set CommonCode(newCommonCode) {
-		if(!newCommonCode){
-			newCommonCode = null;
-		}
 		// All right, parse common code
 		this.commonCode = Submission.submissionsFromFiles(newCommonCode, this.Filter);
 	}
@@ -186,7 +174,7 @@ class ChecksimsRunner {
 	 * @throws ChecksimsException Thrown on error performing similarity detection
 	 */
 	async runChecksims(){
-		let allSubmissions = await Promise.all([this.Submissions,this.archiveSubmissions]);
+		let allSubmissions = await Promise.all([this.Submissions,this.ArchiveSubmissions]);
 
 		let submissions = Object.values(allSubmissions[0]);
 		let archiveSubmissions = allSubmissions[1];
@@ -216,7 +204,7 @@ class ChecksimsRunner {
 
 		console.log("Beginning similarity detection...");
 		let startTime = Date.now();
-		results = await Promise.all(results);
+		this.results = await Promise.all(results);
 		let endTime = Date.now();
 		let timeElapsed = endTime - startTime;
 		console.log("Finished similarity detection in " + timeElapsed + " ms");
@@ -227,7 +215,7 @@ class ChecksimsRunner {
 		//ParallelAlgorithm.shutdownExecutor();
 
 		let report = {
-			"results" : results,
+			"results" : this.results,
 			"submissions":submissions,
 			"archives":archiveSubmissions
 		};
