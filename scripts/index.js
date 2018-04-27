@@ -10,7 +10,7 @@ import './Checksims/visualizations/similaritymatrix/output/MatrixToCSVPrinter.js
 import './Checksims/visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
 
 import {d3ForceDirected} from './widgets/force.js';
-import * as Files from '/scripts/widgets/filesystem.js';
+import * as Files from './widgets/filesystem.js';
 
 /**
  * Parses Checksims' command-line options.
