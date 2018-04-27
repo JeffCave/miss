@@ -1,23 +1,81 @@
 'use strict';
 
-import {ChecksimsException} from './ChecksimsException.js';
-import {ChecksimsRunner} from './ChecksimsRunner.js';
-import {d3ForceDirected} from './visualizations/force.js';
-import {SimilarityMatrix} from './visualizations/similaritymatrix/SimilarityMatrix.js';
-import {MatrixPrinterRegistry} from './visualizations/similaritymatrix/output/MatrixPrinterRegistry.js';
-import {Submission} from './submission/Submission.js';
+import {ChecksimsException} from './Checksims/ChecksimsException.js';
+import {ChecksimsRunner} from './Checksims/ChecksimsRunner.js';
+import {SimilarityMatrix} from './Checksims/visualizations/similaritymatrix/SimilarityMatrix.js';
+import {MatrixPrinterRegistry} from './Checksims/visualizations/similaritymatrix/output/MatrixPrinterRegistry.js';
+import {Submission} from './Checksims/submission/Submission.js';
 
-import './visualizations/similaritymatrix/output/MatrixToCSVPrinter.js';
-import './visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
+import './Checksims/visualizations/similaritymatrix/output/MatrixToCSVPrinter.js';
+import './Checksims/visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
+
+import {d3ForceDirected} from './widgets/force.js';
+import * as Files from '/scripts/widgets/filesystem.js';
 
 /**
  * Parses Checksims' command-line options.
  *
- * TODO: Consider changing from a  class? Having the CommandLine as an instance variable would greatly simplify
+ * TODO: Consider changing from a  class? Having as an instance variable would greatly simplify
  */
-class ChecksimsCommandLine {
+class indexPage {
 	constructor() {
 		this.runner = new ChecksimsRunner();
+		this.files = {};
+
+		Files.DisplaySubmissions('script[name="subtest"]',this.runner.Submissions);
+		let elem = document.querySelector('#filetest');
+		Files.DisplayFiles(elem,this);
+
+		let self = this;
+		let adder = document.querySelector('#submissions > span');
+		adder.addEventListener('dragover',function(event){
+			event.preventDefault();
+			event.target.style.backgroundColor="green";
+		});
+		adder.addEventListener('dragleave',function(event){
+			event.target.style.backgroundColor="transparent";
+		});
+		adder.addEventListener('drop',function(event){
+			event.target.style.backgroundColor="blue";
+			let path = event.dataTransfer.getData("text/plain");
+			path = new RegExp("^" + path);
+			let files = Object.entries(self.files)
+				.filter(function(d){
+					let isMatch = path.test(d[0]);
+					return isMatch;
+				})
+				.reduce(function(a,d){
+					let p = d[0].replace(path,'');
+					a[p] = d[1];
+					return a;
+				},{})
+				;
+			path = event.dataTransfer.getData("text/plain");
+			path = path.split('/').pop();
+			let submission = new Submission(path,files);
+			self.runner.addSubmissions(submission);
+		});
+
+		Object.observe(this.runner.submissions,(changes)=>{
+			self.renderResults();
+		});
+		Object.observe(this.runner.results,(changes)=>{
+			self.renderResults();
+		});
+	}
+
+	get Containers(){
+		if(!('_containers' in this)){
+			this._containers = Array.from(document.querySelectorAll('#results > details'))
+				.reduce(function(a,d){
+					if(d.dataset.type){
+						a[d.dataset.type] = d;
+					}
+					return a;
+				},{})
+				;
+		}
+		return this._containers;
 	}
 
 	attachSubmissions(blob){
@@ -27,12 +85,12 @@ class ChecksimsCommandLine {
 		return JSZip
 			.loadAsync(blob)
 			.then(function(zip) {
-				let files = Submission.fileListFromZip(zip);
-				return files;
-			})
-			.then(function(zip){
-				parent.runner.Submissions = zip;
+				zip = Submission.fileListFromZip(zip);
 				return zip;
+			})
+			.then(function(files){
+				parent.files = files;
+				return files;
 			})
 			.catch(function (e) {
 				console.error("Error reading " + blob.name + ": " + e.message);
@@ -86,7 +144,7 @@ class ChecksimsCommandLine {
 			if(name in htmlContainers){
 				console.log("Generating " + name + " output");
 				let output = MatrixPrinterRegistry.processors[name];
-				output = output(resultsMatrix);
+				output = await output(resultsMatrix);
 				htmlContainers[name].querySelector('.result').innerHTML = output;
 			}
 		}
@@ -144,11 +202,19 @@ class ChecksimsCommandLine {
 		d3ForceDirected(results);
 	}
 
-	async renderResults(results,htmlContainers){
+	async renderResults(){
+		let results = {
+			"results" : Object.values(this.runner.results),
+			"submissions": Object.values(this.runner.Submissions),
+			"archives":this.runner.archiveSubmissions
+		};
+		let htmlContainers = this.Containers;
+
 		this.renderMatrixes(results,htmlContainers);
 		this.renderListTable(results,htmlContainers);
 		this.renderListForce(results,htmlContainers);
 	}
+
 
 	/**
 	 * Parse CLI arguments and run Checksims from them.
@@ -157,7 +223,10 @@ class ChecksimsCommandLine {
 	 *
 	 * @param args CLI arguments to parse
 	 */
-	async runHtml(htmlContainers){
+	async runHtml(htmlContainers = null){
+		if(!htmlContainers){
+			htmlContainers = this.Containers;
+		}
 		let checkSims = this.runner;
 
 		checkSims.CommonCode = this.common;
@@ -172,25 +241,11 @@ class ChecksimsCommandLine {
 
 
 window.addEventListener('load',function(){
-	let checker = new ChecksimsCommandLine();
+	let checker = new indexPage();
 	let button = document.querySelector('button');
 	let upload = document.querySelector("input[name='zip']");
 
-	button.disabled = true;
 	upload.disabled = false;
-
-	let outputFlds = Array.from(document.querySelectorAll('#results > details'))
-		.reduce(function(a,d){
-			if(d.dataset.type){
-				a[d.dataset.type] = d;
-			}
-			return a;
-		},{})
-		;
-
-	button.addEventListener('click',function(e){
-		checker.runHtml(outputFlds);
-	});
 
 	upload.addEventListener('change',function(e){
 		Array.from(e.target.files).forEach(function(file){
@@ -199,15 +254,7 @@ window.addEventListener('load',function(){
 			}
 			checker.attachSubmissions(file)
 				.then(function(files){
-					button.disabled = false;
-					let ul = document.querySelector("ul");
-					ul.innerHTML = Object.keys(files)
-						.sort()
-						.map((file)=>{
-							return '<li>'+file+'</li>';
-						})
-						.join('')
-						;
+					console.log('Submissions attached');
 				})
 				;
 		});
