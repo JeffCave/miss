@@ -53,10 +53,14 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(a, b) {
 
 	// Alright, easy cases taken care of. Generate an instance to perform the actual algorithm
 	let algorithm = new SmithWatermanAlgorithm(aTokens, bTokens);
-
 	let endLists = algorithm.computeSmithWatermanAlignmentExhaustive();
 
-	let results = AlgorithmResults(a, b, endLists[0], endLists[1]);
+	let notes = {}
+	if(algorithm.massive){
+		notes.error = 'Massive compare';
+	}
+
+	let results = AlgorithmResults(a, b, endLists[0], endLists[1], notes);
 	return results;
 };
 

@@ -32,21 +32,11 @@ import {checkNotNull,hasher} from '../util/misc.js';
 	 * @param finalListA Token list from submission A, with matched tokens set invalid
 	 * @param finalListB Token list from submission B, with matched tokens set invalid
 	 */
-export default async function AlgorithmResults(a, b, finalListA, finalListB) {
+export default async function AlgorithmResults(a, b, finalListA, finalListB, notes) {
 	checkNotNull(a);
 	checkNotNull(b);
 	checkNotNull(finalListA);
 	checkNotNull(finalListB);
-	/*
-	 * No longer actually know how many tokens are in the submissions. The actual token lists would need to be resolved, and we haven't done that yet (still promises)
-	 *
-	checkArgument(a.NumTokens === finalListA.length,
-		"Token size mismatch when creating algorithm results for submission \"" + a.Name
-		+ "\" --- expected " + a.NumTokens + ", got " + finalListA.length);
-	checkArgument(b.NumTokens === finalListB.length,
-		"Token size mismatch when creating algorithm results for submission \"" + b.Name
-		+ "\" --- expected " + b.NumTokens + ", got " + finalListB.length);
-	*/
 
 	let results = [
 			{submission: a, finalList: finalListA},
@@ -56,6 +46,12 @@ export default async function AlgorithmResults(a, b, finalListA, finalListB) {
 			let comp = a.submission.Name.localeCompare(b.submission.Name);
 			return comp;
 		});
+
+	if(notes){
+		Object.entries(notes).forEach(function(d){
+			results[d[0]] = d[1];
+		});
+	}
 
 	results.percentMatched=0;
 	for(let r = 0; r<results.length; r++){

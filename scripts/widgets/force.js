@@ -16,6 +16,7 @@ export function d3ForceDirected(results){
 				source:d.A.submission,
 				target:d.B.submission,
 				value:d.percentMatched,
+				original:d
 			};
 			return rtn;
 		}),
@@ -62,13 +63,28 @@ export function d3ForceDirected(results){
 	linkData.exit().remove();
 	let links = linkData
 		.enter().append("line")
-			.attr("stroke", lineColour)
+			.attr("stroke", function(d){
+				let colour = lineColour;
+				if(d.original.error){
+					colour = 'red';
+				}
+				return colour;
+			})
 		.merge(linkData)
 			.attr("stroke-width", function(d){
-				return Math.floor((d.value * radius) + 1) + 'px';
+				let width = d.value;
+				if(d.original.error){
+					width = 1;
+				}
+				width = Math.floor((width * radius) + 1) + 'px';
+				return width;
 			})
 			.attr("opacity", function(d) {
-				return d.value;
+				let opacity = d.value;
+				if(d.original.error){
+					opacity = 0.5;
+				}
+				return opacity;
 			})
 		;
 

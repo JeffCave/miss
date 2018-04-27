@@ -96,7 +96,7 @@ export default class SmithWatermanAlgorithm {
 	 */
 	computeSmithWatermanAlignmentExhaustive(){
 		if(this.massive){
-			return [0,0];
+			return [new TokenList('mixed',[]),new TokenList('mixed',[])];
 		}
 		// Keep computing while we have results over threshold
 		for(let localCandidates = this.computeArraySubset(this.wholeArray);	Object.keys(localCandidates).length > 0; localCandidates = this.computeArraySubset(this.wholeArray)) {
@@ -134,7 +134,7 @@ export default class SmithWatermanAlgorithm {
 	 * TODO tests for this
 	 *
 	 * @return Pair of Token Lists representing optimal detected alignments
-	 * @throws leternalAlgorithmError Thrown if leternal error causes violation of preconditions
+	 * @throws internalAlgorithmError Thrown if internal error causes violation of preconditions
 	 */
 	computeSmithWatermanAlignment(){
 		// Make sure our candidates list is initially empty
@@ -162,7 +162,7 @@ export default class SmithWatermanAlgorithm {
             // This should never happen, so log if it does
             // TODO investigate why this is happening
             if(this.s[currMax.getX()][currMax.getY()] < this.threshold) {
-                console.trace("Potential algorithm error: identified candidate poleting to 0 at " + currMax);
+                console.trace("Potential algorithm error: identified candidate pointing to 0 at " + currMax);
                 largestCoords.remove(currMax);
                 if(largestCoords.isEmpty()) {
                     this.candidates.remove(largestKey);
