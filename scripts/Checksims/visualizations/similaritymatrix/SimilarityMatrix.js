@@ -175,7 +175,7 @@ class SimilarityMatrix {
 		for(let i=0; i<inputSubmissions.length; i++){
 			matrix.push([]);
 			for(let j=0; j<inputSubmissions.length; j++){
-				matrix[i].push(null);
+				matrix[i].push(0);
 			}
 		}
 
@@ -210,17 +210,6 @@ class SimilarityMatrix {
 
 			matrix[aIndex][bIndex] = await MatrixEntry(result.A.submission, result.B.submission, result.A.identicalTokens);
 			matrix[bIndex][aIndex] = await MatrixEntry(result.B.submission, result.A.submission, result.B.identicalTokens);
-		}
-
-		// Verification pass: Go through and ensure that the entire array was populated
-		for (let x = 0; x < orderedSubmissions.length; x++) {
-			for (let y = 0; y < orderedSubmissions.length; y++) {
-				if (matrix[x][y] === null) {
-					throw new Error("Missing Algorithm Results for comparison of submissions \""
-							+ orderedSubmissions.get(x).getName() + "\" and \"" + orderedSubmissions.get(y).getName()
-							+ "\"");
-				}
-			}
 		}
 
 		let sim = new SimilarityMatrix(matrix, orderedSubmissions, orderedSubmissions, results);

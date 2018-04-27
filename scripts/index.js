@@ -15,7 +15,7 @@ import * as Files from '/scripts/widgets/filesystem.js';
 /**
  * Parses Checksims' command-line options.
  *
- * TODO: Consider changing from a  class? Having the CommandLine as an instance variable would greatly simplify
+ * TODO: Consider changing from a  class? Having as an instance variable would greatly simplify
  */
 class indexPage {
 	constructor() {
@@ -56,13 +56,11 @@ class indexPage {
 			self.runner.addSubmissions(submission);
 		});
 
-
-		Object.observe(this.runner.submissions,function(changes){
-			self.runner.runChecksims()
-				.then(function(results){
-					self.renderResults(results,self.Containers);
-				});
-
+		Object.observe(this.runner.submissions,(changes)=>{
+			self.renderResults();
+		});
+		Object.observe(this.runner.results,(changes)=>{
+			self.renderResults();
 		});
 	}
 
@@ -204,7 +202,14 @@ class indexPage {
 		d3ForceDirected(results);
 	}
 
-	async renderResults(results,htmlContainers){
+	async renderResults(){
+		let results = {
+			"results" : Object.values(this.runner.results),
+			"submissions": Object.values(this.runner.Submissions),
+			"archives":this.runner.archiveSubmissions
+		};
+		let htmlContainers = this.Containers;
+
 		this.renderMatrixes(results,htmlContainers);
 		this.renderListTable(results,htmlContainers);
 		this.renderListForce(results,htmlContainers);

@@ -20,6 +20,13 @@ class ChecksimsRunner {
 	constructor() {
 		this.numThreads = 1;
 		this.results = {};
+		this.submissions = {};
+
+		let self = this;
+		Object.observe(this.submissions,function(changes){
+			self.runChecksims();
+		});
+
 	}
 
 	get Filter(){
@@ -195,7 +202,6 @@ class ChecksimsRunner {
 		// Apply algorithm to submissions
 		let allPairs = await PairGenerator.generatePairsWithArchive(submissions, archiveSubmissions);
 		let algo = await this.Algorithm;
-		console.log("Performing similarity detection on " + submissions.length + " pairs");
 		// Perform parallel analysis of all submission pairs to generate a results list
 		let currentResults = Object.keys(this.results);
 		let results = allPairs
@@ -213,32 +219,19 @@ class ChecksimsRunner {
 			})
 			;
 
-		console.log("Beginning similarity detection...");
-		let startTime = Date.now();
+		console.log("Performing similarity detection on " + submissions.length + " pairs");
 		let self = this;
-		this.results = await Promise.all(results)
-			.then(function(results){
-				return results.reduce(function(a,d){
-					a[d.name] = d;
-					return a;
-				},self.results);
-			});
-		let endTime = Date.now();
-		let timeElapsed = endTime - startTime;
-		console.log("Finished similarity detection in " + timeElapsed + " ms");
-
-
-		//TODO: do this with web workers
-		// All parallel jobs are done, shut down the parallel executor
-		//ParallelAlgorithm.shutdownExecutor();
-
-		let report = {
-			"results" : Object.values(this.results),
-			"submissions":submissions,
-			"archives":archiveSubmissions
-		};
-		return report;
-
+		results.forEach(function(result){
+			console.log("Beginning similarity detection on '"+result.name+"'");
+			let startTime = Date.now();
+			result.then(function(d){
+					self.results[d.name] = d;
+					let endTime = Date.now();
+					let timeElapsed = endTime - startTime;
+					console.log("Finished similarity detection on '" + d.name + "' (" + timeElapsed + " ms)");
+				})
+				;
+		});
 	}
 
 }
