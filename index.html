@@ -20,63 +20,79 @@
  </script>
 
  <link rel='stylesheet' href='main.css' />
-
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
- <fieldset>
-  <legend>Files</legend>
-  Files: <input name='zip' type="file" disabled/>
-  <script type='text/mustache' name='filetest'>
-   {{#children}}
-    <details style='margin-left:1em;' draggable='true' data-path='{{path}}'>
-     <summary>{{name}}</summary>
-     {{>li}}
-    </details>
-   {{/children}}
-  </script>
- </fieldset>
- <fieldset id='submissions'>
-  <legend>Submissions</legend>
-   <span>&#10133;</span>
-   <script type='text/mustache' name='subtest'>
-    <input type='checkbox' />
-    <span style='opacity:0.5;'>&#128190;</span>
-    {{name}}
+ <nav style='display:none;'>
+  <progress  value='1' min='0' max='2'>asdf</progress>
+  <input type='range' id='menu' value='0' min='0' max='3' list='forms' />
+  <datalist id='forms'>
+   <option value='0'>A</option>
+   <option value='1'>B</option>
+   <option value='2'>C</option>
+   <option value='3'>D</option>
+  </datalist>
+ </nav>
+ <main>
+  <fieldset>
+   <legend>Files</legend>
+   Files: <input name='zip' type="file" disabled/>
+   <script type='text/mustache' name='filetest'>
+    {{#children}}
+     <details style='margin-left:1em;' draggable='true' data-path='{{path}}'>
+      <summary>{{name}}</summary>
+      {{>li}}
+     </details>
+    {{/children}}
    </script>
- </fieldset>
- <section id='results'>
-  <details data-type='force' open>
-   <summary>Force</summary>
-   <svg width="300" height="300"></svg>
-   <ul class='result' style="padding:0;height:300px;width:300px;list-style-type:none;position:relative;display:none;"></ul>
-  </details>
-  <details data-type='lst' open>
-   <summary>Listing</summary>
-   <table class="result"></table>
-  </details>
-  <details data-type='html'>
-   <summary>HTML</summary>
-   <div class='result'></div>
-  </details>
-  <details data-type='csv'>
-   <summary>CSV</summary>
-   <textarea class='result'></textarea>
-  </details>
- </section>
- <h1>Sample Files</h1>
- <dl>
-  <dt><a href='./tests/sampleassignment.zip'>Sample Assignments</a></dt>
-   <dd>
-    A few demo files that have been used in classes. Formatted for student submission, and copied a couple of way. Gives some data to match and fine no match between.
-   </dd>
-  <dt><a href='./tests/bigcompares.zip'>Big Compares</a></dt>
-   <dd>
-    Genome of E.Coli, and Y.Pestarius. Makes for a really big compare, and is know to currently break the application.
-   </dd>
- </dl>
- <section >
+  </fieldset>
+  <fieldset id='submissions'>
+   <legend>Submissions</legend>
+    <span>&#10133;</span>
+    <script type='text/mustache' name='subtest'>
+     <input type='checkbox' />
+     <span style='opacity:0.5;'>&#128190;</span>
+     {{name}}
+    </script>
+  </fieldset>
+  <fieldset id='results'>
+   <legend>Reports</legend>
+   <details data-type='force' open>
+    <summary>Force</summary>
+    <svg width="300" height="300"></svg>
+    <ul class='result' style="padding:0;height:300px;width:300px;list-style-type:none;position:relative;display:none;"></ul>
+   </details>
+   <details data-type='lst' open>
+    <summary>Listing</summary>
+    <table class="result"></table>
+   </details>
+   <details data-type='html' open>
+    <summary>HTML</summary>
+    <div class='result'></div>
+   </details>
+   <details data-type='csv'>
+    <summary>CSV</summary>
+    <textarea class='result'></textarea>
+   </details>
+  </fieldset>
+  <fieldset>
+   <legend>Sample Files</legend>
+   <dl>
+    <dt><a href='./tests/sampleassignment.zip'>Sample Assignments</a></dt>
+     <dd>
+      A few demo files that I have used in classes. Formatted
+      appropriately for student submission, and copied a couple of way.
+      Gives some data that will match and some data that will not match.
+     </dd>
+    <dt><a href='./tests/bigcompares.zip'>Big Compares</a></dt>
+     <dd>
+      Genome of E.Coli, and Y.Pestarius. Makes for a really big compare,
+      and is know to currently break the application.
+     </dd>
+   </dl>
+  </fieldset>
+ </main>
 
- </section>
  <div id='unsupported' style='display:none;'>
   <h1>Experimental Features required</h1>
   <p>

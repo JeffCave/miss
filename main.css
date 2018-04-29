@@ -16,10 +16,50 @@
 	*/
 }
 
+* {
+	position:relative;
+}
+
 body{
 	font-family:sans-serif;
 	position:relative;
+	padding:0;
+	margin:0;
 }
+
+main{
+	display: flex;
+	flex-flow: row wrap;
+	height:100vh;
+	padding:0;
+	margin:0;
+}
+main > fieldset{
+	flex:1 1 auto;
+	min-height:25vh;
+	width:100%;
+	min-width:300px;
+	margin:1vmin;
+	border:0.3vmin solid black;
+	padding:1.7vmin;
+	border-radius:0.5em;
+}
+
+@media screen and (orientation:landscape) {
+	main{
+		flex-flow: column wrap;
+		overflow-y:hidden;
+	}
+	main > fieldset{
+		height:100%;
+		width:44vw;
+		min-width:300px;
+		overflow-y: auto;
+	}
+
+}
+
+
 
 table{
 	border-collapse:collapse;
@@ -40,10 +80,63 @@ textarea{
 	height:300px;
 }
 
+nav {
+	height:2vmin;
+	width:100%;
+}
+
+nav > progress[value]{
+	position:absolute;
+	width:100%;
+	height:100%;
+
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	margin:0;
+	background:none;
+	border: 0;
+}
+
+nav > progress[value]::-webkit-progress-bar {
+	background-color:var(--notice-info-off);
+}
+nav > progress[value]::-webkit-progress-value {
+	background-color:var(--notice-info-high);
+}
+
+input[type='range'] {
+	width: 100%;
+}
 
 
-fieldset > button{
-	float: right;
+input[type='range']::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	border: 1px solid #000000;
+	height: 36px;
+	width: 16px;
+	border-radius: 3px;
+	background: #ffffff;
+	cursor: pointer;
+	/* margin-top: -14px; */
+	/* box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d; */
+}
+
+input[type=range]:focus {
+	outline: none;
+}
+
+input[type=range]::-ms-track {
+/*
+	width: 100%;
+	cursor: pointer;
+
+	background: transparent;
+	border-color: transparent;
+	color: transparent;
+*/
 }
 
 
