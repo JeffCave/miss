@@ -11,6 +11,7 @@ import './Checksims/visualizations/similaritymatrix/output/MatrixToHTMLPrinter.j
 
 import {d3ForceDirected} from './widgets/force.js';
 import * as Files from './widgets/filesystem.js';
+import './widgets/panel.js';
 
 /**
  * Parses Checksims' command-line options.

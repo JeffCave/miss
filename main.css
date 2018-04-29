@@ -44,6 +44,10 @@ main > fieldset{
 	padding:1.7vmin;
 	border-radius:0.5em;
 }
+main > fieldset > *{
+	opacity:1;
+	transition: opacity 1s;
+}
 
 @media screen and (orientation:landscape) {
 	main{
@@ -229,3 +233,4 @@ input[type=range]::-ms-track {
 #results > details[data-type='lst'] tr > td:nth-of-type(1) > span {
 	right:0.5em;
 }
+

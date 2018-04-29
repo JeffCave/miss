@@ -19,7 +19,7 @@
  </script>
  </script>
 
- <link rel='stylesheet' href='main.css' />
+ <link rel='stylesheet' href='index.css' />
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
@@ -36,7 +36,7 @@
  <main>
   <fieldset>
    <legend>Files</legend>
-   Files: <input name='zip' type="file" disabled/>
+   <label>Files:</label> <input name='zip' type="file" disabled/>
    <script type='text/mustache' name='filetest'>
     {{#children}}
      <details style='margin-left:1em;' draggable='true' data-path='{{path}}'>
