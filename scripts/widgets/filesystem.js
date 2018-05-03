@@ -106,7 +106,9 @@ function DisplayFiles(element,files){
 
 }
 
-export default function DisplaySubmissions(element,submissions){
+
+
+export default function DisplaySubmissions(element,db){
 	let holder = document.querySelector(element);
 
 	let templates = {
@@ -120,34 +122,33 @@ export default function DisplaySubmissions(element,submissions){
 	holder = newElem;
 	let dom = d3.select(holder);
 
-	Object.observe(submissions,function(changes){
-		//console.log("Changes: ", changes);
-		let data = changes
-			.pop()
-			.object
-			;
-		if(!data){
-			return;
-		}
+	let subChange = null;
+	db.changes({filter:'checksims/submissions'})
+		.on('change',(e)=>{
+			if(subChange !== null){
+				return;
+			}
+			subChange = setTimeout(function(){
+				db.query('checksims/submissions',{include_docs:true}).then((data)=>{
+					subChange = null;
 
-		data = Object.values(data)
-			.sort((a,b)=>{return a.name.localeCompare(b.name);})
-			;
-		let binding = dom.selectAll('li')
-			.data(data,function(d){
-				return d.name;
-			})
-			;
-		binding
-			.enter()
-				.append('li')
-			.merge(binding)
-				.html(function(d){
-					let html = Mustache.render(templates.li,d,templates);
-					return html;
-				})
-			.exit()
-				.remove()
-			;
-	});
+					let binding = dom.selectAll('li')
+						.data(data.rows,function(d){
+							return d.doc.name;
+						})
+						;
+					binding
+						.enter()
+							.append('li')
+						.merge(binding)
+							.html(function(d){
+								let html = Mustache.render(templates.li,d.doc,templates);
+								return html;
+							})
+						.exit()
+							.remove()
+						;
+				});
+			},500);
+		});
 }

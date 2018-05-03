@@ -34,8 +34,8 @@
   </datalist>
  </nav>
  <main>
-  <fieldset>
-   <legend>Files</legend>
+  <section>
+   <h1>Files</h1>
    <label>Files:</label> <input name='zip' type="file" disabled/>
    <script type='text/mustache' name='filetest'>
     {{#children}}
@@ -45,18 +45,18 @@
      </details>
     {{/children}}
    </script>
-  </fieldset>
-  <fieldset id='submissions'>
-   <legend>Submissions</legend>
-    <span>&#10133;</span>
+  </section>
+  <section id='submissions'>
+   <h1>Submissions</h1>
+    <span id='submissionMaker'>&#10133;</span>
     <script type='text/mustache' name='subtest'>
      <input type='checkbox' />
      <span style='opacity:0.5;'>&#128190;</span>
      {{name}}
     </script>
-  </fieldset>
-  <fieldset id='results'>
-   <legend>Reports</legend>
+  </section>
+  <section id='results'>
+   <h1>Reports</h1>
    <details data-type='force' open>
     <summary>Force</summary>
     <svg width="300" height="300"></svg>
@@ -74,9 +74,9 @@
     <summary>CSV</summary>
     <textarea class='result'></textarea>
    </details>
-  </fieldset>
-  <fieldset>
-   <legend>Sample Files</legend>
+  </section>
+  <section>
+   <h1>Sample Files</h1>
    <dl>
     <dt><a href='./tests/sampleassignment.zip'>Sample Assignments</a></dt>
      <dd>
@@ -90,7 +90,7 @@
       and is know to currently break the application.
      </dd>
    </dl>
-  </fieldset>
+  </section>
  </main>
 
  <div id='unsupported' style='display:none;'>

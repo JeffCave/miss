@@ -22,13 +22,14 @@ class indexPage {
 	constructor() {
 		this.runner = new ChecksimsRunner();
 		this.files = {};
+		let self = this;
 
-		Files.DisplaySubmissions('script[name="subtest"]',this.runner.Submissions);
+		Files.DisplaySubmissions('script[name="subtest"]',this.runner.db);
+
 		let elem = document.querySelector('#filetest');
 		Files.DisplayFiles(elem,this);
 
-		let self = this;
-		let adder = document.querySelector('#submissions > span');
+		let adder = document.querySelector('#submissionMaker');
 		adder.addEventListener('dragover',function(event){
 			event.preventDefault();
 			event.target.style.backgroundColor="green";
@@ -243,7 +244,6 @@ class indexPage {
 
 window.addEventListener('load',function(){
 	let checker = new indexPage();
-	let button = document.querySelector('button');
 	let upload = document.querySelector("input[name='zip']");
 
 	upload.disabled = false;

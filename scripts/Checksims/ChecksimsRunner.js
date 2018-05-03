@@ -10,7 +10,15 @@ import {AlgorithmRegistry} from './algorithm/AlgorithmRegistry.js';
 import {CommonCodeLineRemovalPreprocessor} from './preprocessor/CommonCodeLineRemovalPreprocessor.js';
 import {PairGenerator} from './util/PairGenerator.js';
 import {Submission} from './submission/Submission.js';
-import {checkNotNull,checkArgument} from './util/misc.js';
+
+import "https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.4.3/pouchdb.min.js";
+import "./lib/pouchdb.upsert.min.js";
+
+import * as utils from './util/misc.js';
+
+/*
+global PouchDB
+*/
 
 /**
  * CLI Entry point and main public API endpoint for Checksims.
@@ -21,12 +29,52 @@ class ChecksimsRunner {
 		this.numThreads = 1;
 		this.results = {};
 		this.submissions = {};
+		this.db = new PouchDB('checksim');
 
 		let self = this;
 		Object.observe(this.submissions,function(changes){
 			self.runChecksims();
 		});
 
+		this.dbInit();
+	}
+
+	dbInit(){
+		let self = this;
+		this.db.upsert('_design/checksims',function(doc){
+			let designDoc = {
+				views:{
+					submissions:{
+						map: function(doc){
+							if(doc._id.startsWith('submission.')){
+								let key = doc._id.split('.');
+								let val = doc.hash;
+								emit(key,val);
+							}
+						}.toString()
+					}
+				},
+				filters: {
+					submissions: function (doc,req) {
+						let isSub = doc._id.startsWith('submission.');
+						return isSub;
+					}.toString()
+				}
+			};
+			if(utils.docsEqual(doc,designDoc)){
+				console.log('DB version: no change');
+				return false;
+			}
+			console.log('DB version: updating');
+			return designDoc;
+		})
+		.then(function(){
+			self.db
+				.changes({filter:'checksims/submissions'})
+				.on('change', function(e) {
+					console.log('Submission change');
+				});
+		});
 	}
 
 	get Filter(){
@@ -55,7 +103,7 @@ class ChecksimsRunner {
 	 * @return This configuration
 	 */
 	set Algorithm(newAlgorithm) {
-		checkNotNull(newAlgorithm);
+		utils.checkNotNull(newAlgorithm);
 		if(typeof newAlgorithm === 'string'){
 			newAlgorithm = AlgorithmRegistry.processors[newAlgorithm];
 		}
@@ -81,7 +129,7 @@ class ChecksimsRunner {
 	 * @return This configuration
 	 */
 	async addSubmissions(newSubmissions) {
-		checkNotNull(newSubmissions);
+		utils.checkNotNull(newSubmissions);
 		if(newSubmissions instanceof Submission){
 			newSubmissions = [newSubmissions];
 		}
@@ -97,6 +145,15 @@ class ChecksimsRunner {
 				}
 			}
 			this.Submissions[newSub.name] = newSub;
+			let self = this;
+			let newDoc = await newSub.toJSON();
+			self.db.upsert('submission.'+newSub.name,function(oldDoc){
+				newDoc = JSON.parse(newDoc);
+				if(utils.docsEqual(newDoc,oldDoc)){
+					return false;
+				}
+				return newDoc;
+			});
 		}
 	}
 
@@ -154,10 +211,10 @@ class ChecksimsRunner {
 	 * @return Copy of configuration with new number of threads set
 	 */
 	set NumThreads(newNumThreads) {
-		checkNotNull(newNumThreads);
+		utils.checkNotNull(newNumThreads);
 		newNumThreads = Number.parseInt(newNumThreads,10);
-		checkArgument(!isNaN(newNumThreads), "Attempted to set number of threads to " + newNumThreads + " - must be a number!");
-		checkArgument(newNumThreads > 0, "Attempted to set number of threads to " + newNumThreads + " - must be positive integer!");
+		utils.checkArgument(!isNaN(newNumThreads), "Attempted to set number of threads to " + newNumThreads + " - must be a number!");
+		utils.checkArgument(newNumThreads > 0, "Attempted to set number of threads to " + newNumThreads + " - must be positive integer!");
 		this.numThreads = newNumThreads;
 	}
 

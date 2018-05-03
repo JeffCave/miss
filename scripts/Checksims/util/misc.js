@@ -93,3 +93,19 @@ JSON.merge = function(a){
 	},{});
 	return obj;
 };
+
+export function docsEqual (aDoc,bDoc){
+	if(typeof aDoc === 'string'){
+		aDoc = JSON.parse(aDoc);
+	}
+	aDoc = JSON.clone(aDoc);
+
+	delete aDoc._id; delete aDoc._rev;
+	delete bDoc._id; delete bDoc._rev;
+
+	aDoc = JSON.stringify(aDoc);
+	bDoc = JSON.stringify(bDoc);
+
+	let areSame = (aDoc === bDoc);
+	return areSame;
+}

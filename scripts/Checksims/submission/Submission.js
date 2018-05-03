@@ -205,8 +205,21 @@ export default class Submission {
 			type : 'Submission',
 			name : this.name,
 			content : this.content,
-			hash : this.hashCode
+			hash : this.hash
 		};
+		return JSON.stringify(json);
+	}
+
+	async toJSON() {
+		let json = {
+			type : 'Submission',
+			name : this.name,
+			content : {},
+			hash : await this.hash
+		};
+		for(let key in this.content){
+			json.content[key] = await this.content[key];
+		}
 		return JSON.stringify(json);
 	}
 
@@ -241,7 +254,7 @@ export default class Submission {
 	 */
 	static fromString(json){
 		json = JSON.parse(json);
-		let sub = new Submission(json.name, json.content, new TokenList(json.content));
+		let sub = new Submission(json.name, json.content);
 		return sub;
 	}
 

@@ -34,7 +34,7 @@ main{
 	padding:0;
 	margin:0;
 }
-main > fieldset{
+main > section{
 	flex:1 1 auto;
 	min-height:25vh;
 	width:100%;
@@ -44,7 +44,7 @@ main > fieldset{
 	padding:1.7vmin;
 	border-radius:0.5em;
 }
-main > fieldset > *{
+main > section > *{
 	opacity:1;
 	transition: opacity 1s;
 }
@@ -54,7 +54,7 @@ main > fieldset > *{
 		flex-flow: column wrap;
 		overflow-y:hidden;
 	}
-	main > fieldset{
+	main > section{
 		height:100%;
 		width:44vw;
 		min-width:300px;
