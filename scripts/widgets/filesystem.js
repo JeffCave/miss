@@ -123,7 +123,7 @@ export default function DisplaySubmissions(element,db){
 	let dom = d3.select(holder);
 
 	let subChange = null;
-	db.changes({filter:'checksims/submissions'})
+	db.changes({filter:'checksims/submissions',live:true})
 		.on('change',(e)=>{
 			if(subChange !== null){
 				return;
@@ -149,6 +149,6 @@ export default function DisplaySubmissions(element,db){
 							.remove()
 						;
 				});
-			},500);
+			},100);
 		});
 }
