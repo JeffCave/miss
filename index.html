@@ -8,6 +8,16 @@
  <script async src="https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.4.3/pouchdb.min.js" integrity="sha256-KCHhiEhNiEbEd8h607QOlmc3LkpQ/En/mS302LGjnLY=" crossorigin="anonymous"></script>
  <script async src="https://cdnjs.cloudflare.com/ajax/libs/object-observe/0.2.6/object-observe.js" integrity="sha256-bv022XiEHbrp9bLG8/z2fZXtDNYmdl/Uv/p30JMbXVk=" crossorigin="anonymous"></script>
 
+
+ <link href='https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons' rel="stylesheet">
+ <link href="https://unpkg.com/vuetify/dist/vuetify.min.css" rel="stylesheet">
+
+
+ <script src="https://unpkg.com/vue/dist/vue.js"></script>
+ <script src="https://unpkg.com/vuetify/dist/vuetify.js"></script>
+
+
+
  <script type="module" src="./scripts/index.js"></script>
  <script type="text/javascript" nomodule>
     let everything = Array.from(document.querySelectorAll('body > *'));
@@ -17,10 +27,16 @@
     let instructions = document.body.querySelector('#unsupported');
     instructions.style.display = 'block';
  </script>
- </script>
+
+ <template type="text/x-template" id="treeview-template">
+  <details style='margin-left:1em;' draggable='true' @dragstart='dragstart' open>
+   <summary> {{ filecollection.name }} </summary>
+   <treeview v-for="(filecollection, index) in filecollection.children" :key="index" :files="filecollection"></item>
+  </details>
+ </template>
 
  <link rel='stylesheet' href='index.css' />
- <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
 </head>
 <body>
  <nav style='display:none;'>
@@ -34,17 +50,10 @@
   </datalist>
  </nav>
  <main>
-  <section>
+  <section id='files'>
    <h1>Files</h1>
    <label>Files:</label> <input name='zip' type="file" disabled/>
-   <script type='text/mustache' name='filetest'>
-    {{#children}}
-     <details style='margin-left:1em;' draggable='true' data-path='{{path}}'>
-      <summary>{{name}}</summary>
-      {{>li}}
-     </details>
-    {{/children}}
-   </script>
+   <treeview :filelist="treeData"></item>
   </section>
   <section id='submissions'>
    <h1>Submissions</h1>
@@ -91,6 +100,7 @@
      </dd>
    </dl>
   </section>
+
  </main>
 
  <div id='unsupported' style='display:none;'>
@@ -113,5 +123,6 @@
    <li>Activate "Experimental Javascript"</li>
   </ol>
  </div>
+
 </body>
 </html>

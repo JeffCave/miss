@@ -1,5 +1,12 @@
 'use strict';
 
+/*
+global Vue
+*/
+
+//import vue from 'https://unpkg.com/vue/dist/vue.js'
+//import vuetify from 'https://unpkg.com/vuetify/dist/vuetify.js'
+
 import {ChecksimsException} from './Checksims/ChecksimsException.js';
 import {ChecksimsRunner} from './Checksims/ChecksimsRunner.js';
 import {SimilarityMatrix} from './Checksims/visualizations/similaritymatrix/SimilarityMatrix.js';
@@ -12,6 +19,8 @@ import './Checksims/visualizations/similaritymatrix/output/MatrixToHTMLPrinter.j
 import {d3ForceDirected} from './widgets/force.js';
 import * as Files from './widgets/filesystem.js';
 import './widgets/panel.js';
+import './widgets/treeview.js';
+
 
 /**
  * Parses Checksims' command-line options.
@@ -21,13 +30,16 @@ import './widgets/panel.js';
 class indexPage {
 	constructor() {
 		this.runner = new ChecksimsRunner();
-		this.files = {};
+		this.files = [];
 		let self = this;
 
 		Files.DisplaySubmissions('script[name="subtest"]',this.runner.db);
-
-		let elem = document.querySelector('#filetest');
-		Files.DisplayFiles(elem,this);
+		new Vue({
+			el: '#files',
+			data: {
+				treeData: this.files
+			}
+		});
 
 		let adder = document.querySelector('#submissionMaker');
 		adder.addEventListener('dragover',function(event){
@@ -80,24 +92,19 @@ class indexPage {
 		return this._containers;
 	}
 
-	attachSubmissions(blob){
+	async attachSubmissions(blob){
 		let parent = this;
 		this.submissions = null;
 		// 1) read the Blob
-		return JSZip
-			.loadAsync(blob)
-			.then(function(zip) {
-				zip = Submission.fileListFromZip(zip);
-				return zip;
-			})
-			.then(function(files){
-				parent.files = files;
-				return files;
-			})
-			.catch(function (e) {
-				console.error("Error reading " + blob.name + ": " + e.message);
-			})
-			;
+		let files = await JSZip.loadAsync(blob);
+		files = await Submission.fileListFromZip(files);
+		Object.entries(files).forEach(function(file){
+			parent.files.push({
+				name:file[0],
+				content:file[1],
+			});
+		});
+		return files;
 	}
 
 	attachArchive(blob){
@@ -243,6 +250,7 @@ class indexPage {
 
 
 window.addEventListener('load',function(){
+
 	let checker = new indexPage();
 	let upload = document.querySelector("input[name='zip']");
 
@@ -250,7 +258,7 @@ window.addEventListener('load',function(){
 
 	upload.addEventListener('change',function(e){
 		Array.from(e.target.files).forEach(function(file){
-			if (!file.type === 'application/x-zip-compressed'){
+			if (file.type !== 'application/x-zip-compressed'){
 				return;
 			}
 			checker.attachSubmissions(file)

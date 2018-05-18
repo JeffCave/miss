@@ -30,12 +30,6 @@ class ChecksimsRunner {
 		this.results = {};
 		this.submissions = {};
 		this.db = new PouchDB('checksim');
-
-		let self = this;
-		Object.observe(this.submissions,function(changes){
-			self.runChecksims();
-		});
-
 		this.dbInit();
 	}
 
@@ -73,6 +67,7 @@ class ChecksimsRunner {
 				.changes({filter:'checksims/submissions'})
 				.on('change', function(e) {
 					console.log('Submission change');
+					self.runChecksims();
 				});
 		});
 	}
@@ -118,10 +113,7 @@ class ChecksimsRunner {
 	 * @return Set of submissions to run on
 	 */
 	get Submissions() {
-		if(!this.submissions){
-			this.submissions = {};
-		}
-		return this.submissions;
+		this.db.query()
 	}
 
 	/**
