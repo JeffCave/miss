@@ -42,7 +42,7 @@ function assert(check, msg = "no message"){
 function hasher(value){
 	let hasher = new jsSHA("SHA-512", "TEXT");
 	hasher.update(value);
-	let hashed = hasher.getHash('HEX');
+	let hashed = hasher.getHash('B64');
 	return hashed;
 }
 

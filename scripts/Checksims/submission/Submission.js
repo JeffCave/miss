@@ -40,10 +40,14 @@ export default class Submission {
 	 * break, at the very least, Preprocessors.
 	 */
 	constructor(name, files) {
+		this.common = PreprocessorRegistry.processors.null;
+
 		if(name instanceof Submission){
 			this.allContent = name.allContent;
 			this.content = name.content;
 			this.name = name.name;
+			this.typedContent = name.typedContent;
+
 			return;
 		}
 		checkNotNull(name);
@@ -103,7 +107,6 @@ export default class Submission {
 		this.typedContent = content;
 		this.content = files;
 		this.name = name;
-		this.common = PreprocessorRegistry.processors.null;
 	}
 
 	set Common(common){
@@ -254,7 +257,16 @@ export default class Submission {
 	 */
 	static fromString(json){
 		json = JSON.parse(json);
+		json = Submission.fromJSON(json);
+		return json;
+	}
+
+	/**
+	 * Parses Submission from string
+	 */
+	static fromJSON(json){
 		let sub = new Submission(json.name, json.content);
+		sub._hash = json.hash;
 		return sub;
 	}
 

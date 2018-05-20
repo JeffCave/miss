@@ -53,14 +53,14 @@ class indexPage {
 			event.target.style.backgroundColor="blue";
 			let path = event.dataTransfer.getData("text/plain");
 			path = new RegExp("^" + path);
-			let files = Object.entries(self.files)
+			let files = self.files
 				.filter(function(d){
-					let isMatch = path.test(d[0]);
+					let isMatch = path.test(d.name);
 					return isMatch;
 				})
 				.reduce(function(a,d){
-					let p = d[0].replace(path,'');
-					a[p] = d[1];
+					let p = d.name.replace(path,'');
+					a[p] = d.content;
 					return a;
 				},{})
 				;
@@ -214,9 +214,18 @@ class indexPage {
 	async renderResults(){
 		let results = {
 			"results" : Object.values(this.runner.results),
-			"submissions": Object.values(this.runner.Submissions),
+			"submissions": [],
 			"archives":this.runner.archiveSubmissions
 		};
+		results.submissions = results.results
+			.map(d=>d.A.submission)
+			.concat(results.results.map(d=>d.B.submission))
+			.reduce((a,d)=>{
+				a[d.hash] = d;
+				return a;
+			},{});
+		results.submissions = Object.values(results.submissions);
+
 		let htmlContainers = this.Containers;
 
 		this.renderMatrixes(results,htmlContainers);

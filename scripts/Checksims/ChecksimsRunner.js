@@ -113,7 +113,18 @@ class ChecksimsRunner {
 	 * @return Set of submissions to run on
 	 */
 	get Submissions() {
-		this.db.query()
+		return this.db.query('checksims/submissions',{
+				include_docs: true
+			})
+			.then(function(results){
+				let rows = results.rows.map(d=>{
+					let sub = d.doc;
+					sub =  Submission.fromJSON(sub);
+					return sub;
+				});
+				return rows;
+			})
+			;
 	}
 
 	/**
@@ -130,16 +141,8 @@ class ChecksimsRunner {
 		}
 		for(let d=0; d<newSubmissions.length; d++){
 			let newSub = newSubmissions[d];
-			if(newSub.name in this.Submissions){
-				let hash = await newSub.hash;
-				if(this.Submissions[newSub.name] === hash){
-					continue;
-				}
-			}
-			this.Submissions[newSub.name] = newSub;
-			let self = this;
 			let newDoc = await newSub.toJSON();
-			self.db.upsert('submission.'+newSub.name,function(oldDoc){
+			this.db.upsert('submission.'+newSub.name,function(oldDoc){
 				newDoc = JSON.parse(newDoc);
 				if(utils.docsEqual(newDoc,oldDoc)){
 					return false;
@@ -232,7 +235,7 @@ class ChecksimsRunner {
 	async runChecksims(){
 		let allSubmissions = await Promise.all([this.Submissions,this.ArchiveSubmissions]);
 
-		let submissions = Object.values(allSubmissions[0]);
+		let submissions = allSubmissions[0];
 		let archiveSubmissions = allSubmissions[1];
 
 		console.log("Got " + archiveSubmissions.length + " archive submissions to test.");
@@ -270,16 +273,13 @@ class ChecksimsRunner {
 
 		console.log("Performing similarity detection on " + submissions.length + " pairs");
 		let self = this;
+		let startTime = Date.now();
+		results = await Promise.all(results);
+		let endTime = Date.now();
+		let timeElapsed = endTime - startTime;
+		console.log("Finished similarity detection  (" + timeElapsed + " ms)");
 		results.forEach(function(result){
-			console.log("Beginning similarity detection on '"+result.name+"'");
-			let startTime = Date.now();
-			result.then(function(d){
-					self.results[d.name] = d;
-					let endTime = Date.now();
-					let timeElapsed = endTime - startTime;
-					console.log("Finished similarity detection on '" + d.name + "' (" + timeElapsed + " ms)");
-				})
-				;
+			self.results[result.name] = result;
 		});
 	}
 

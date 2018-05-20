@@ -181,9 +181,8 @@ class SimilarityMatrix {
 
 		// Order the submissions
 		let orderedSubmissions = inputSubmissions.sort(function(a,b){
-				if(a.Name === b.Name) return 0;
-				if(a.Name < b.Name) return -1;
-				return 1;
+				let comp = a.Name.localeCompare(b.Name);
+				return comp;
 			});
 
 		// Generate the matrix
@@ -198,14 +197,14 @@ class SimilarityMatrix {
 		// Now go through all the results, and build appropriate two MatrixEntry objects for each
 		for(let r=0; r<results.length; r++){
 			let result = results[r];
-			let aIndex = orderedSubmissions.indexOf(result.A.submission);
-			let bIndex = orderedSubmissions.indexOf(result.B.submission);
+			let aIndex = orderedSubmissions.map(d=>d.hash).indexOf(result.A.submission.hash);
+			let bIndex = orderedSubmissions.map(d=>d.hash).indexOf(result.B.submission.hash);
 
 			if (aIndex === -1) {
-				throw new Error("Processed Algorithm Result with submission not in given input submissions with name \"" + result.a.getName() + "\"");
+				throw new Error("Processed Algorithm Result with submission not in given input submissions with name \"" + result.A.submission.name + "\"");
 			}
 			else if (bIndex === -1) {
-				throw new Error("Processed Algorithm Result with submission not in given input submissions with name \"" + result.b.getName() + "\"");
+				throw new Error("Processed Algorithm Result with submission not in given input submissions with name \"" + result.B.submission.name + "\"");
 			}
 
 			matrix[aIndex][bIndex] = await MatrixEntry(result.A.submission, result.B.submission, result.A.identicalTokens);

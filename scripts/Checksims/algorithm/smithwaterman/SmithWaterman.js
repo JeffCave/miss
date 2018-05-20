@@ -40,7 +40,7 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(a, b) {
 	//console.debug(bText);
 
 	// Handle a 0-token submission (no similarity)
-	if(aTokens.length === 0 || aTokens.length === 0) {
+	if(aTokens.length === 0 || bTokens.length === 0) {
 		return AlgorithmResults(a, b, aTokens, bTokens);
 	}
 
@@ -55,7 +55,7 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(a, b) {
 	let algorithm = new SmithWatermanAlgorithm(aTokens, bTokens);
 	let endLists = algorithm.computeSmithWatermanAlignmentExhaustive();
 
-	let notes = {}
+	let notes = {};
 	if(algorithm.massive){
 		notes.error = 'Massive compare';
 	}

@@ -35,14 +35,16 @@ export function d3ForceDirected(results){
 	if(!simulation){
 		simulation = d3.forceSimulation()
 			.force("link", d3.forceLink()
-				.id(function(d) { return d.name; })
+				.id(function(d) {
+					return d.name;
+				})
 				.distance(function(d) {
 					return (1-d.value)*distance;
 				})
 				.strength(function(d){
-						let rtn = d.value;
-						return rtn;
-					})
+					let rtn = d.value;
+					return rtn;
+				})
 			)
 			.force("charge", d3.forceManyBody())
 			.force("center", d3.forceCenter(width / 2, height / 2))
