@@ -31,6 +31,24 @@
    <treeview v-for="(filecollection, index) in filecollection.children" :key="index" :files="filecollection"></item>
   </details>
  </template>
+ <template type='text/x-template' id='submission-template'>
+  <details>
+   <summary>
+    <input type='checkbox' />
+    <span style='opacity:0.5;'>&#128686;</span>
+    <span style='opacity:0.5;'>&#128190;</span>
+    {{submission.name}}
+   </summary>
+   <pre>TODO: Apply a "treeview" of the associated files</pre>
+   <!-- <treeview :files="submission.content"></treeview> -->
+  </details>
+ </template>
+ <template type='text/x-template' id='submissions-template'>
+  <div>
+   <submission v-for='(sub,key) in ordered' :key="sub.name" :submission="sub"></submission>
+  </div>
+ </template>
+
 
  <link rel='stylesheet' href='index.css' />
  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
@@ -50,16 +68,12 @@
   <section id='files'>
    <h1>Files</h1>
    <label>Files:</label> <input name='zip' type="file" disabled/>
-   <treeview :filelist="treeData"></item>
+   <treeview :filelist="treeData"></treeview>
   </section>
   <section id='submissions'>
    <h1>Submissions</h1>
     <span id='submissionMaker'>&#10133;</span>
-    <script type='text/mustache' name='subtest'>
-     <input type='checkbox' />
-     <span style='opacity:0.5;'>&#128190;</span>
-     {{name}}
-    </script>
+    <submission-list :pouchdb='db' :filter='filter'></submission-list>
   </section>
   <section id='results'>
    <h1>Reports</h1>

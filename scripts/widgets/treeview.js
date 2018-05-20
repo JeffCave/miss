@@ -16,12 +16,21 @@ Vue.component('treeview', {
 		},
 		filecollection:function(){
 			let data = this.files;
-			if(!data){
+			if(data){
+				data = Object.entries(data)
+					.map((d)=>{
+						return {
+							'name':d[0],
+							'content':d[1]
+						};
+					});
+			}
+			else{
 				data = this.filelist;
 			}
 			if(Array.isArray(data)){
 				data = this.walk(data);
-				data = {"name":"root","children": data};
+				data = {"name":"","children": data};
 			}
 			return data;
 		},
@@ -87,4 +96,3 @@ Vue.component('treeview', {
 
 	}
 });
-

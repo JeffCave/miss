@@ -17,7 +17,7 @@ import './Checksims/visualizations/similaritymatrix/output/MatrixToCSVPrinter.js
 import './Checksims/visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
 
 import {d3ForceDirected} from './widgets/force.js';
-import * as Files from './widgets/filesystem.js';
+import * as Files from './widgets/submissions.js';
 import './widgets/panel.js';
 import './widgets/treeview.js';
 
@@ -33,8 +33,14 @@ class indexPage {
 		this.files = [];
 		let self = this;
 
-		Files.DisplaySubmissions('script[name="subtest"]',this.runner.db);
-		new Vue({
+		this.displaySubmissions = new Vue({
+			el:'#submissions',
+			data: {
+				db: this.runner.db,
+				filter: 'checksims/submissions'
+			}
+		});
+		this.displayFiles = new Vue({
 			el: '#files',
 			data: {
 				treeData: this.files
