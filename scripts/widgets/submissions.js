@@ -6,11 +6,26 @@ import {Submission} from '/scripts/Checksims/submission/Submission.js';
 Vue.component('submission', {
 	template: '#submission-template',
 	props: {
-		submission: Submission
+		submission: Submission,
+		remover:{
+			type:Function,
+			default: null
+		}
 	},
 	data: function () {
 		return {};
 	},
+	methods:{
+		remove:function(){
+			if(this.remover){
+				this.remover(this.submission.name);
+			}
+		},
+		showhide:function(){
+
+		}
+	}
+
 });
 
 // define the item component
@@ -43,7 +58,7 @@ Vue.component('submission-list', {
 		let opts = this.opts;
 		opts.filter = this.filter;
 		this.pouchdb.changes(opts).on('change',(e)=>{
-			if(e.doc._deleted){
+			if(e.deleted){
 				Vue.delete(this.submissions, e.id);
 			}
 			else{
@@ -58,6 +73,14 @@ Vue.component('submission-list', {
 				.sort((a,b)=>{
 					return a.Name.localeCompare(b.Name);
 				});
+		}
+	},
+	methods:{
+		remover:function(id){
+			id = ['submission',id].join('.');
+			this.pouchdb.upsert(id,function(){
+				return {_deleted:true};
+			});
 		}
 	}
 });

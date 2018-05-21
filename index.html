@@ -8,12 +8,11 @@
  <script async src="https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.4.3/pouchdb.min.js" integrity="sha256-KCHhiEhNiEbEd8h607QOlmc3LkpQ/En/mS302LGjnLY=" crossorigin="anonymous"></script>
  <script async src="https://cdnjs.cloudflare.com/ajax/libs/object-observe/0.2.6/object-observe.js" integrity="sha256-bv022XiEHbrp9bLG8/z2fZXtDNYmdl/Uv/p30JMbXVk=" crossorigin="anonymous"></script>
  <script async src="https://unpkg.com/vue/dist/vue.js"></script>
- <script async src="https://unpkg.com/vuetify/dist/vuetify.js"></script>
+ <script async src="https://unpkg.com/vue-material@beta"></script>
 
 
- <link href='https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons' rel="stylesheet">
- <link href="https://unpkg.com/vuetify/dist/vuetify.min.css" rel="stylesheet">
-
+ <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:400,500,700,400italic|Material+Icons">
+ <link rel="stylesheet" href="//unpkg.com/vue-material@beta/dist/theme/default.css">
 
  <script type="module" src="./scripts/index.js"></script>
  <script type="text/javascript" nomodule>
@@ -34,18 +33,17 @@
  <template type='text/x-template' id='submission-template'>
   <details>
    <summary>
-    <input type='checkbox' />
-    <span style='opacity:0.5;'>&#128686;</span>
-    <span style='opacity:0.5;'>&#128190;</span>
+    <button @click='showhide' title='Display'>&#128065;</button>
+    <button @click='remove' title='Delete' v-show='remover !== null'>&#128465;</button>
+    <!-- span @click='save'>&#128427;</span -->
     {{submission.name}}
    </summary>
-   <pre>TODO: Apply a "treeview" of the associated files</pre>
-   <!-- <treeview :files="submission.content"></treeview> -->
+   <treeview :files="submission.content"></treeview>
   </details>
  </template>
  <template type='text/x-template' id='submissions-template'>
   <div>
-   <submission v-for='(sub,key) in ordered' :key="sub.name" :submission="sub"></submission>
+   <submission v-for='(sub,key) in ordered' :key="sub.name" :submission="sub" :remover='remover'></submission>
   </div>
  </template>
 

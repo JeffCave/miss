@@ -66,6 +66,7 @@ class ChecksimsRunner {
 			self.db
 				.changes({filter:'checksims/submissions'})
 				.on('change', function(e) {
+					if(e.deleted) return;
 					console.log('Submission change');
 					self.runChecksims();
 				});

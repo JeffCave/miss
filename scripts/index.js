@@ -265,6 +265,7 @@ class indexPage {
 
 
 window.addEventListener('load',function(){
+	Vue.use(VueMaterial.default);
 
 	let checker = new indexPage();
 	let upload = document.querySelector("input[name='zip']");

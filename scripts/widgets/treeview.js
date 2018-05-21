@@ -17,13 +17,18 @@ Vue.component('treeview', {
 		filecollection:function(){
 			let data = this.files;
 			if(data){
-				data = Object.entries(data)
-					.map((d)=>{
-						return {
-							'name':d[0],
-							'content':d[1]
-						};
-					});
+				if(data.name){
+					return data;
+				}
+				else{
+					data = Object.entries(data)
+						.map((d)=>{
+							return {
+								'name':d[0].replace(/^\//,''),
+								'content':d[1]
+							};
+						});
+				}
 			}
 			else{
 				data = this.filelist;
@@ -57,26 +62,35 @@ Vue.component('treeview', {
 			}
 
 			function unwalk(obj,parent={}){
-				let entries = Object.entries(obj);
-				let list = obj;
-				if(typeof list === 'object'){
-					list = entries.map(d=>{
-						let item = {
-							"name": d[0],
-							"parent": parent
-						};
-						item.path = [item.name];
-						if(parent.path){
-							item.path = parent.path.concat(item.path);
-						}
-						item.children = unwalk(d[1],item);
-						item.path = item.path.join('/');
-						return item;
-					})
-					.sort(function(a,b){
-						return a.name.localeCompare(b.name);
-					});
+				if(typeof obj !== 'object'){
+					throw new Error("This case should never exist");
 				}
+				let entries = Object.entries(obj);
+				let list = [];
+				for(let i in entries){
+					let d = entries[i];
+					let item = {
+						"name": d[0],
+						"parent": parent
+					};
+					item.path = [item.name];
+					if(parent.path){
+						item.path = parent.path.concat(item.path);
+					}
+					if(typeof d[1] === 'string' || d[1] instanceof Promise){
+						item.content = d[1];
+					}
+					else{
+						item.children = unwalk(d[1],item);
+					}
+
+					while (item.path[0] === '') item.path.shift();
+					item.path = item.path.join('/');
+					list.push(item);
+				}
+				list.sort(function(a,b){
+					return a.name.localeCompare(b.name);
+				});
 				return list;
 			}
 
