@@ -35,17 +35,19 @@ import {checkNotNull,hasher} from '../util/misc.js';
 export default async function AlgorithmResults(a, b, finalListA, finalListB, notes) {
 	checkNotNull(a);
 	checkNotNull(b);
-	checkNotNull(finalListA);
-	checkNotNull(finalListB);
 
 	let results = [
 			{submission: a, finalList: finalListA},
 			{submission: b, finalList: finalListB}
 		]
 		.sort(function(a,b){
-			let comp = a.submission.Name.localeCompare(b.submission.Name);
+			let comp = a.submission.name.localeCompare(b.submission.name);
 			return comp;
 		});
+
+	results.name = [a.name,b.name].sort().join('.');
+	results.hash = hasher(await a.hash + await b.hash);
+	results.complete = 0;
 
 	if(notes){
 		Object.entries(notes).forEach(function(d){
@@ -56,15 +58,18 @@ export default async function AlgorithmResults(a, b, finalListA, finalListB, not
 	results.percentMatched=0;
 	for(let r = 0; r<results.length; r++){
 		let d = results[r];
+		if(!d.finalList){
+			d.finalList = new TokenList('mixed',[]);
+		}
 		d.finalList = await TokenList.cloneTokenList(d.finalList);
 
 		d.identicalTokens = Array.from(d.finalList).reduce((sum,token)=>{
-			sum = sum +	(!token.valid);
+			sum = sum + (!token.valid);
 			return sum;
 		},0);
 
-		let subTokens = await d.submission.ContentAsTokens;
-		let pct = (subTokens.length === 0) ? 0 : d.identicalTokens / subTokens.length;
+		let totalTokens = await d.submission.totalTokens;
+		let pct = (totalTokens === 0) ? 0 : d.identicalTokens / totalTokens;
 		d.percentMatched = pct;
 
 		results[String.fromCharCode(r+65)] = d;
@@ -72,8 +77,15 @@ export default async function AlgorithmResults(a, b, finalListA, finalListB, not
 	}
 	results.percentMatched /= results.length;
 
-	results.name = [a.name,b.name].sort().join('.');
-	results.hash = hasher(await a.hash + await b.hash);
+	results.toJSON = function(){
+		let json = {
+			name:this.name,
+			hash:this.hash,
+			complete:this.complete,
+			percentMatched:this.percentMatched,
+		};
+		return json;
+	};
 
 	return results;
 }

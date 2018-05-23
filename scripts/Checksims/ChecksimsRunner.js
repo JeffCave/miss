@@ -7,6 +7,7 @@ import './algorithm/smithwaterman/SmithWaterman.js';
 import './preprocessor/LowercasePreprocessor.js';
 import './preprocessor/WhitespaceDeduplicationPreprocessor.js';
 import {AlgorithmRegistry} from './algorithm/AlgorithmRegistry.js';
+import {AlgorithmResults} from './algorithm/AlgorithmResults.js';
 import {CommonCodeLineRemovalPreprocessor} from './preprocessor/CommonCodeLineRemovalPreprocessor.js';
 import {PairGenerator} from './util/PairGenerator.js';
 import {Submission} from './submission/Submission.js';
@@ -30,12 +31,16 @@ class ChecksimsRunner {
 		this.results = {};
 		this.submissions = {};
 		this.db = new PouchDB('checksim');
+		this._events = {
+			'submissions':{},
+			'results':{},
+		};
 		this.dbInit();
 	}
 
-	dbInit(){
+	async dbInit(){
 		let self = this;
-		this.db.upsert('_design/checksims',function(doc){
+		await this.db.upsert('_design/checksims',function(doc){
 			let designDoc = {
 				views:{
 					submissions:{
@@ -52,8 +57,20 @@ class ChecksimsRunner {
 					submissions: function (doc,req) {
 						let isSub = doc._id.startsWith('submission.');
 						return isSub;
+					}.toString(),
+					results: function (doc,req) {
+						let isResult = doc._id.startsWith('results.');
+						return isResult;
 					}.toString()
-				}
+				},
+				validate_doc_update:function (newDoc, oldDoc){
+					if(utils.docsEqual(newDoc,oldDoc)){
+						throw({
+							code:304,
+							forbidden:'Document has not significantly changed'
+						});
+					}
+				}.toString()
 			};
 			if(utils.docsEqual(doc,designDoc)){
 				console.log('DB version: no change');
@@ -61,16 +78,92 @@ class ChecksimsRunner {
 			}
 			console.log('DB version: updating');
 			return designDoc;
-		})
-		.then(function(){
+		});
+		self.runChecksims();
+		Object.entries(this._events).forEach((eventType)=>{
+			let opts = ['checksims',eventType[0]].join('/');
+			opts = {
+				filter:opts,
+				since:'now',
+				live:true,
+				include_docs:true,
+			};
 			self.db
-				.changes({filter:'checksims/submissions'})
+				.changes(opts)
 				.on('change', function(e) {
-					if(e.deleted) return;
-					console.log('Submission change');
-					self.runChecksims();
+					//if(e.deleted) return;
+					console.log(eventType[0] + ' change');
+					Object
+						.values(eventType[1])
+						.forEach(function(handler){
+							setTimeout(handler,20,e);
+						});
 				});
 		});
+		this.addEventListener('submissions',async function(e){
+			if(e.deleted){
+				let results = await self.db.allDocs({startkey:'results.',endkey:'results.\ufff0'});
+				let deletes = results.rows.map(function(d){
+					return self.db.upsert(d.id,()=>({_deleted:true}));
+				});
+				Promise.all(deletes);
+			}
+			else{
+				//let results = await self.Submissions;
+				let results = await self.db.allDocs({startkey:'submission.',endkey:'submission.\ufff0', include_docs:true});
+				results = results.rows
+					.filter((d)=>{
+						return d.id !== e.id;
+					})
+					.map(d=>{
+						let result = AlgorithmResults(e.doc,d.doc)
+							.then(function(result){
+								let upsert = self.db.upsert('results.'+result.name,function(oldDoc){
+										let newDoc = result.toJSON();
+										if(oldDoc.hash === newDoc.hash){
+											return false;
+										}
+
+										return newDoc;
+									});
+								return upsert;
+							});
+						return result;
+					})
+					;
+				Promise.all(results);
+			}
+		});
+		this.addEventListener('submissions',function(){
+			self.runChecksims();
+		});
+
+	}
+
+	removeEventListener(type,handler){
+		if(!(type in this._events)){
+			throw Error('Unknown event type');
+		}
+		let handlers = this._events[type];
+		if(typeof handler === 'function'){
+			handler = handler.name;
+		}
+		if(typeof handler === 'string'){
+			if(handler in handlers){
+				delete handlers[handler];
+			}
+		}
+	}
+
+	addEventListener(type,handler){
+		if(!(type in this._events)){
+			throw Error('Unknown event type');
+		}
+		let name = handler.name;
+		if(name === ''){
+			name = handler.toString();
+		}
+		this._events[type][name] = handler;
 	}
 
 	get Filter(){
@@ -242,8 +335,8 @@ class ChecksimsRunner {
 		console.log("Got " + archiveSubmissions.length + " archive submissions to test.");
 
 		// Common code removal first, always
-		let the = this;
-		let common = await the.CommonCode;
+		let self = this;
+		let common = await self.CommonCode;
 		common = CommonCodeLineRemovalPreprocessor(common);
 		// Apply the preprocessors to the submissions
 		[submissions,archiveSubmissions].forEach(function(group){
@@ -273,7 +366,6 @@ class ChecksimsRunner {
 			;
 
 		console.log("Performing similarity detection on " + submissions.length + " pairs");
-		let self = this;
 		let startTime = Date.now();
 		results = await Promise.all(results);
 		let endTime = Date.now();

@@ -76,10 +76,7 @@ class indexPage {
 			self.runner.addSubmissions(submission);
 		});
 
-		Object.observe(this.runner.submissions,(changes)=>{
-			self.renderResults();
-		});
-		Object.observe(this.runner.results,(changes)=>{
+		this.runner.addEventListener('results',function(){
 			self.renderResults();
 		});
 	}

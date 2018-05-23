@@ -195,12 +195,17 @@ export default class Submission {
 					r(content);
 				})
 				.then(function(content){
-					let name = self.name;
-					let hash = hasher(name + content);
+					//let name = self.name;
+					//let hash = hasher(name + content);
+					let hash = hasher(content);
 					return hash;
 				});
 		}
 		return this._hash;
+	}
+
+	get totalTokens(){
+		return this.ContentAsTokens.then(function(tokens){return tokens.length;});
 	}
 
 	toString() {
@@ -218,7 +223,8 @@ export default class Submission {
 			type : 'Submission',
 			name : this.name,
 			content : {},
-			hash : await this.hash
+			hash : await this.hash,
+			totalTokens : await this.totalTokens,
 		};
 		for(let key in this.content){
 			json.content[key] = await this.content[key];
