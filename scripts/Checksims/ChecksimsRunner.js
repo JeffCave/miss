@@ -7,9 +7,8 @@ import './algorithm/smithwaterman/SmithWaterman.js';
 import './preprocessor/LowercasePreprocessor.js';
 import './preprocessor/WhitespaceDeduplicationPreprocessor.js';
 import {AlgorithmRegistry} from './algorithm/AlgorithmRegistry.js';
-import {AlgorithmResults} from './algorithm/AlgorithmResults.js';
+import * as AlgorithmResults from './algorithm/AlgorithmResults.js';
 import {CommonCodeLineRemovalPreprocessor} from './preprocessor/CommonCodeLineRemovalPreprocessor.js';
-import {PairGenerator} from './util/PairGenerator.js';
 import {Submission} from './submission/Submission.js';
 
 import "https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.4.3/pouchdb.min.js";
@@ -28,7 +27,7 @@ class ChecksimsRunner {
 
 	constructor() {
 		this.numThreads = 1;
-		this.results = {};
+		this._results = {};
 		this.submissions = {};
 		this.db = new PouchDB('checksim');
 		this._events = {
@@ -51,6 +50,15 @@ class ChecksimsRunner {
 								emit(key,val);
 							}
 						}.toString()
+					},
+					results:{
+						map: function(doc){
+							if(doc._id.startsWith('result.')){
+								let key = doc._id.split('.');
+								let val = doc.hash;
+								emit(key,val);
+							}
+						}.toString()
 					}
 				},
 				filters: {
@@ -59,7 +67,7 @@ class ChecksimsRunner {
 						return isSub;
 					}.toString(),
 					results: function (doc,req) {
-						let isResult = doc._id.startsWith('results.');
+						let isResult = doc._id.startsWith('result.');
 						return isResult;
 					}.toString()
 				},
@@ -79,7 +87,7 @@ class ChecksimsRunner {
 			console.log('DB version: updating');
 			return designDoc;
 		});
-		self.runChecksims();
+		self.runAllCompares();
 		Object.entries(this._events).forEach((eventType)=>{
 			let opts = ['checksims',eventType[0]].join('/');
 			opts = {
@@ -98,12 +106,42 @@ class ChecksimsRunner {
 						.forEach(function(handler){
 							setTimeout(handler,20,e);
 						});
+					if(e.seq % 10 === 0){
+						self.db.compact();
+					}
 				});
 		});
+
+
+		this.addEventListener('results',async function(e){
+			if(e.deleted){
+				console.log("removed result: " + e.id);
+			}
+			else{
+				let result = await self.Compare(e.doc);
+				self.db.upsert('result.'+result.name,function(oldDoc){
+					if(utils.docsEqual(result,oldDoc)){
+						return false;
+					}
+					return result;
+				});
+			}
+		});
+
 		this.addEventListener('submissions',async function(e){
 			if(e.deleted){
-				let results = await self.db.allDocs({startkey:'results.',endkey:'results.\ufff0'});
+				let results = await self.db.allDocs({startkey:'result.',endkey:'result.\ufff0'});
+				let submission = e.id.split('.').pop();
 				let deletes = results.rows.map(function(d){
+					let keys = d.id.split('.');
+					keys.shift();
+					let match = keys.some(function(name){
+						let m = name === submission;
+						return m;
+					});
+					if(!match){
+						return false;
+					}
 					return self.db.upsert(d.id,()=>({_deleted:true}));
 				});
 				Promise.all(deletes);
@@ -116,10 +154,10 @@ class ChecksimsRunner {
 						return d.id !== e.id;
 					})
 					.map(d=>{
-						let result = AlgorithmResults(e.doc,d.doc)
+						let result = AlgorithmResults.Create(e.doc,d.doc)
 							.then(function(result){
-								let upsert = self.db.upsert('results.'+result.name,function(oldDoc){
-										let newDoc = result.toJSON();
+								let newDoc = AlgorithmResults.toJSON(result);
+								let upsert = self.db.upsert('result.'+result.name,function(oldDoc){
 										if(oldDoc.hash === newDoc.hash){
 											return false;
 										}
@@ -134,10 +172,6 @@ class ChecksimsRunner {
 				Promise.all(results);
 			}
 		});
-		this.addEventListener('submissions',function(){
-			self.runChecksims();
-		});
-
 	}
 
 	removeEventListener(type,handler){
@@ -221,6 +255,32 @@ class ChecksimsRunner {
 			;
 	}
 
+	get results(){
+		console.warn('Usage of ChecksimsRunner.results');
+		return this._results;
+	}
+
+	/**
+	 * @return Set of submissions to run on
+	 */
+	get Results() {
+		return this.db.query('checksims/results',{
+				include_docs: true
+			})
+			.then(function(results){
+				let rows = results.rows.map(d=>{
+					let sub = d.doc;
+					return sub;
+				})
+				.filter(d=>{
+					let valid = (!d) === false;
+					return valid;
+				});
+				return rows;
+			})
+			;
+	}
+
 	/**
 	 * @param newSubmissions New set of submissions to work on. Must contain at least 1 submission.
 	 * @return This configuration
@@ -238,6 +298,30 @@ class ChecksimsRunner {
 			let newDoc = await newSub.toJSON();
 			this.db.upsert('submission.'+newSub.name,function(oldDoc){
 				newDoc = JSON.parse(newDoc);
+				if(utils.docsEqual(newDoc,oldDoc)){
+					return false;
+				}
+				return newDoc;
+			});
+		}
+	}
+
+
+	/**
+	 * @param newSubmissions New set of submissions to work on. Must contain at least 1 submission.
+	 * @return This configuration
+	 */
+	async addResults(newResult) {
+		utils.checkNotNull(newResult);
+		if(newResult instanceof Submission){
+			newResult = [newResult];
+		}
+		if(!Array.isArray(newResult)){
+			newResult = Submission.submissionsFromFiles(newResult, this.Filter);
+		}
+		for(let d=0; d<newResult.length; d++){
+			let newDoc = newResult[d];
+			this.db.upsert('result.'+newDoc.name,function(oldDoc){
 				if(utils.docsEqual(newDoc,oldDoc)){
 					return false;
 				}
@@ -314,66 +398,78 @@ class ChecksimsRunner {
 	 * @return Current version of Checksims
 	 */
 	static get Version(){
-		return "0.0.0";
+		return "0.1.0";
 	}
 
+	async Compare(pair, force = false){
+		if(!force && pair.complete === pair.totalTokens){
+			return pair;
+		}
+
+		let common = await this.CommonCode;
+		common = CommonCodeLineRemovalPreprocessor(common);
+		pair.submissions = pair.submissions.map(function(submission){
+			return 'submission.'+submission.submission;
+		});
+		pair.submissions = await this.db
+			.allDocs({keys:pair.submissions,include_docs:true})
+			.then(subs=>{
+				return subs.rows.map(s=>{
+					s = s.doc;
+					s = Submission.fromJSON(s);
+					s.Common = common;
+					return s;
+				});
+			});
+		pair.submissions = await Promise.all(pair.submissions);
+		let algo = this.Algorithm;
+		console.log("Performing comparison on " + pair.name );
+		let startTime = performance.now();
+		let result = await algo(pair.submissions[0],pair.submissions[1]);
+		let endTime = performance.now();
+		let timeElapsed = endTime - startTime;
+		console.log("Finished comparison on " + pair.name + "(" + timeElapsed.toFixed(1) + " ms)" );
+		result = AlgorithmResults.toJSON(result);
+		return result;
+	}
 
 	/**
-	 * Main public entrypoint to Checksims. Runs similarity detection
-	 * according to given configuration.
+	 * .
 	 *
 	 * @param config Configuration defining how Checksims will be run
 	 * @return Map containing output of all output printers requested. Keys are name of output printer.
 	 * @throws ChecksimsException Thrown on error performing similarity detection
 	 */
-	async runChecksims(){
-		let allSubmissions = await Promise.all([this.Submissions,this.ArchiveSubmissions]);
-
-		let submissions = allSubmissions[0];
-		let archiveSubmissions = allSubmissions[1];
-
-		console.log("Got " + archiveSubmissions.length + " archive submissions to test.");
-
-		// Common code removal first, always
-		let self = this;
-		let common = await self.CommonCode;
-		common = CommonCodeLineRemovalPreprocessor(common);
-		// Apply the preprocessors to the submissions
-		[submissions,archiveSubmissions].forEach(function(group){
-				group.forEach(function(submission){
-					submission.Common = common;
-				});
-			});
-
-		// Apply algorithm to submissions
-		let allPairs = await PairGenerator.generatePairsWithArchive(submissions, archiveSubmissions);
-		let algo = await this.Algorithm;
+	async runAllCompares(){
 		// Perform parallel analysis of all submission pairs to generate a results list
-		let currentResults = Object.keys(this.results);
+		let allPairs = await this.Results;
+		if(allPairs.length === 0){
+			return Promise.resolve();
+		}
+
 		let results = allPairs
-			.filter(function(pair){
-				let name = pair.map((d)=>d.name).sort().join('.');
-				let existingPosition = currentResults.indexOf(name);
-				if(existingPosition >= 0){
-					currentResults.splice(existingPosition,1);
-					return false;
-				}
+			.filter((pair)=>{
+				if (!pair) return false;
+				if (pair.complete === pair.totalTokens) return false;
 				return true;
 			})
-			.map(function(pair){
-				return algo(pair[0], pair[1]);
+			.map((pair)=>{
+				return this.Compare(pair);
 			})
 			;
 
-		console.log("Performing similarity detection on " + submissions.length + " pairs");
-		let startTime = Date.now();
+		console.log("Discovered " + results.length + " oustanding pairs");
 		results = await Promise.all(results);
-		let endTime = Date.now();
-		let timeElapsed = endTime - startTime;
-		console.log("Finished similarity detection  (" + timeElapsed + " ms)");
-		results.forEach(function(result){
-			self.results[result.name] = result;
+		results = results.map((result)=>{
+			return this.db.upsert('result.'+result.name,function(oldDoc){
+				if(utils.docsEqual(result,oldDoc)){
+					return false;
+				}
+				return result;
+			});
 		});
+
+		return Promise.all(results);
 	}
 
 }

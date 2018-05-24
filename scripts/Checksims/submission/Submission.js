@@ -295,9 +295,7 @@ export default class Submission {
 	static get NullSubmission(){
 		if(!('_NullSubmission' in Submission)){
 			let content = {
-				'NullContent.txt':new Promise((result)=>{
-					result('');
-				})
+				'NullContent.txt':Promise.resolve('')
 			};
 			Submission._NullSubmission = new Submission(' ',content);
 		}

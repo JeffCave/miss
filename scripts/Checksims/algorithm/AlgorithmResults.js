@@ -1,20 +1,7 @@
-/*
- * CDDL HEADER START
- *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * See LICENSE.txt included in this distribution for the specific
- * language governing permissions and limitations under the License.
- *
- * CDDL HEADER END
- *
- * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
- */
 'use strict';
 export {
-	AlgorithmResults
+	Create,
+	toJSON
 };
 
 import {TokenList} from '../token/TokenList.js';
@@ -32,21 +19,35 @@ import {checkNotNull,hasher} from '../util/misc.js';
 	 * @param finalListA Token list from submission A, with matched tokens set invalid
 	 * @param finalListB Token list from submission B, with matched tokens set invalid
 	 */
-export default async function AlgorithmResults(a, b, finalListA, finalListB, notes) {
+export default async function Create(a, b, finalListA = null, finalListB = null, notes = null) {
+	if(a.type === 'result'){
+		return a;
+	}
+
 	checkNotNull(a);
 	checkNotNull(b);
 
-	let results = [
+	let results = {};
+	results.submissions = [
 			{submission: a, finalList: finalListA},
 			{submission: b, finalList: finalListB}
 		]
+		.map((d)=>{
+			return {
+				submission: d.submission.name,
+				name : d.submission.name,
+				totalTokens : d.submission.totalTokens,
+				hash: d.submission.hash,
+				finalList: d.finalList
+			};
+		})
 		.sort(function(a,b){
-			let comp = a.submission.name.localeCompare(b.submission.name);
+			let comp = a.submission.localeCompare(b.submission);
 			return comp;
-		});
+		})
+		;
 
-	results.name = [a.name,b.name].sort().join('.');
-	results.hash = hasher(await a.hash + await b.hash);
+	results.hash = hasher(a.hash + b.hash);
 	results.complete = 0;
 
 	if(notes){
@@ -55,37 +56,39 @@ export default async function AlgorithmResults(a, b, finalListA, finalListB, not
 		});
 	}
 
+	results.name = [];
+	results.totalTokens = 0;
 	results.percentMatched=0;
-	for(let r = 0; r<results.length; r++){
-		let d = results[r];
+	for(let r = 0; r<results.submissions.length; r++){
+		let d = results.submissions[r];
 		if(!d.finalList){
 			d.finalList = new TokenList('mixed',[]);
 		}
 		d.finalList = await TokenList.cloneTokenList(d.finalList);
+		d.totalTokens = await d.totalTokens;
 
 		d.identicalTokens = Array.from(d.finalList).reduce((sum,token)=>{
 			sum = sum + (!token.valid);
 			return sum;
 		},0);
 
-		let totalTokens = await d.submission.totalTokens;
-		let pct = (totalTokens === 0) ? 0 : d.identicalTokens / totalTokens;
+		let pct = (d.totalTokens === 0) ? 0 : d.identicalTokens / d.totalTokens;
 		d.percentMatched = pct;
 
-		results[String.fromCharCode(r+65)] = d;
+		//results[String.fromCharCode(r+65)] = d;
 		results.percentMatched += d.percentMatched;
+		results.totalTokens += d.totalTokens;
+		results.name.push(d.submission);
 	}
-	results.percentMatched /= results.length;
-
-	results.toJSON = function(){
-		let json = {
-			name:this.name,
-			hash:this.hash,
-			complete:this.complete,
-			percentMatched:this.percentMatched,
-		};
-		return json;
-	};
+	results.percentMatched /= results.submissions.length;
+	results.name = results.name.join('.');
 
 	return results;
 }
+
+function toJSON(result){
+	let json = JSON.clone(result);
+	json.type = 'result';
+	return json;
+}
+

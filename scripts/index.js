@@ -174,26 +174,20 @@ class indexPage {
 				'<tbody>',
 			];
 		html = html.concat(results.results
-			.map(function(d){
-				let rtn = [
-						{'name':d.A.submission.name,'pct':d.A.percentMatched},
-						{'name':d.B.submission.name,'pct':d.B.percentMatched}
-					].sort(function(a,b){
-						let diff = b.pct - a.pct;
-						return diff;
-					});
-				rtn.total = rtn[0].pct + rtn[1].pct;
-				return rtn;
-			})
 			.sort(function(a,b){
-				let diff = b.total - a.total;
+				let diff = b.percentMatched - a.percentMatched;
 				return diff;
 			})
 			.map(function(comp){
-				let html = comp.map(function(d){
+				let html = comp.submissions
+					.sort(function(a,b){
+						let diff = b.percentMatched - a.percentMatched;
+						return diff;
+					})
+					.map(function(d){
 						return cellTemplate
-							.replace(/{{name}}/g,d.name)
-							.replace(/{{pct}}/g,(d.pct * 100).toFixed(0))
+							.replace(/{{name}}/g,d.submission)
+							.replace(/{{pct}}/g,(d.percentMatched * 100).toFixed(0))
 							;
 					}).join('');
 				html = [' <tr>', html, '</tr>',];
@@ -215,25 +209,27 @@ class indexPage {
 	}
 
 	async renderResults(){
-		let results = {
-			"results" : Object.values(this.runner.results),
+		let report = {
+			"results" : await this.runner.Results,
 			"submissions": [],
 			"archives":this.runner.archiveSubmissions
 		};
-		results.submissions = results.results
-			.map(d=>d.A.submission)
-			.concat(results.results.map(d=>d.B.submission))
-			.reduce((a,d)=>{
-				a[d.hash] = d;
+		if(report.results){
+			//report.submissions = await this.runner.Submissions;
+			report.submissions = report.results.reduce((a,d)=>{
+				d.submissions.forEach((s)=>{
+					a[s.name] = s;
+				});
 				return a;
 			},{});
-		results.submissions = Object.values(results.submissions);
+			report.submissions = Object.values(report.submissions);
+		}
 
 		let htmlContainers = this.Containers;
 
-		this.renderMatrixes(results,htmlContainers);
-		this.renderListTable(results,htmlContainers);
-		this.renderListForce(results,htmlContainers);
+		this.renderMatrixes(report,htmlContainers);
+		this.renderListTable(report,htmlContainers);
+		this.renderListForce(report,htmlContainers);
 	}
 
 
@@ -261,10 +257,12 @@ class indexPage {
 
 
 
-window.addEventListener('load',function(){
+window.addEventListener('load',async function(){
 	Vue.use(VueMaterial.default);
 
 	let checker = new indexPage();
+	checker.renderResults();
+
 	let upload = document.querySelector("input[name='zip']");
 
 	upload.disabled = false;

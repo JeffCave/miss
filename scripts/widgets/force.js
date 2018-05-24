@@ -13,8 +13,8 @@ export function d3ForceDirected(results){
 		nodes: results.submissions,
 		links: results.results.map(function(d){
 			let rtn = {
-				source:d.A.submission,
-				target:d.B.submission,
+				source:d.submissions[0].submission,
+				target:d.submissions[1].submission,
 				value:d.percentMatched,
 				original:d
 			};
@@ -53,8 +53,8 @@ export function d3ForceDirected(results){
 			;
 		svg.node().simulation = simulation;
 	}
-	simulation.force("link").links(graph.links);
 	simulation.nodes(graph.nodes).on("tick", ticked);
+	simulation.force("link").links(graph.links);
 
 	let linkData = d3.select("g.links")
 		.selectAll("line")
@@ -91,8 +91,11 @@ export function d3ForceDirected(results){
 		;
 
 	let nodeData = svg.select("g.nodes").selectAll("circle")
-		.data(graph.nodes)
+		.data(graph.nodes,(d)=>{
+			return d.name;
+		})
 		;
+
 	nodeData.exit().remove();
 	let nodes = nodeData
 		.enter().append("circle")

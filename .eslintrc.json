@@ -8,6 +8,7 @@
 	},
 	"globals": {
 		"Vue": false,
-		"emit": false
+		"emit": false,
+		"performance":false
 	}
 }

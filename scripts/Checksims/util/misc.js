@@ -3,8 +3,7 @@ export{
 	checkNotNull,
 	checkArgument,
 	hasher,
-	hashCode,
-	Pair
+	hashCode
 };
 
 /*
@@ -23,13 +22,6 @@ function checkArgument(value = null, msg = ""){
 	checkNotNull(msg);
 
 	assert(value,msg);
-}
-
-class Pair extends Set{
-	constructor(vals){
-		console.warn('Usage of class "Pair"');
-		super(vals);
-	}
 }
 
 function assert(check, msg = "no message"){
