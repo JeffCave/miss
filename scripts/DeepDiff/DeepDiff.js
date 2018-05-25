@@ -1,6 +1,6 @@
 'use strict';
 export {
-	ChecksimsRunner
+	DeepDiff
 };
 
 import './algorithm/smithwaterman/SmithWaterman.js';
@@ -21,9 +21,9 @@ global PouchDB
 */
 
 /**
- * CLI Entry point and main public API endpoint for Checksims.
+ * CLI Entry point and main public API endpoint for DeepDiff.
  */
-class ChecksimsRunner {
+class DeepDiff {
 
 	constructor() {
 		this.numThreads = 1;
@@ -255,11 +255,6 @@ class ChecksimsRunner {
 			;
 	}
 
-	get results(){
-		console.warn('Usage of ChecksimsRunner.results');
-		return this._results;
-	}
-
 	/**
 	 * @return Set of submissions to run on
 	 */
@@ -395,7 +390,7 @@ class ChecksimsRunner {
 	/**
 	 * Get current version.
 	 *
-	 * @return Current version of Checksims
+	 * @return Current version of DeepDiff
 	 */
 	static get Version(){
 		return "0.1.0";
@@ -436,9 +431,9 @@ class ChecksimsRunner {
 	/**
 	 * .
 	 *
-	 * @param config Configuration defining how Checksims will be run
+	 * @param config Configuration defining how DeepDiff will be run
 	 * @return Map containing output of all output printers requested. Keys are name of output printer.
-	 * @throws ChecksimsException Thrown on error performing similarity detection
+	 * @throws DeepDiffException Thrown on error performing similarity detection
 	 */
 	async runAllCompares(){
 		// Perform parallel analysis of all submission pairs to generate a results list

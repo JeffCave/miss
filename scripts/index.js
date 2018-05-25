@@ -9,14 +9,13 @@ global Vue
 
 import "https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.0/underscore-min.js";
 
-import {ChecksimsException} from './Checksims/ChecksimsException.js';
-import {ChecksimsRunner} from './Checksims/ChecksimsRunner.js';
-import {SimilarityMatrix} from './Checksims/visualizations/similaritymatrix/SimilarityMatrix.js';
-import {MatrixPrinterRegistry} from './Checksims/visualizations/similaritymatrix/output/MatrixPrinterRegistry.js';
-import {Submission} from './Checksims/submission/Submission.js';
+import {DeepDiff} from './DeepDiff/DeepDiff.js';
+import {SimilarityMatrix} from './DeepDiff/visualizations/similaritymatrix/SimilarityMatrix.js';
+import {MatrixPrinterRegistry} from './DeepDiff/visualizations/similaritymatrix/output/MatrixPrinterRegistry.js';
+import {Submission} from './DeepDiff/submission/Submission.js';
 
-import './Checksims/visualizations/similaritymatrix/output/MatrixToCSVPrinter.js';
-import './Checksims/visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
+import './DeepDiff/visualizations/similaritymatrix/output/MatrixToCSVPrinter.js';
+import './DeepDiff/visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
 
 import {d3ForceDirected} from './widgets/force.js';
 import * as Panels from './widgets/panel.js';
@@ -25,13 +24,13 @@ import './widgets/submissions.js';
 
 
 /**
- * Parses Checksims' command-line options.
+ * Parses DeepDiff' command-line options.
  *
  * TODO: Consider changing from a  class? Having as an instance variable would greatly simplify
  */
 class indexPage {
 	constructor() {
-		this.runner = new ChecksimsRunner();
+		this.runner = new DeepDiff();
 		this.files = [];
 		let self = this;
 
@@ -148,7 +147,7 @@ class indexPage {
 	async renderMatrixes(results,htmlContainers){
 		let deduplicatedStrategies = Array.from(new Set(['html','csv']));
 		if(deduplicatedStrategies.length === 0) {
-			throw new ChecksimsException("Error: did not obtain a valid output strategy!");
+			throw new DeepDiffException("Error: did not obtain a valid output strategy!");
 		}
 
 		let resultsMatrix = await SimilarityMatrix.generateMatrix(results);
@@ -243,7 +242,7 @@ class indexPage {
 
 
 	/**
-	 * Parse CLI arguments and run Checksims from them.
+	 * Parse CLI arguments and run DeepDiff from them.
 	 *
 	 * TODO add unit tests
 	 *
@@ -257,7 +256,7 @@ class indexPage {
 
 		checkSims.CommonCode = this.common;
 		checkSims.ArchiveSubmissions = this.archive;
-		let results = await checkSims.runChecksims();
+		let results = await checkSims.runDeepDiff();
 
 		this.renderResults(results,htmlContainers);
 	}

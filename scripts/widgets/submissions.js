@@ -1,6 +1,7 @@
 'use strict';
 
-import {Submission} from '../Checksims/submission/Submission.js';
+import {Submission} from '../DeepDiff/submission/Submission.js';
+import {DeepDiff} from '../DeepDiff/DeepDiff.js';
 
 // define the item component
 Vue.component('submission', {

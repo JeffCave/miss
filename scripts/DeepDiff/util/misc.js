@@ -101,3 +101,4 @@ export function docsEqual (aDoc,bDoc){
 	let areSame = (aDoc === bDoc);
 	return areSame;
 }
+
