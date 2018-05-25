@@ -7,6 +7,8 @@ global Vue
 //import vue from 'https://unpkg.com/vue/dist/vue.js'
 //import vuetify from 'https://unpkg.com/vuetify/dist/vuetify.js'
 
+import "https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.0/underscore-min.js";
+
 import {ChecksimsException} from './Checksims/ChecksimsException.js';
 import {ChecksimsRunner} from './Checksims/ChecksimsRunner.js';
 import {SimilarityMatrix} from './Checksims/visualizations/similaritymatrix/SimilarityMatrix.js';
@@ -77,8 +79,8 @@ class indexPage {
 			self.runner.addSubmissions(submission);
 		});
 
-		this.runner.addEventListener('results',function(){
-			self.renderResults();
+		this.runner.addEventListener('results',()=>{
+			this.renderResults();
 		});
 	}
 
@@ -209,28 +211,34 @@ class indexPage {
 		d3ForceDirected(results);
 	}
 
-	async renderResults(){
-		let report = {
-			"results" : await this.runner.Results,
-			"submissions": [],
-			"archives":this.runner.archiveSubmissions
-		};
-		if(report.results){
-			//report.submissions = await this.runner.Submissions;
-			report.submissions = report.results.reduce((a,d)=>{
-				d.submissions.forEach((s)=>{
-					a[s.name] = s;
-				});
-				return a;
-			},{});
-			report.submissions = Object.values(report.submissions);
+	renderResults(){
+		if(this.renderResultsThrottle){
+			return;
 		}
+		this.renderResultsThrottle = setTimeout(async ()=>{
+			this.renderResultsThrottle = null;
+			let report = {
+				"results" : await this.runner.Results,
+				"submissions": [],
+				"archives":this.runner.archiveSubmissions
+			};
+			if(report.results){
+				//report.submissions = await this.runner.Submissions;
+				report.submissions = report.results.reduce((a,d)=>{
+					d.submissions.forEach((s)=>{
+						a[s.name] = s;
+					});
+					return a;
+				},{});
+				report.submissions = Object.values(report.submissions);
+			}
 
-		let htmlContainers = this.Containers;
+			let htmlContainers = this.Containers;
 
-		this.renderMatrixes(report,htmlContainers);
-		this.renderListTable(report,htmlContainers);
-		this.renderListForce(report,htmlContainers);
+			this.renderMatrixes(report,htmlContainers);
+			this.renderListTable(report,htmlContainers);
+			this.renderListForce(report,htmlContainers);
+		},300);
 	}
 
 
