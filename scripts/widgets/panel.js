@@ -1,11 +1,14 @@
 'use strict';
+export {
+	initialize
+};
 
 function restorePanel(e){
 	e.target.classList.remove('minimized');
 	e.target.removeEventListener('click',restorePanel);
 }
 
-let initialize = function(){
+export default function initialize(){
 	let panels = document.querySelectorAll('main > section');
 	panels = Array.from(panels);
 	panels.forEach(function(panel){
@@ -13,7 +16,6 @@ let initialize = function(){
 		let minimize = document.createElement('span');
 		panel.prepend(minimize);
 		minimize.innerHTML = '&#128469;';
-		minimize.innerHTML = '_';
 		minimize.style.float = 'right';
 		minimize.style.zIndex = 1000;
 		minimize.style.cursor = 'default';
@@ -25,12 +27,4 @@ let initialize = function(){
 		});
 	});
 
-	initialize = function(){};
-};
-
-if(document.readyState === 'complete'){
-	initialize();
-}
-else{
-	window.addEventListener('load',initialize);
 }

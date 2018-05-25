@@ -41,6 +41,7 @@ main > section{
 	min-height:25vh;
 	width:100%;
 	min-width:300px;
+	max-width:400px;
 	margin:1vmin;
 	border:0.3vmin solid black;
 	padding:1.7vmin;

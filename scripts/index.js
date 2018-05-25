@@ -17,9 +17,9 @@ import './Checksims/visualizations/similaritymatrix/output/MatrixToCSVPrinter.js
 import './Checksims/visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
 
 import {d3ForceDirected} from './widgets/force.js';
-import * as Files from './widgets/submissions.js';
-import './widgets/panel.js';
+import * as Panels from './widgets/panel.js';
 import './widgets/treeview.js';
+import './widgets/submissions.js';
 
 
 /**
@@ -46,6 +46,7 @@ class indexPage {
 				treeData: this.files
 			}
 		});
+		Panels.initialize();
 
 		let adder = document.querySelector('#submissionMaker');
 		adder.addEventListener('dragover',function(event){

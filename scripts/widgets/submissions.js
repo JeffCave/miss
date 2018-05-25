@@ -1,6 +1,6 @@
 'use strict';
 
-import {Submission} from '/scripts/Checksims/submission/Submission.js';
+import {Submission} from '../Checksims/submission/Submission.js';
 
 // define the item component
 Vue.component('submission', {
@@ -71,7 +71,7 @@ Vue.component('submission-list', {
 		ordered : function(){
 			return Object.values(this.submissions)
 				.sort((a,b)=>{
-					return a.Name.localeCompare(b.Name);
+					return a.name.localeCompare(b.name);
 				});
 		}
 	},
