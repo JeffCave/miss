@@ -29,6 +29,11 @@ body{
 	margin:0;
 }
 
+i {
+	text-decoration: none;
+	font-style: normal;
+}
+
 main{
 	display: flex;
 	flex-flow: row wrap;

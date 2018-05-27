@@ -64,6 +64,7 @@
  </nav>
  <main>
   <section>
+   <i>help</i>
    <h1>Sample Files</h1>
    <dl>
     <dt><a href='./tests/sampleassignment.zip'>Sample Assignments</a></dt>
@@ -80,16 +81,19 @@
    </dl>
   </section>
   <section id='files'>
+   <i>folder</i>
    <h1>Files</h1>
-   <label>Files:</label> <input name='zip' type="file" disabled/>
+   <filedrop :onfile="onfile">&#128476; Upload a Zip</filedrop>
    <treeview :filelist="treeData"></treeview>
   </section>
   <section id='submissions'>
+   <i>collections</i>
    <h1>Submissions</h1>
-    <span id='submissionMaker'>&#10133;</span>
-    <submission-list :pouchdb='db' :filter='filter'></submission-list>
+   <span id='submissionMaker'>&#10133;</span>
+   <submission-list :pouchdb='db' :filter='filter'></submission-list>
   </section>
   <section id='results'>
+   <i>bar_chart</i>
    <h1>Reports</h1>
    <details data-type='force' open>
     <summary>Force</summary>

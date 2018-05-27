@@ -3,6 +3,8 @@ export {
 	initialize
 };
 
+import icons from './icons.js';
+
 function restorePanel(e){
 	e.target.classList.remove('minimized');
 	e.target.removeEventListener('click',restorePanel);
@@ -12,6 +14,11 @@ export default function initialize(){
 	let panels = document.querySelectorAll('main > section');
 	panels = Array.from(panels);
 	panels.forEach(function(panel){
+		let icon = panel.querySelector('i');
+		if(icons[icon.innerText]){
+			icon.innerHTML = icons[icon.innerText];
+		}
+
 		panel.classList.add('restore');
 		let minimize = document.createElement('span');
 		panel.prepend(minimize);

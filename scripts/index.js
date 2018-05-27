@@ -21,6 +21,7 @@ import {d3ForceDirected} from './widgets/force.js';
 import * as Panels from './widgets/panel.js';
 import './widgets/treeview.js';
 import './widgets/submissions.js';
+import './widgets/filedrop.js';
 
 
 /**
@@ -44,7 +45,19 @@ class indexPage {
 		this.displayFiles = new Vue({
 			el: '#files',
 			data: {
-				treeData: this.files
+				treeData: this.files,
+				onfile: function(e){
+					Array.from(e.target.files).forEach(function(file){
+						if (file.type !== 'application/x-zip-compressed'){
+							return;
+						}
+						self.attachSubmissions(file)
+							.then(function(files){
+								console.log('Submissions attached');
+							})
+							;
+					});
+				}
 			}
 		});
 		Panels.initialize();
@@ -270,22 +283,5 @@ window.addEventListener('load',async function(){
 
 	let checker = new indexPage();
 	checker.renderResults();
-
-	let upload = document.querySelector("input[name='zip']");
-
-	upload.disabled = false;
-
-	upload.addEventListener('change',function(e){
-		Array.from(e.target.files).forEach(function(file){
-			if (file.type !== 'application/x-zip-compressed'){
-				return;
-			}
-			checker.attachSubmissions(file)
-				.then(function(files){
-					console.log('Submissions attached');
-				})
-				;
-		});
-	});
 });
 

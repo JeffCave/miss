@@ -18,14 +18,13 @@ main > section.minimized{
 		;
 	transition-timing-function: cubic-bezier;
 }
+
 main > section.minimized > *{
 	visibility: hidden;
 	opacity: 0;
 	transition: opacity 1s, visibility 1.1s;
 }
-main > section.minimized > legend{
-	display: none;
-}
+
 main > section.restore{
 	transition:
 		min-width 1s,
@@ -37,5 +36,13 @@ main > section.restore{
 		;
 }
 main > section.restore > *{
+	transition: opacity 1s,visibility 1s;
+}
+
+main > section.restore > i:first-of-type {
+	transition: opacity 0s,visibility 1s;
+}
+
+main > section.minimized > i:first-of-type {
 	transition: opacity 1s,visibility 1s;
 }
