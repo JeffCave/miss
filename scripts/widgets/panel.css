@@ -17,6 +17,9 @@ main > section.minimized{
 		max-height 1s
 		;
 	transition-timing-function: cubic-bezier;
+	display:flex;
+	align-items: center;
+	justify-content: center;
 }
 
 main > section.minimized > *{
@@ -40,9 +43,15 @@ main > section.restore > *{
 }
 
 main > section.restore > i:first-of-type {
-	transition: opacity 0s,visibility 1s;
+	opacity:0;
+	visibility:hidden;
+	transition: opacity 1s,visibility 1s;
 }
 
 main > section.minimized > i:first-of-type {
+	opacity:1;
+	position:absolute;
+	visibility:visible;
 	transition: opacity 1s,visibility 1s;
+	font-size: 0.75cm;
 }
