@@ -39,7 +39,7 @@ class indexPage {
 			el:'#submissions',
 			data: {
 				db: this.runner.db,
-				filter: 'checksims/submissions'
+				filter: 'checksims/submissions',
 			}
 		});
 		this.displayFiles = new Vue({
@@ -160,7 +160,7 @@ class indexPage {
 	async renderMatrixes(results,htmlContainers){
 		let deduplicatedStrategies = Array.from(new Set(['html','csv']));
 		if(deduplicatedStrategies.length === 0) {
-			throw new DeepDiffException("Error: did not obtain a valid output strategy!");
+			throw new Error("Error: did not obtain a valid output strategy!");
 		}
 
 		let resultsMatrix = await SimilarityMatrix.generateMatrix(results);
@@ -243,6 +243,24 @@ class indexPage {
 					return a;
 				},{});
 				report.submissions = Object.values(report.submissions);
+
+				// go lookup all of the items in the hide list
+				let hides = report.submissions
+					.filter((d)=>{
+						return d.visible === false;
+					})
+					.map((d)=>{
+						return d.name;
+					})
+					;
+				// filter out any results that are in the hide list
+				report.results = report.results.filter((d)=>{
+					let match = hides.some(s=>{
+						let match = d.submissions[0].name === s || d.submissions[1].name === s;
+						return match;
+					});
+					return !match;
+				});
 			}
 
 			let htmlContainers = this.Containers;

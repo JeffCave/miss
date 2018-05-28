@@ -33,7 +33,7 @@
  <template type='text/x-template' id='submission-template'>
   <details>
    <summary>
-    <button @click='showhide' title='Display'>&#128065;</button>
+    <!-- button @click='showhide' title='Display'><span v-html="showhideIcon"></span></button -->
     <button @click='remove' title='Delete' v-show='remover !== null'>&#128465;</button>
     <!-- span @click='save'>&#128427;</span -->
     {{submission.name}}
@@ -43,7 +43,7 @@
  </template>
  <template type='text/x-template' id='submissions-template'>
   <div>
-   <submission v-for='(sub,key) in ordered' :key="sub.name" :submission="sub" :remover='remover'></submission>
+   <submission v-for='(sub,key) in ordered' :key="sub.name" :submission="sub" :remover='remover' ></submission>
   </div>
  </template>
 
@@ -93,7 +93,7 @@
    <submission-list :pouchdb='db' :filter='filter'></submission-list>
   </section>
   <section id='results'>
-   <i>bar_chart</i>
+   <i>show_chart</i>
    <h1>Reports</h1>
    <details data-type='force' open>
     <summary>Force</summary>

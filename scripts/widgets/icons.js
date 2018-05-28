@@ -20,6 +20,9 @@ const icons = Object.seal({
 	'maximize':'&#128470;',
 	'minimize':'&#128469;',
 	'save':'&#128427;',
+	'show_chart':'&#128200;',
+	'visibility':'&#128065;',
+	'visibility_off':'&#128683;',
 
 	'compressed':'&#128476;',
 });

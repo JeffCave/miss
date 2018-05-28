@@ -229,6 +229,9 @@ export default class Submission {
 		for(let key in this.content){
 			json.content[key] = await this.content[key];
 		}
+		if(this.visibility === false){
+			json.visibility = false;
+		}
 		return JSON.stringify(json);
 	}
 

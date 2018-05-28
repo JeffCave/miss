@@ -2,6 +2,7 @@
 
 import {Submission} from '../DeepDiff/submission/Submission.js';
 import {DeepDiff} from '../DeepDiff/DeepDiff.js';
+import {icons} from './icons.js'
 
 // define the item component
 Vue.component('submission', {
@@ -16,14 +17,30 @@ Vue.component('submission', {
 	data: function () {
 		return {};
 	},
+	computed:{
+		isShow:function(){
+			return !(this.submission.visible === false);
+		},
+		showhideIcon: function(){
+			if(this.isShow){
+				return icons.visibility;
+			}
+			return icons.visibility_off;
+		}
+	},
 	methods:{
 		remove:function(){
 			if(this.remover){
 				this.remover(this.submission.name);
 			}
 		},
-		showhide:function(){
-
+		showhide:function(event){
+			// only explicit false is 'false' ... everything else is to be
+			// assumed 'true'. Also, toggle it.
+			let value = (this.submission.visible === false);
+			// set it on the object
+			Vue.set(this.submission,'visible',value);
+			return value;
 		}
 	}
 
@@ -52,7 +69,7 @@ Vue.component('submission-list', {
 	},
 	data: function () {
 		return {
-			submissions:{}
+			submissions:{},
 		};
 	},
 	created: function () {
