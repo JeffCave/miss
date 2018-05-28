@@ -1,7 +1,7 @@
 'use strict';
 
 import {AlgorithmRegistry} from '../../algorithm/AlgorithmRegistry.js';
-import {AlgorithmResults} from '../../algorithm/AlgorithmResults.js';
+import * as AlgorithmResults from '../../algorithm/AlgorithmResults.js';
 import {TokenList} from '../../token/TokenList.js';
 import {SmithWatermanAlgorithm} from '../../algorithm/smithwaterman/SmithWatermanAlgorithm.js';
 import {checkNotNull} from '../../util/misc.js';
@@ -40,7 +40,7 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(a, b) {
 	//console.debug(bText);
 
 	// Handle a 0-token submission (no similarity)
-	if(aTokens.length === 0 || aTokens.length === 0) {
+	if(aTokens.length === 0 || bTokens.length === 0) {
 		return AlgorithmResults(a, b, aTokens, bTokens);
 	}
 
@@ -55,12 +55,15 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(a, b) {
 	let algorithm = new SmithWatermanAlgorithm(aTokens, bTokens);
 	let endLists = algorithm.computeSmithWatermanAlignmentExhaustive();
 
-	let notes = {}
+	let notes = {
+		algorithm: 'smithwaterman'
+	};
 	if(algorithm.massive){
 		notes.error = 'Massive compare';
 	}
 
-	let results = AlgorithmResults(a, b, endLists[0], endLists[1], notes);
+	let results = await AlgorithmResults.Create(a, b, endLists[0], endLists[1], notes);
+	results.complete = results.totalTokens;
 	return results;
 };
 

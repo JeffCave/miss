@@ -1,33 +1,68 @@
 'use strict';
 
-import {ChecksimsException} from './Checksims/ChecksimsException.js';
-import {ChecksimsRunner} from './Checksims/ChecksimsRunner.js';
-import {SimilarityMatrix} from './Checksims/visualizations/similaritymatrix/SimilarityMatrix.js';
-import {MatrixPrinterRegistry} from './Checksims/visualizations/similaritymatrix/output/MatrixPrinterRegistry.js';
-import {Submission} from './Checksims/submission/Submission.js';
+/*
+global Vue
+*/
 
-import './Checksims/visualizations/similaritymatrix/output/MatrixToCSVPrinter.js';
-import './Checksims/visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
+//import vue from 'https://unpkg.com/vue/dist/vue.js'
+//import vuetify from 'https://unpkg.com/vuetify/dist/vuetify.js'
+
+import "https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.0/underscore-min.js";
+
+import {DeepDiff} from './DeepDiff/DeepDiff.js';
+import {SimilarityMatrix} from './DeepDiff/visualizations/similaritymatrix/SimilarityMatrix.js';
+import {MatrixPrinterRegistry} from './DeepDiff/visualizations/similaritymatrix/output/MatrixPrinterRegistry.js';
+import {Submission} from './DeepDiff/submission/Submission.js';
+
+import './DeepDiff/visualizations/similaritymatrix/output/MatrixToCSVPrinter.js';
+import './DeepDiff/visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
 
 import {d3ForceDirected} from './widgets/force.js';
-import * as Files from './widgets/filesystem.js';
+import * as Panels from './widgets/panel.js';
+import './widgets/treeview.js';
+import './widgets/submissions.js';
+import './widgets/filedrop.js';
+
 
 /**
- * Parses Checksims' command-line options.
+ * Parses DeepDiff' command-line options.
  *
  * TODO: Consider changing from a  class? Having as an instance variable would greatly simplify
  */
 class indexPage {
 	constructor() {
-		this.runner = new ChecksimsRunner();
-		this.files = {};
-
-		Files.DisplaySubmissions('script[name="subtest"]',this.runner.Submissions);
-		let elem = document.querySelector('#filetest');
-		Files.DisplayFiles(elem,this);
-
+		this.runner = new DeepDiff();
+		this.files = [];
 		let self = this;
-		let adder = document.querySelector('#submissions > span');
+
+		this.displaySubmissions = new Vue({
+			el:'#submissions',
+			data: {
+				db: this.runner.db,
+				filter: 'checksims/submissions',
+			}
+		});
+		this.displayFiles = new Vue({
+			el: '#files',
+			data: {
+				treeData: this.files,
+				onfile: function(e){
+					Array.from(e.target.files).forEach(function(file){
+						if (file.type !== 'application/x-zip-compressed'){
+							return;
+						}
+						self.attachSubmissions(file)
+							.then(function(files){
+								console.log('Submissions attached');
+							})
+							;
+					});
+				}
+			}
+		});
+		Panels.initialize();
+
+		let adder = document.querySelector('#submissionMaker');
 		adder.addEventListener('dragover',function(event){
 			event.preventDefault();
 			event.target.style.backgroundColor="green";
@@ -39,14 +74,14 @@ class indexPage {
 			event.target.style.backgroundColor="blue";
 			let path = event.dataTransfer.getData("text/plain");
 			path = new RegExp("^" + path);
-			let files = Object.entries(self.files)
+			let files = self.files
 				.filter(function(d){
-					let isMatch = path.test(d[0]);
+					let isMatch = path.test(d.name);
 					return isMatch;
 				})
 				.reduce(function(a,d){
-					let p = d[0].replace(path,'');
-					a[p] = d[1];
+					let p = d.name.replace(path,'');
+					a[p] = d.content;
 					return a;
 				},{})
 				;
@@ -56,11 +91,8 @@ class indexPage {
 			self.runner.addSubmissions(submission);
 		});
 
-		Object.observe(this.runner.submissions,(changes)=>{
-			self.renderResults();
-		});
-		Object.observe(this.runner.results,(changes)=>{
-			self.renderResults();
+		this.runner.addEventListener('results',()=>{
+			this.renderResults();
 		});
 	}
 
@@ -78,24 +110,19 @@ class indexPage {
 		return this._containers;
 	}
 
-	attachSubmissions(blob){
+	async attachSubmissions(blob){
 		let parent = this;
 		this.submissions = null;
 		// 1) read the Blob
-		return JSZip
-			.loadAsync(blob)
-			.then(function(zip) {
-				zip = Submission.fileListFromZip(zip);
-				return zip;
-			})
-			.then(function(files){
-				parent.files = files;
-				return files;
-			})
-			.catch(function (e) {
-				console.error("Error reading " + blob.name + ": " + e.message);
-			})
-			;
+		let files = await JSZip.loadAsync(blob);
+		files = await Submission.fileListFromZip(files);
+		Object.entries(files).forEach(function(file){
+			parent.files.push({
+				name:file[0],
+				content:file[1],
+			});
+		});
+		return files;
 	}
 
 	attachArchive(blob){
@@ -133,7 +160,7 @@ class indexPage {
 	async renderMatrixes(results,htmlContainers){
 		let deduplicatedStrategies = Array.from(new Set(['html','csv']));
 		if(deduplicatedStrategies.length === 0) {
-			throw new ChecksimsException("Error: did not obtain a valid output strategy!");
+			throw new Error("Error: did not obtain a valid output strategy!");
 		}
 
 		let resultsMatrix = await SimilarityMatrix.generateMatrix(results);
@@ -162,26 +189,20 @@ class indexPage {
 				'<tbody>',
 			];
 		html = html.concat(results.results
-			.map(function(d){
-				let rtn = [
-						{'name':d.A.submission.name,'pct':d.A.percentMatched},
-						{'name':d.B.submission.name,'pct':d.B.percentMatched}
-					].sort(function(a,b){
-						let diff = b.pct - a.pct;
-						return diff;
-					});
-				rtn.total = rtn[0].pct + rtn[1].pct;
-				return rtn;
-			})
 			.sort(function(a,b){
-				let diff = b.total - a.total;
+				let diff = b.percentMatched - a.percentMatched;
 				return diff;
 			})
 			.map(function(comp){
-				let html = comp.map(function(d){
+				let html = comp.submissions
+					.sort(function(a,b){
+						let diff = b.percentMatched - a.percentMatched;
+						return diff;
+					})
+					.map(function(d){
 						return cellTemplate
-							.replace(/{{name}}/g,d.name)
-							.replace(/{{pct}}/g,(d.pct * 100).toFixed(0))
+							.replace(/{{name}}/g,d.submission)
+							.replace(/{{pct}}/g,(d.percentMatched * 100).toFixed(0))
 							;
 					}).join('');
 				html = [' <tr>', html, '</tr>',];
@@ -202,22 +223,57 @@ class indexPage {
 		d3ForceDirected(results);
 	}
 
-	async renderResults(){
-		let results = {
-			"results" : Object.values(this.runner.results),
-			"submissions": Object.values(this.runner.Submissions),
-			"archives":this.runner.archiveSubmissions
-		};
-		let htmlContainers = this.Containers;
+	renderResults(){
+		if(this.renderResultsThrottle){
+			return;
+		}
+		this.renderResultsThrottle = setTimeout(async ()=>{
+			this.renderResultsThrottle = null;
+			let report = {
+				"results" : await this.runner.Results,
+				"submissions": [],
+				"archives":this.runner.archiveSubmissions
+			};
+			if(report.results){
+				//report.submissions = await this.runner.Submissions;
+				report.submissions = report.results.reduce((a,d)=>{
+					d.submissions.forEach((s)=>{
+						a[s.name] = s;
+					});
+					return a;
+				},{});
+				report.submissions = Object.values(report.submissions);
 
-		this.renderMatrixes(results,htmlContainers);
-		this.renderListTable(results,htmlContainers);
-		this.renderListForce(results,htmlContainers);
+				// go lookup all of the items in the hide list
+				let hides = report.submissions
+					.filter((d)=>{
+						return d.visible === false;
+					})
+					.map((d)=>{
+						return d.name;
+					})
+					;
+				// filter out any results that are in the hide list
+				report.results = report.results.filter((d)=>{
+					let match = hides.some(s=>{
+						let match = d.submissions[0].name === s || d.submissions[1].name === s;
+						return match;
+					});
+					return !match;
+				});
+			}
+
+			let htmlContainers = this.Containers;
+
+			this.renderMatrixes(report,htmlContainers);
+			this.renderListTable(report,htmlContainers);
+			this.renderListForce(report,htmlContainers);
+		},300);
 	}
 
 
 	/**
-	 * Parse CLI arguments and run Checksims from them.
+	 * Parse CLI arguments and run DeepDiff from them.
 	 *
 	 * TODO add unit tests
 	 *
@@ -231,7 +287,7 @@ class indexPage {
 
 		checkSims.CommonCode = this.common;
 		checkSims.ArchiveSubmissions = this.archive;
-		let results = await checkSims.runChecksims();
+		let results = await checkSims.runDeepDiff();
 
 		this.renderResults(results,htmlContainers);
 	}
@@ -240,24 +296,10 @@ class indexPage {
 
 
 
-window.addEventListener('load',function(){
+window.addEventListener('load',async function(){
+	Vue.use(VueMaterial.default);
+
 	let checker = new indexPage();
-	let button = document.querySelector('button');
-	let upload = document.querySelector("input[name='zip']");
-
-	upload.disabled = false;
-
-	upload.addEventListener('change',function(e){
-		Array.from(e.target.files).forEach(function(file){
-			if (!file.type === 'application/x-zip-compressed'){
-				return;
-			}
-			checker.attachSubmissions(file)
-				.then(function(files){
-					console.log('Submissions attached');
-				})
-				;
-		});
-	});
+	checker.renderResults();
 });
 

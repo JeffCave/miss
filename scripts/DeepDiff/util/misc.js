@@ -3,8 +3,7 @@ export{
 	checkNotNull,
 	checkArgument,
 	hasher,
-	hashCode,
-	Pair
+	hashCode
 };
 
 /*
@@ -25,13 +24,6 @@ function checkArgument(value = null, msg = ""){
 	assert(value,msg);
 }
 
-class Pair extends Set{
-	constructor(vals){
-		console.warn('Usage of class "Pair"');
-		super(vals);
-	}
-}
-
 function assert(check, msg = "no message"){
 	check = !(check === false);
 	if(!check){
@@ -42,7 +34,7 @@ function assert(check, msg = "no message"){
 function hasher(value){
 	let hasher = new jsSHA("SHA-512", "TEXT");
 	hasher.update(value);
-	let hashed = hasher.getHash('HEX');
+	let hashed = hasher.getHash('B64');
 	return hashed;
 }
 
@@ -93,3 +85,20 @@ JSON.merge = function(a){
 	},{});
 	return obj;
 };
+
+export function docsEqual (aDoc,bDoc){
+	if(typeof aDoc === 'string'){
+		aDoc = JSON.parse(aDoc);
+	}
+	aDoc = JSON.clone(aDoc);
+
+	delete aDoc._id; delete aDoc._rev;
+	delete bDoc._id; delete bDoc._rev;
+
+	aDoc = JSON.stringify(aDoc);
+	bDoc = JSON.stringify(bDoc);
+
+	let areSame = (aDoc === bDoc);
+	return areSame;
+}
+

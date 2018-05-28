@@ -43,10 +43,10 @@ class SimilarityMatrix {
 		checkNotNull(xSubmissions);
 		checkNotNull(ySubmissions);
 		checkNotNull(builtFrom);
-		checkArgument(xSubmissions.length !== 0, "Cannot make similarity matrix with empty list of submissions to be compared!");
-		checkArgument(ySubmissions.length !== 0, "Cannot make similarity matrix with empty list of submissions to compare to!");
-		checkArgument(xSubmissions.length === entries.length, "Array size mismatch when creating Similarity Matrix - X direction, found " + xSubmissions.length + ", expecting " + entries.length);
-		checkArgument(ySubmissions.length === entries[0].length, "Array size mismatch when creating Similarity Matrix - Y direction, found " + ySubmissions.length + ", expecting " + entries[0].length);
+		//checkArgument(xSubmissions.length !== 0, "Cannot make similarity matrix with empty list of submissions to be compared!");
+		//checkArgument(ySubmissions.length !== 0, "Cannot make similarity matrix with empty list of submissions to compare to!");
+		//checkArgument(xSubmissions.length === entries.length, "Array size mismatch when creating Similarity Matrix - X direction, found " + xSubmissions.length + ", expecting " + entries.length);
+		//checkArgument(ySubmissions.length === entries[0].length, "Array size mismatch when creating Similarity Matrix - Y direction, found " + ySubmissions.length + ", expecting " + entries[0].length);
 		//checkArgument(builtFrom.length !== 0, "Must provide Algorithm Results used to build similarity matrix - instead got empty set!");
 
 		this.entries = entries;
@@ -166,7 +166,7 @@ class SimilarityMatrix {
 		//checkArgument(inputSubmissions.length !== 0, "Must provide at least 1 submission to build matrix from");
 		//checkArgument(results.length !== 0, "Must provide at least 1 AlgorithmResults to build matrix from!");
 
-		if(archive.length > 0){
+		if(archive && archive.length > 0){
 			return SimilarityMatrix.generateMatrixArchive(results, inputSubmissions, archive);
 		}
 
@@ -181,35 +181,40 @@ class SimilarityMatrix {
 
 		// Order the submissions
 		let orderedSubmissions = inputSubmissions.sort(function(a,b){
-				if(a.Name === b.Name) return 0;
-				if(a.Name < b.Name) return -1;
-				return 1;
+				let comp = a.name.localeCompare(b.name);
+				return comp;
 			});
 
 		// Generate the matrix
 
 		// Start with the diagonal, filling with 100% similarity
-		for(let i = 0; i<orderedSubmissions.length; i++){
-			let s = orderedSubmissions[i];
-			let tokens = await s.ContentAsTokens;
-			matrix[i][i] = await MatrixEntry(s, s, tokens.length);
-		}
+		orderedSubmissions.forEach((s,i)=>{
+			matrix[i][i] = MatrixEntry(s, s);
+		});
 
 		// Now go through all the results, and build appropriate two MatrixEntry objects for each
 		for(let r=0; r<results.length; r++){
 			let result = results[r];
-			let aIndex = orderedSubmissions.indexOf(result.A.submission);
-			let bIndex = orderedSubmissions.indexOf(result.B.submission);
+			let aIndex = orderedSubmissions.map(d=>{
+					return d.name;
+				})
+				.indexOf(result.submissions[0].submission)
+				;
+			let bIndex = orderedSubmissions.map(d=>{
+					return d.name;
+				})
+				.indexOf(result.submissions[1].submission)
+				;
 
 			if (aIndex === -1) {
-				throw new Error("Processed Algorithm Result with submission not in given input submissions with name \"" + result.a.getName() + "\"");
+				throw new Error("Processed Algorithm Result with submission not in given input submissions with name \"" + result.submissions[0].submission + "\"");
 			}
 			else if (bIndex === -1) {
-				throw new Error("Processed Algorithm Result with submission not in given input submissions with name \"" + result.b.getName() + "\"");
+				throw new Error("Processed Algorithm Result with submission not in given input submissions with name \"" + result.submissions[1].submission.name + "\"");
 			}
 
-			matrix[aIndex][bIndex] = await MatrixEntry(result.A.submission, result.B.submission, result.A.identicalTokens);
-			matrix[bIndex][aIndex] = await MatrixEntry(result.B.submission, result.A.submission, result.B.identicalTokens);
+			matrix[aIndex][bIndex] = MatrixEntry(result.submissions[0], result.submissions[1]);
+			matrix[bIndex][aIndex] = MatrixEntry(result.submissions[1], result.submissions[0]);
 		}
 
 		let sim = new SimilarityMatrix(matrix, orderedSubmissions, orderedSubmissions, results);

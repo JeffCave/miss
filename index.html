@@ -1,12 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
- <script type='text/javascript' async src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js'></script>
- <script type='text/javascript' async src='https://cdnjs.cloudflare.com/ajax/libs/jsSHA/2.3.1/sha.js'></script>
- <script type='text/javascript' async src='https://cdnjs.cloudflare.com/ajax/libs/mustache.js/2.3.0/mustache.min.js'></script>
- <script type='text/javascript' async src='https://cdnjs.cloudflare.com/ajax/libs/d3/4.13.0/d3.min.js'></script>
+ <script async src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js'></script>
+ <script async src='https://cdnjs.cloudflare.com/ajax/libs/jsSHA/2.3.1/sha.js'></script>
+ <script async src='https://cdnjs.cloudflare.com/ajax/libs/mustache.js/2.3.0/mustache.min.js'></script>
+ <script async src='https://cdnjs.cloudflare.com/ajax/libs/d3/4.13.0/d3.min.js'></script>
  <script async src="https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.4.3/pouchdb.min.js" integrity="sha256-KCHhiEhNiEbEd8h607QOlmc3LkpQ/En/mS302LGjnLY=" crossorigin="anonymous"></script>
- <script async src="https://cdnjs.cloudflare.com/ajax/libs/object-observe/0.2.6/object-observe.js" integrity="sha256-bv022XiEHbrp9bLG8/z2fZXtDNYmdl/Uv/p30JMbXVk=" crossorigin="anonymous"></script>
+ <!-- script async src="https://cdnjs.cloudflare.com/ajax/libs/object-observe/0.2.6/object-observe.js" integrity="sha256-bv022XiEHbrp9bLG8/z2fZXtDNYmdl/Uv/p30JMbXVk=" crossorigin="anonymous"></script -->
+ <script async src="https://unpkg.com/vue/dist/vue.js"></script>
+ <script async src="https://unpkg.com/vue-material@beta"></script>
+
+
+ <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:400,500,700,400italic|Material+Icons">
+ <link rel="stylesheet" href="//unpkg.com/vue-material@beta/dist/theme/default.css">
 
  <script type="module" src="./scripts/index.js"></script>
  <script type="text/javascript" nomodule>
@@ -17,66 +23,99 @@
     let instructions = document.body.querySelector('#unsupported');
     instructions.style.display = 'block';
  </script>
- </script>
 
- <link rel='stylesheet' href='main.css' />
+ <template type="text/x-template" id="treeview-template">
+  <details style='margin-left:1em;' draggable='true' @dragstart='dragstart' :data-path='filecollection.path' open>
+   <summary> {{ filecollection.name }} </summary>
+   <treeview v-for="(filecollection, index) in filecollection.children" :key="index" :files="filecollection"></item>
+  </details>
+ </template>
+ <template type='text/x-template' id='submission-template'>
+  <details>
+   <summary>
+    <!-- button @click='showhide' title='Display'><span v-html="showhideIcon"></span></button -->
+    <button @click='remove' title='Delete' v-show='remover !== null'>&#128465;</button>
+    <!-- span @click='save'>&#128427;</span -->
+    {{submission.name}}
+   </summary>
+   <treeview :files="submission.content"></treeview>
+  </details>
+ </template>
+ <template type='text/x-template' id='submissions-template'>
+  <div>
+   <submission v-for='(sub,key) in ordered' :key="sub.name" :submission="sub" :remover='remover' ></submission>
+  </div>
+ </template>
 
+
+ <link rel='stylesheet' href='index.css' />
+ <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
 </head>
 <body>
- <fieldset>
-  <legend>Files</legend>
-  Files: <input name='zip' type="file" disabled/>
-  <script type='text/mustache' name='filetest'>
-   {{#children}}
-    <details style='margin-left:1em;' draggable='true' data-path='{{path}}'>
-     <summary>{{name}}</summary>
-     {{>li}}
-    </details>
-   {{/children}}
-  </script>
- </fieldset>
- <fieldset id='submissions'>
-  <legend>Submissions</legend>
-   <span>&#10133;</span>
-   <script type='text/mustache' name='subtest'>
-    <input type='checkbox' />
-    <span style='opacity:0.5;'>&#128190;</span>
-    {{name}}
-   </script>
- </fieldset>
- <section id='results'>
-  <details data-type='force' open>
-   <summary>Force</summary>
-   <svg width="300" height="300"></svg>
-   <ul class='result' style="padding:0;height:300px;width:300px;list-style-type:none;position:relative;display:none;"></ul>
-  </details>
-  <details data-type='lst' open>
-   <summary>Listing</summary>
-   <table class="result"></table>
-  </details>
-  <details data-type='html'>
-   <summary>HTML</summary>
-   <div class='result'></div>
-  </details>
-  <details data-type='csv'>
-   <summary>CSV</summary>
-   <textarea class='result'></textarea>
-  </details>
- </section>
- <h1>Sample Files</h1>
- <dl>
-  <dt><a href='./tests/sampleassignment.zip'>Sample Assignments</a></dt>
-   <dd>
-    A few demo files that have been used in classes. Formatted for student submission, and copied a couple of way. Gives some data to match and fine no match between.
-   </dd>
-  <dt><a href='./tests/bigcompares.zip'>Big Compares</a></dt>
-   <dd>
-    Genome of E.Coli, and Y.Pestarius. Makes for a really big compare, and is know to currently break the application.
-   </dd>
- </dl>
- <section >
+ <nav style='display:none;'>
+  <progress  value='1' min='0' max='2'>asdf</progress>
+  <input type='range' id='menu' value='0' min='0' max='3' list='forms' />
+  <datalist id='forms'>
+   <option value='0'>A</option>
+   <option value='1'>B</option>
+   <option value='2'>C</option>
+   <option value='3'>D</option>
+  </datalist>
+ </nav>
+ <main>
+  <section>
+   <i>help</i>
+   <h1>Sample Files</h1>
+   <dl>
+    <dt><a href='./tests/sampleassignment.zip'>Sample Assignments</a></dt>
+     <dd>
+      A few demo files that I have used in classes. Formatted
+      appropriately for student submission, and copied a couple of way.
+      Gives some data that will match and some data that will not match.
+     </dd>
+    <dt><a href='./tests/bigcompares.zip'>Big Compares</a></dt>
+     <dd>
+      Genome of E.Coli, and Y.Pestarius. Makes for a really big compare,
+      and is know to currently break the application.
+     </dd>
+   </dl>
+  </section>
+  <section id='files'>
+   <i>folder</i>
+   <h1>Files</h1>
+   <filedrop :onfile="onfile">&#128476; Upload a Zip</filedrop>
+   <treeview :filelist="treeData"></treeview>
+  </section>
+  <section id='submissions'>
+   <i>collections</i>
+   <h1>Submissions</h1>
+   <span id='submissionMaker'>&#10133;</span>
+   <submission-list :pouchdb='db' :filter='filter'></submission-list>
+  </section>
+  <section id='results'>
+   <i>show_chart</i>
+   <h1>Reports</h1>
+   <details data-type='force' open>
+    <summary>Force</summary>
+    <svg width="300" height="300"></svg>
+    <ul class='result' style="padding:0;height:300px;width:300px;list-style-type:none;position:relative;display:none;"></ul>
+   </details>
+   <details data-type='lst' open>
+    <summary>Listing</summary>
+    <table class="result"></table>
+   </details>
+   <details data-type='html' open>
+    <summary>HTML</summary>
+    <div class='result'></div>
+   </details>
+   <details data-type='csv'>
+    <summary>CSV</summary>
+    <textarea class='result'></textarea>
+   </details>
+  </section>
 
- </section>
+ </main>
+
  <div id='unsupported' style='display:none;'>
   <h1>Experimental Features required</h1>
   <p>
@@ -97,5 +136,6 @@
    <li>Activate "Experimental Javascript"</li>
   </ol>
  </div>
+
 </body>
 </html>

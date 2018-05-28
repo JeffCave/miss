@@ -11,7 +11,7 @@ global Mustache
 
 (function(){
 
-let template = fetch('scripts/Checksims/visualizations/similaritymatrix/output/htmlOutput.tmpl.html')
+let template = fetch('scripts/DeepDiff/visualizations/similaritymatrix/output/htmlOutput.tmpl.html')
 	.then(function(response) {
 		if(response.status !== 200){
 			throw new Error("Could not resolve resource for HTML output template!");

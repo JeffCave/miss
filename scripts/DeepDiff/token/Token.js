@@ -23,7 +23,7 @@ import {LexemeMap} from '../token/LexemeMap.js';
 /**
  * Interface for Tokens.
  *
- * A Token is the basic unit of comparison in Checksims. A token
+ * A Token is the basic unit of comparison in DeepDiff. A token
  * represents a "chunk" of a submission --- typically a substring of
  * the submission, or a single character.
  *

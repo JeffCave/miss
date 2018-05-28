@@ -1,7 +1,7 @@
 'use strict';
 
 import {AlgorithmRegistry} from '../../algorithm/AlgorithmRegistry.js';
-import {AlgorithmResults} from '../../algorithm/AlgorithmResults.js';
+import * as AlgorithmResults from '../../algorithm/AlgorithmResults.js';
 import {Submission} from '../../submission/Submission.js';
 import {TokenList} from '../../token/TokenList.js';
 import {LexemeMap} from '../../token/LexemeMap.js';

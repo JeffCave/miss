@@ -29,25 +29,15 @@ import {checkNotNull,checkArgument} from '../../util/misc.js';
 	 * @param comparedTo Submission being compared to
 	 * @param similarTokens Number of tokens shared by both submissions
 	 */
-export default async function MatrixEntry(base, comparedTo, similarTokens) {
+export default function MatrixEntry(base, comparedTo) {
 		checkNotNull(base);
 		checkNotNull(comparedTo);
-		checkArgument(similarTokens >= 0, "There cannot be a negative number of similar tokens");
-
-		let baseTokens = await base.ContentAsTokens;
-		// DEBUG: put this back
-		//checkArgument(similarTokens <= baseTokens.length, "Attempted to created MatrixEntry with " + similarTokens + " similar tokens --- only " + baseTokens.length + " tokens in base!");
 
 		let rtn = {};
-
 		rtn.base = base;
 		rtn.comparedTo = comparedTo;
-		rtn.similarTokens = +similarTokens;
-		rtn.totalTokens = baseTokens.length;
-		rtn.similarityPercent = 0.0;
-
-		if(rtn.totalTokens > 0) {
-			rtn.similarityPercent = similarTokens / rtn.totalTokens;
-		}
+		rtn.similarTokens = +base.identicalTokens;
+		rtn.totalTokens = +base.totalTokens;
+		rtn.similarityPercent = base.percentMatched;
 		return rtn;
 }

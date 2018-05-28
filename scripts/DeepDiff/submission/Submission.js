@@ -40,10 +40,14 @@ export default class Submission {
 	 * break, at the very least, Preprocessors.
 	 */
 	constructor(name, files) {
+		this.common = PreprocessorRegistry.processors.null;
+
 		if(name instanceof Submission){
 			this.allContent = name.allContent;
 			this.content = name.content;
 			this.name = name.name;
+			this.typedContent = name.typedContent;
+
 			return;
 		}
 		checkNotNull(name);
@@ -103,7 +107,6 @@ export default class Submission {
 		this.typedContent = content;
 		this.content = files;
 		this.name = name;
-		this.common = PreprocessorRegistry.processors.null;
 	}
 
 	set Common(common){
@@ -192,12 +195,17 @@ export default class Submission {
 					r(content);
 				})
 				.then(function(content){
-					let name = self.name;
-					let hash = hasher(name + content);
+					//let name = self.name;
+					//let hash = hasher(name + content);
+					let hash = hasher(content);
 					return hash;
 				});
 		}
 		return this._hash;
+	}
+
+	get totalTokens(){
+		return this.ContentAsTokens.then(function(tokens){return tokens.length;});
 	}
 
 	toString() {
@@ -205,8 +213,25 @@ export default class Submission {
 			type : 'Submission',
 			name : this.name,
 			content : this.content,
-			hash : this.hashCode
+			hash : this.hash
 		};
+		return JSON.stringify(json);
+	}
+
+	async toJSON() {
+		let json = {
+			type : 'Submission',
+			name : this.name,
+			content : {},
+			hash : await this.hash,
+			totalTokens : await this.totalTokens,
+		};
+		for(let key in this.content){
+			json.content[key] = await this.content[key];
+		}
+		if(this.visibility === false){
+			json.visibility = false;
+		}
 		return JSON.stringify(json);
 	}
 
@@ -241,7 +266,16 @@ export default class Submission {
 	 */
 	static fromString(json){
 		json = JSON.parse(json);
-		let sub = new Submission(json.name, json.content, new TokenList(json.content));
+		json = Submission.fromJSON(json);
+		return json;
+	}
+
+	/**
+	 * Parses Submission from string
+	 */
+	static fromJSON(json){
+		let sub = new Submission(json.name, json.content);
+		sub._hash = json.hash;
 		return sub;
 	}
 
@@ -264,9 +298,7 @@ export default class Submission {
 	static get NullSubmission(){
 		if(!('_NullSubmission' in Submission)){
 			let content = {
-				'NullContent.txt':new Promise((result)=>{
-					result('');
-				})
+				'NullContent.txt':Promise.resolve('')
 			};
 			Submission._NullSubmission = new Submission(' ',content);
 		}
