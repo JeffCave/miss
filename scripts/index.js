@@ -6,6 +6,7 @@ global Vue
 
 //import vue from 'https://unpkg.com/vue/dist/vue.js'
 //import vuetify from 'https://unpkg.com/vuetify/dist/vuetify.js'
+//import "https://unpkg.com/http-vue-loader";
 
 import "https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.0/underscore-min.js";
 
@@ -13,6 +14,7 @@ import {DeepDiff} from './DeepDiff/DeepDiff.js';
 import {SimilarityMatrix} from './DeepDiff/visualizations/similaritymatrix/SimilarityMatrix.js';
 import {MatrixPrinterRegistry} from './DeepDiff/visualizations/similaritymatrix/output/MatrixPrinterRegistry.js';
 import {Submission} from './DeepDiff/submission/Submission.js';
+
 
 import './DeepDiff/visualizations/similaritymatrix/output/MatrixToCSVPrinter.js';
 import './DeepDiff/visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
@@ -35,12 +37,16 @@ class indexPage {
 		this.files = [];
 		let self = this;
 
+
 		this.displaySubmissions = new Vue({
 			el:'#submissions',
 			data: {
 				db: this.runner.db,
 				filter: 'checksims/submissions',
-			}
+			},
+//			components: {
+//				'my-component': 'my-component.vue'
+//			},
 		});
 		this.displayFiles = new Vue({
 			el: '#files',
@@ -48,14 +54,13 @@ class indexPage {
 				treeData: this.files,
 				onfile: function(e){
 					Array.from(e.target.files).forEach(function(file){
-						if (file.type !== 'application/x-zip-compressed'){
-							return;
+						if (file.type === 'application/x-zip-compressed' || file.type === 'application/zip'){
+							self.attachSubmissions(file)
+								.then(function(files){
+									console.log('Submissions attached');
+								})
+								;
 						}
-						self.attachSubmissions(file)
-							.then(function(files){
-								console.log('Submissions attached');
-							})
-							;
 					});
 				}
 			}
@@ -298,6 +303,8 @@ class indexPage {
 
 window.addEventListener('load',async function(){
 	Vue.use(VueMaterial.default);
+	Vue.use(httpVueLoader);
+
 
 	let checker = new indexPage();
 	checker.renderResults();
