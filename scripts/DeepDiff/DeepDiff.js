@@ -419,11 +419,7 @@ class DeepDiff {
 		pair.submissions = await Promise.all(pair.submissions);
 		let algo = this.Algorithm;
 		console.log("Performing comparison on " + pair.name );
-		let startTime = performance.now();
-		let result = await algo(pair.submissions[0],pair.submissions[1]);
-		let endTime = performance.now();
-		let timeElapsed = endTime - startTime;
-		console.log("Finished comparison on " + pair.name + "(" + timeElapsed.toFixed(1) + " ms)" );
+		let result = await algo(pair);
 		result = AlgorithmResults.toJSON(result);
 		return result;
 	}

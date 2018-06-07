@@ -243,6 +243,7 @@ class indexPage {
 				//report.submissions = await this.runner.Submissions;
 				report.submissions = report.results.reduce((a,d)=>{
 					d.submissions.forEach((s)=>{
+						s.name = s.name || s.submission;
 						a[s.name] = s;
 					});
 					return a;

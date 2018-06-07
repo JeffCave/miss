@@ -1,5 +1,9 @@
 'use strict';
 
+/*
+global performance
+*/
+
 import {AlgorithmRegistry} from '../../algorithm/AlgorithmRegistry.js';
 import * as AlgorithmResults from '../../algorithm/AlgorithmResults.js';
 import {TokenList} from '../../token/TokenList.js';
@@ -18,9 +22,13 @@ import {checkNotNull} from '../../util/misc.js';
  * @param b Second submission to apply to
  * @return Similarity results of comparing submissions A and B
  */
-AlgorithmRegistry.processors['smithwaterman'] = async function(a, b) {
-	checkNotNull(a);
-	checkNotNull(b);
+AlgorithmRegistry.processors['smithwaterman'] = async function(req) {
+	checkNotNull(req);
+
+	performance.mark('smithwaterman-start.'+req.name)
+
+	let a = req.submissions[0];
+	let b = req.submissions[1];
 
 	let aTokens = await a.ContentAsTokens;
 	let bTokens = await b.ContentAsTokens;
@@ -41,6 +49,7 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(a, b) {
 
 	// Handle a 0-token submission (no similarity)
 	if(aTokens.length === 0 || bTokens.length === 0) {
+		//TODO: return req
 		return AlgorithmResults(a, b, aTokens, bTokens);
 	}
 
@@ -64,6 +73,13 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(a, b) {
 
 	let results = await AlgorithmResults.Create(a, b, endLists[0], endLists[1], notes);
 	results.complete = results.totalTokens;
+
+	performance.mark('smithwaterman-end.'+req.name);
+	performance.measure('smithwaterman.'+req.name,'smithwaterman-start.'+req.name,'smithwaterman-end.'+req.name);
+	let perf = performance.getEntriesByName('smithwaterman.'+req.name);
+	results.duration = JSON.stringify(perf.pop());
+
+
 	return results;
 };
 
