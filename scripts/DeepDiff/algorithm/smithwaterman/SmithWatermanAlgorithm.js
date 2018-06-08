@@ -31,8 +31,8 @@ export default class SmithWatermanAlgorithm {
 	}
 
 	get MAXCOMPARE(){
-		// 1GB?
-		return 1024**3;
+		// 4GB?
+		return (1024**3)*4;
 	}
 	get threshold(){
 		return SmithWatermanAlgorithm.threshold;
@@ -73,17 +73,18 @@ export default class SmithWatermanAlgorithm {
 			this.massive = true;
 			return;
 		}
-		this.s = [];
-		for(let i = 0; i<this.wholeArray.getMax().getX(); i++){
-			let a = [];
-			for(let j = 0; j<this.wholeArray.getMax().getY(); j++){
-				a.push(0);
-			}
-			this.s.push(a);
-		}
-		this.m = JSON.clone(this.s.slice(0));
+		this.s = {};
+		//for(let i = 0; i<this.wholeArray.getMax().getX(); i++){
+		//	let a = [];
+		//	for(let j = 0; j<this.wholeArray.getMax().getY(); j++){
+		//		a.push(0);
+		//	}
+		//	this.s.push(a);
+		//}
+		//this.m = JSON.clone(this.s.slice(0));
+		this.m = {};
 
-		this.candidates = new Map();
+		this.candidates = {};
 	}
 
 
@@ -162,7 +163,7 @@ export default class SmithWatermanAlgorithm {
 			// Check to verify that this match is over the threshold
 			// This should never happen, so log if it does
 			// TODO investigate why this is happening
-			if(this.s[currMax.getX()][currMax.getY()] < this.threshold) {
+			if(this.s[Coordinate.from(currMax.getX(),currMax.getY())] || 0  < this.threshold) {
 				console.trace("Potential algorithm error: identified candidate pointing to 0 at " + currMax);
 				largestCoords.remove(currMax);
 				if(largestCoords.isEmpty()) {
@@ -276,27 +277,27 @@ export default class SmithWatermanAlgorithm {
 		checkArgument(this.wholeArrayBounds.contains(max), "Max of requested area out of bounds: " + max
 			+ " not within " + this.wholeArray);
 
-		let xLower = origin.getX();
-		let xUpper = max.getX();
-
+		//let xLower = origin.getX();
+		//let xUpper = max.getX();
+		//
 		// Zero out the X match
-		for(let x = xLower; x <= xUpper; x++) {
-			for(let y = 1; y < this.s[0].length; y++) {
-				this.s[x][y] = 0;
-				this.m[x][y] = 0;
-			}
-		}
-
-		let yLower = origin.getY();
-		let yUpper = max.getY();
-
+		//for(let x = xLower; x <= xUpper; x++) {
+		//	for(let y = 1; y < this.s[0].length; y++) {
+		//		this.s[x][y] = 0;
+		//		this.m[x][y] = 0;
+		//	}
+		//}
+		//
+		//let yLower = origin.getY();
+		//let yUpper = max.getY();
+		//
 		// Zero out the Y match
-		for(let x = 1; x < this.s.length; x++) {
-			for(let y = yLower; y <= yUpper; y++) {
-				this.s[x][y] = 0;
-				this.m[x][y] = 0;
-			}
-		}
+		//for(let x = 1; x < this.s.length; x++) {
+		//	for(let y = yLower; y <= yUpper; y++) {
+		//		this.s[x][y] = 0;
+		//		this.m[x][y] = 0;
+		//	}
+		//}
 	}
 
 	/**
@@ -331,7 +332,7 @@ export default class SmithWatermanAlgorithm {
 				// Unclear how this candidate got added, but it's no longer valid
 				// This shouldn't happen, so log it as well
 				// TODO investigate why this is happening
-				if(this.s[coord.getX()][coord.getY()] < this.threshold) {
+				if(this.s[Coordinate.from(coord.getX(),coord.getY())]||0 < this.threshold) {
 					console.trace("Potential algorithm error - filtered match lower than threshold at " + coord);
 					return;
 				}
@@ -387,8 +388,14 @@ export default class SmithWatermanAlgorithm {
 				// Token Match - increment S table
 				let yToken = this.yList[prevY];
 				if(yToken.valid && xToken.valid && xToken.lexeme === yToken.lexeme && xToken.type === yToken.type) {
-					let sPred = this.s[prevX][prevY];
-					let mPred = this.m[prevX][prevY];
+					let sPred = this.s[Coordinate.from(prevX,prevY)];
+					if(!sPred){
+						sPred = 0;
+					}
+					let mPred = this.m[Coordinate.from(prevX,prevY)];
+					if(!mPred){
+						mPred = 0;
+					}
 
 					newS = sPred + this.swConstant;
 
@@ -403,11 +410,14 @@ export default class SmithWatermanAlgorithm {
 				else {
 					// Tokens did not match
 					// Get the max of S table predecessors and decrement
-					let a = this.s[prevX][prevY];
-					let b = this.s[prevX][y];
-					let c = this.s[x][prevY];
+					let a = this.s[Coordinate.from(prevX,prevY)] || 0;
+					let b = this.s[Coordinate.from(prevX,y)] || 0;
+					let c = this.s[Coordinate.from(x,prevY)] || 0;
 
 					let max = Math.max(a, b, c);
+					if(!max){
+						max = 0;
+					}
 					newS = max - this.swConstant;
 					if(newS < 0) {
 						newS = 0;
@@ -418,9 +428,9 @@ export default class SmithWatermanAlgorithm {
 						newM = 0;
 					}
 					else {
-						let aM = this.m[prevX][prevY];
-						let bM = this.m[prevX][y];
-						let cM = this.m[x][prevY];
+						let aM = this.m[Coordinate.from(prevX,prevY)];
+						let bM = this.m[Coordinate.from(prevX,y)];
+						let cM = this.m[Coordinate.from(x,prevY)];
 
 						// Get largest predecessor in M table
 						let maxM = Math.max(aM, bM, cM);
@@ -442,8 +452,8 @@ export default class SmithWatermanAlgorithm {
 				}
 
 				// Set S and M table entries
-				this.s[x][y] = newS;
-				this.m[x][y] = newM;
+				if(newS) this.s[Coordinate.from(x,y)] = newS;
+				if(newM) this.m[Coordinate.from(x,y)] = newM;
 
 				// Check if our result is significant
 				if(newS >= this.threshold && newS > newM) {
@@ -517,7 +527,7 @@ export default class SmithWatermanAlgorithm {
 	getMatchCoordinates(matchCoord) {
 		checkNotNull(matchCoord);
 		checkArgument(this.wholeArray.contains(matchCoord), "Requested match coordinate is out of bounds: " + matchCoord + " not within " + this.wholeArray);
-		checkArgument(this.s[matchCoord.getX()][matchCoord.getY()] !== 0, "Requested match coordinate " + matchCoord + " points to 0 in S array!");
+		checkArgument(this.s[Coordinate.from(matchCoord.getX(),matchCoord.getY())], "Requested match coordinate " + matchCoord + " points to 0 in S array!");
 
 		let matchCoordinates = [];
 
@@ -536,13 +546,13 @@ export default class SmithWatermanAlgorithm {
 				x = x - 1;
 				y = y - 1;
 
-				largestPredecessor = this.s[x][y];
+				largestPredecessor = this.s[Coordinate.from(x,y)] || 0;
 			}
 			else{
 				// Get predecessors
-				let a = this.s[x - 1][y - 1];
-				let b = this.s[x - 1][y];
-				let c = this.s[x][y - 1];
+				let a = this.s[Coordinate.from(x - 1,y - 1)] || 0;
+				let b = this.s[Coordinate.from(x - 1,y)] || 0;
+				let c = this.s[Coordinate.from(x,y - 1)] || 0;
 
 				largestPredecessor = Math.max(a, b, c);
 
@@ -577,10 +587,10 @@ export default class SmithWatermanAlgorithm {
 		checkArgument(!toTest.isEmpty(), "Cannot get the maximum of an empty set of coordinates!");
 
 		let candidate = toTest[0];
-		let value = this.s[candidate.getX()][candidate.getY()];
+		let value = this.s[Coordinate.from(candidate.getX(),candidate.getY())];
 
 		toTest.forEach(function(newCandidate) {
-			let newValue = this.s[newCandidate.getX()][newCandidate.getY()];
+			let newValue = this.s[Coordinate.from(newCandidate.getX(),newCandidate.getY())];
 
 			if(newValue > value) {
 				candidate = newCandidate;

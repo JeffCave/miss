@@ -18,7 +18,7 @@ export{
 };
 
 /**
- * An immutable 2-D coordinate.
+ * A 2-D coordinate.
  */
 export default class Coordinate{
 	/**
