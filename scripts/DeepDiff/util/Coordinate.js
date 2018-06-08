@@ -34,11 +34,19 @@ export default class Coordinate{
 			y = val.y;
 		}
 
+		if(x instanceof Object && 'y' in x){
+			y = x.y;
+			x = x.x;
+		}
+
 		this.x = +x;
 		this.y = +y;
 	}
 
 	static from(x,y){
+		if(x instanceof Coordinate){
+			return x;
+		}
 		return new Coordinate(x,y);
 	}
 

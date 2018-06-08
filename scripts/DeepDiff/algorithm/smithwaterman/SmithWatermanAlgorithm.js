@@ -52,14 +52,15 @@ export default class SmithWatermanAlgorithm {
 	 * @param a First token list to align
 	 * @param b Second token list to align
 	 */
-	constructor(a, b) {
+	constructor(a, b, completed) {
 		checkNotNull(a);
 		checkNotNull(b);
 		checkArgument(a.length > 0, "Cowardly refusing to perform alignment with empty token list A");
 		checkArgument(b.length > 0, "Cowardly refusing to perform alignment with empty token list B");
 
-		this.xList = TokenList.cloneTokenList(a);
-		this.yList = TokenList.cloneTokenList(b);
+		this.xList = a;
+		this.yList = b;
+		this.completed = completed;
 
 		this.wholeArray = ArraySubset.from(1, 1, this.xList.length + 1, this.yList.length + 1);
 		this.wholeArrayBounds = ArraySubset.from(1, 1, this.xList.length, this.yList.length);
@@ -75,7 +76,7 @@ export default class SmithWatermanAlgorithm {
 		this.s = [];
 		for(let i = 0; i<this.wholeArray.getMax().getX(); i++){
 			let a = [];
-			for(let j = 0; j<this.wholeArray.getMax().getY();j++){
+			for(let j = 0; j<this.wholeArray.getMax().getY(); j++){
 				a.push(0);
 			}
 			this.s.push(a);
@@ -103,8 +104,7 @@ export default class SmithWatermanAlgorithm {
 
 			// Get the largest key
 			let largestKey = Object.keys(localCandidates)
-				.sort(function(a,b){return a.length-b.length;})
-				.shift()
+				.reduce((a,d)=>{return Math.max(a,d)},Number.MIN_SAFE_INTEGER)
 				;
 
 			// Get matching coordinates
@@ -141,36 +141,38 @@ export default class SmithWatermanAlgorithm {
 		this.candidates.clear();
 
 		// Start by computing the entire array, and adding the results to candidates
-		this.mergeletoCandidates(this.computeArraySubset(this.wholeArray));
+		this.mergeIntoCandidates(this.computeArraySubset(this.wholeArray));
 
 		// Go through all candidates
-		while(!this.candidates.isEmpty()) {
+		let keys = Object.keys(this.candidates);
+		while(keys.length > 0) {
 			// Need to identify the largest key (largest value in the S-W array)
-			let largestKey = this.candidates.keys().sort().shift();
+			let largestKey = keys.sort((a,b)=>{return parseInt(a,10)-parseInt(b,10);}).pop();
 
 			// Get coordinate(s) with largest value in S-W array
 			let largestCoords = this.candidates[largestKey];
 
-			if(largestCoords === null || largestCoords.isEmpty()) {
+			if(largestCoords === null || largestCoords.length === 0) {
 				throw new Error("Null or empty mapping from largest coordinates!");
 			}
 
 			// Arbitrarily break ties, if they exist
 			let currMax = largestCoords[0];
 
-            // Check to verify that this match is over the threshold
-            // This should never happen, so log if it does
-            // TODO investigate why this is happening
-            if(this.s[currMax.getX()][currMax.getY()] < this.threshold) {
-                console.trace("Potential algorithm error: identified candidate pointing to 0 at " + currMax);
-                largestCoords.remove(currMax);
-                if(largestCoords.isEmpty()) {
-                    this.candidates.remove(largestKey);
-                } else {
-                    this.candidates[largestKey] = largestCoords;
-                }
-                continue;
-            }
+			// Check to verify that this match is over the threshold
+			// This should never happen, so log if it does
+			// TODO investigate why this is happening
+			if(this.s[currMax.getX()][currMax.getY()] < this.threshold) {
+				console.trace("Potential algorithm error: identified candidate pointing to 0 at " + currMax);
+				largestCoords.remove(currMax);
+				if(largestCoords.isEmpty()) {
+					this.candidates.remove(largestKey);
+				}
+				else {
+					this.candidates[largestKey] = largestCoords;
+				}
+				continue;
+			}
 
 			// Get match coordinates
 			let coords = this.getMatchCoordinates(currMax);
@@ -178,8 +180,8 @@ export default class SmithWatermanAlgorithm {
 			// Get match origin
 			let currOrigin = this.getFirstMatchCoordinate(coords);
 
-			if(currMax.equals(currOrigin)) {
-				throw new Error("Maximum and Origin polet to same polet - " + currMax + " and " + currOrigin + ". Size of match coordinates set is " + coords.size());
+			if(currMax === currOrigin) {
+				throw new Error("Maximum and Origin point to same point - " + currMax + " and " + currOrigin + ". Size of match coordinates set is " + coords.size());
 			}
 
 			// Filter postdominated results
@@ -196,7 +198,7 @@ export default class SmithWatermanAlgorithm {
 
 			// Recompute given array subsets
 			subsetsToCompute.forEach(function(subset){
-				this.mergeletoCandidates(this.computeArraySubset(subset));
+				this.mergeIntoCandidates(this.computeArraySubset(subset));
 			});
 		}
 
@@ -218,44 +220,44 @@ export default class SmithWatermanAlgorithm {
 		checkArgument(this.wholeArray.contains(origin), "Origin of requested area out of bounds: " + origin + " not within " + this.wholeArray);
 		checkArgument(this.wholeArray.contains(max), "Max of requested area out of bounds: " + max + " not within " + this.wholeArray);
 
-		let toRecompute = new Set();
+		let toRecompute = [];
 
 		// There are potentially 4 zones we need to care about
 
 		// First: above and to the left
 		// Check if it exists
 		if(origin.getX() > 1 && origin.getY() > 1) {
-			toRecompute.add(ArraySubset.of(1, 1, origin.getX(), origin.getY()));
+			toRecompute.push(ArraySubset.of(1, 1, origin.getX(), origin.getY()));
 		}
 
 		// Second: Above and to the right
 		// Check if it exists
 		if(max.getX() < (this.wholeArray.getMax().getX() - 1) && origin.getY() > 1) {
-			toRecompute.add(ArraySubset.of(max.getX(), 1, this.wholeArray.getMax().getX(), origin.getY()));
+			toRecompute.push(ArraySubset.of(max.getX(), 1, this.wholeArray.getMax().getX(), origin.getY()));
 		}
 
-        // Third: Below and to the left
-        // Check if it exists
-        if(origin.getX() > 1 && max.getY() < (this.wholeArray.getMax().getY() - 1)) {
-            toRecompute.add(ArraySubset.of(1, max.getY(), origin.getX(), this.wholeArray.getMax().getY() - 1));
-        }
+		// Third: Below and to the left
+		// Check if it exists
+		if(origin.getX() > 1 && max.getY() < (this.wholeArray.getMax().getY() - 1)) {
+			toRecompute.push(ArraySubset.of(1, max.getY(), origin.getX(), this.wholeArray.getMax().getY() - 1));
+		}
 
-        // Fourth: Below and to the right
-        // Check if it exists
-        if(max.getX() < (this.wholeArray.getMax().getX() - 1) && max.getY() < (this.wholeArray.getMax().getY() - 1)) {
-            toRecompute.add(ArraySubset.of(max.getX(), max.getY(), this.wholeArray.getMax().getX() - 1,this.wholeArray.getMax().getY() - 1));
-        }
+		// Fourth: Below and to the right
+		// Check if it exists
+		if(max.getX() < (this.wholeArray.getMax().getX() - 1) && max.getY() < (this.wholeArray.getMax().getY() - 1)) {
+			toRecompute.push(ArraySubset.of(max.getX(), max.getY(), this.wholeArray.getMax().getX() - 1,this.wholeArray.getMax().getY() - 1));
+		}
 
-        // If none of the subsets were added, we matched the entire array
-        // Nothing to do here, just return
-        if(toRecompute.isEmpty()) {
-            return toRecompute;
-        }
+		// If none of the subsets were added, we matched the entire array
+		// Nothing to do here, just return
+		if(toRecompute.isEmpty()) {
+			return toRecompute;
+		}
 
-        // Now, if we DIDN'T match the entire array
-        // We're going to want to narrow down these subsets
-        // We can do this by removing invalid areas
-        // TODO this optimization
+		// Now, if we DIDN'T match the entire array
+		// We're going to want to narrow down these subsets
+		// We can do this by removing invalid areas
+		// TODO this optimization
 
 		return toRecompute;
 	}
@@ -264,7 +266,7 @@ export default class SmithWatermanAlgorithm {
 	 * Zero out the portion of S and M arrays that was matched.
 	 *
 	 * @param origin Origin of the match
-	 * @param max Endpolet of the match
+	 * @param max Endpoint of the match
 	 */
 	zeroMatch(origin, max) {
 		checkNotNull(origin);
@@ -300,7 +302,7 @@ export default class SmithWatermanAlgorithm {
 	/**
 	 * Filter postdominated results of a match.
 	 *
-	 * @param max Endpolet of match
+	 * @param max Endpoint of match
 	 * @return Filtered version of candidate results set, with all results postdominated by match removed
 	 */
 	filterPostdominated(origin, max) {
@@ -309,7 +311,7 @@ export default class SmithWatermanAlgorithm {
 		checkArgument(this.wholeArray.contains(origin), "Origin of requested area out of bounds: " + origin + " not within " + this.wholeArray);
 		checkArgument(this.wholeArray.contains(max), "Max of requested area out of bounds: " + max + " not within " + this.wholeArray);
 
-		if(this.candidates.isEmpty()) {
+		if(this.candidates.length === 0) {
 			return this.candidates;
 		}
 
@@ -323,7 +325,7 @@ export default class SmithWatermanAlgorithm {
 		this.candidates.keys().forEach(function(key){
 			let allCandidates = this.candidates.get(key);
 
-			let newSet = new Set();
+			let newSet = [];
 
 			allCandidates.forEach(function(coord){
 				// Unclear how this candidate got added, but it's no longer valid
@@ -344,7 +346,7 @@ export default class SmithWatermanAlgorithm {
                             || yInval.contains(coord)
                             || xInval.contains(max)
                             || yInval.contains(max)) {
-                        newSet.add(coord);
+                        newSet.push(coord);
                     }
                 }
             });
@@ -443,14 +445,14 @@ export default class SmithWatermanAlgorithm {
 				this.s[x][y] = newS;
 				this.m[x][y] = newM;
 
-				// Check if we our result is significant
+				// Check if our result is significant
 				if(newS >= this.threshold && newS > newM) {
 					// It's significant, add it to our results
 					if(!(newS in newCandidates)) {
-						newCandidates[newS] = new Set();
+						newCandidates[newS] = [];
 					}
 					let valuesForKey = newCandidates[newS];
-					valuesForKey.add(Coordinate.from(x, y));
+					valuesForKey.push(Coordinate.from(x, y));
 				}
 			}
 		}
@@ -464,18 +466,17 @@ export default class SmithWatermanAlgorithm {
 	 * @param coordinates Coordinates to search within
 	 * @return Closest coordinate to origin --- (0,0)
 	 */
-	static getFirstMatchCoordinate(coordinates) {
+	getFirstMatchCoordinate(coordinates) {
 		checkNotNull(coordinates);
-		checkArgument(!coordinates.isEmpty(), "Cannot get first match coordinate as match set is empty!");
 
-		if(coordinates.size() == 1) {
+		if(coordinates.length === 1) {
 			return coordinates[0];
 		}
 
 		this.candidate = coordinates[0];
 
 		// Search for a set of coordinates closer to the origin
-		coordinates.forEach(function(coord){
+		coordinates.forEach((coord)=>{
 			if(coord.getX() <= this.candidate.getX() && coord.getY() <= this.candidate.getY()) {
 				this.candidate = coord;
 			}
@@ -518,7 +519,7 @@ export default class SmithWatermanAlgorithm {
 		checkArgument(this.wholeArray.contains(matchCoord), "Requested match coordinate is out of bounds: " + matchCoord + " not within " + this.wholeArray);
 		checkArgument(this.s[matchCoord.getX()][matchCoord.getY()] !== 0, "Requested match coordinate " + matchCoord + " points to 0 in S array!");
 
-		let matchCoordinates = new Set();
+		let matchCoordinates = [];
 
 		let x = matchCoord.getX();
 		let y = matchCoord.getY();
@@ -529,7 +530,7 @@ export default class SmithWatermanAlgorithm {
 			let yToken = this.xList[x - 1];
 			let xToken = this.yList[y - 1];
 			if(yToken.valid && xToken.valid && xToken.lexeme === yToken.lexeme && xToken.type === yToken.type) {
-				matchCoordinates.add(Coordinate.from(x, y).toString());
+				matchCoordinates.push(Coordinate.from(x, y));
 
 				// If they match, the predecessor is always the upper-left diagonal
 				x = x - 1;
@@ -598,14 +599,15 @@ export default class SmithWatermanAlgorithm {
 	mergeIntoCandidates(merge) {
 		checkNotNull(merge);
 
-		merge.keys().forEach(function(key){
-			let contentsToMerge = merge[key];
+		Object.entries(merge).forEach((entry)=>{
+			let key = entry[0];
+			let contentsToMerge = entry[1];
 			if(!(key in this.candidates)) {
 				this.candidates[key] = contentsToMerge;
 			}
 			else {
-				let contentsMergeleto = this.candidates.get(key);
-				contentsMergeleto.addAll(contentsToMerge);
+				let contentsMergeInto = this.candidates[key];
+				contentsMergeInto.addAll(contentsToMerge);
 			}
 		});
 	}

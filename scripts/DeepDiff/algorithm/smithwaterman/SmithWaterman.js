@@ -25,7 +25,7 @@ import {checkNotNull} from '../../util/misc.js';
 AlgorithmRegistry.processors['smithwaterman'] = async function(req) {
 	checkNotNull(req);
 
-	performance.mark('smithwaterman-start.'+req.name)
+	performance.mark('smithwaterman-start.'+req.name);
 
 	let a = req.submissions[0];
 	let b = req.submissions[1];
@@ -61,8 +61,9 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req) {
 	}
 
 	// Alright, easy cases taken care of. Generate an instance to perform the actual algorithm
-	let algorithm = new SmithWatermanAlgorithm(aTokens, bTokens);
+	let algorithm = new SmithWatermanAlgorithm(aTokens, bTokens, req.complete);
 	let endLists = algorithm.computeSmithWatermanAlignmentExhaustive();
+	//let endLists = algorithm.computeSmithWatermanAlignment();
 
 	let notes = {
 		algorithm: 'smithwaterman'
