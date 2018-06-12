@@ -24,9 +24,11 @@ class Matrix{
 		this.name = name;
 		this.submissions = [a,b];
 
-		this.remaining = 0;
+		this.remaining = this.submissions[0].length * this.submissions[1].length;
+		this.totalSize = this.remaining;
+		this.lastCompactionSeq = -1;
 
-		// initialize the calculations. Creates teh state for the first
+		// initialize the calculations. Creates the state for the first
 		// cell to be calculated
 		this.submissions[0].forEach((t,i)=>{
 			this.addToCell(i ,0,'n',0);
@@ -121,14 +123,14 @@ class Matrix{
 				include_docs:true
 			})
 			.on('change', (e)=>{
-				if(0 === e.seq % 10000){
+				if(e.seq - this.lastCompactionSeq > 10000){
 					this.db.compact();
+					this.lastCompactionSeq = e.seq;
 				}
-				if(e.deleted) return;
+				if(e.deleted){
+					return;
+				}
 				this.calcCell(e.doc);
-				if(this.remaining === 0){
-					this.filled = true;
-				}
 			});
 
 		let edges = await this.db.query('smithwaterman/complete',{
@@ -152,7 +154,7 @@ class Matrix{
 		return edges;
 	}
 
-	addToCell(x,y,orig,score){
+	addToCell(x,y,orig,score,chain=[]){
 		if(x < 0 || y < 0){
 			return;
 		}
@@ -161,9 +163,6 @@ class Matrix{
 		}
 		let key = [this.name,x,y].join('.');
 		this.db.upsert(key,(doc)=>{
-			if(Object.keys(doc).length === 0){
-				this.remaining++;
-			}
 			if(orig in doc || 'score' in doc){
 				return false;
 			}
@@ -194,18 +193,21 @@ class Matrix{
 				score = 0;
 			}
 
-			doc[orig] = score;
+			doc[orig] = {
+				score: score,
+				chain: chain,
+			};
 			return doc;
 		});
 	}
 
 	calcCell(doc){
 		if(!('n' in doc && 'w' in doc && 'nw' in doc)){
-			if(!('score' in doc)){
-				return;
-			}
+			return;
 		}
-		this.remaining--;
+		if(doc._deleted === true){
+			return;
+		}
 
 		let orig = JSON.clone(doc);
 
@@ -219,28 +221,52 @@ class Matrix{
 			score = Math.max(doc.n, doc.w, doc.nw);
 		}
 
-		this.addToCell(x   , y+1 , 'n' , score );
-		this.addToCell(x+1 , y+1 , 'nw', score );
-		this.addToCell(x+1 , y   , 'w' , score );
+		// create the record of the chain of matches. In general we favour
+		// 'nw', so in the event of a tie it is chosen. North and West are
+		// arbitrary.
+		switch(doc.score){
+			case doc.nw:
+				doc.chain = doc.nw.chain;
+				doc.chain.push([x-1,y-1,doc.score]);
+				break;
+			case doc.n:
+				doc.chain = doc.n.chain;
+				doc.chain.push([x,y-1,doc.score]);
+				break;
+			case doc.w:
+				doc.chain = doc.w.chain;
+				doc.chain.push([x-1,y,doc.score]);
+				break;
+		}
+
+		this.addToCell( x   , y+1 , 'n' , score , doc.chain );
+		this.addToCell( x+1 , y+1 , 'nw', score , doc.chain );
+		this.addToCell( x+1 , y   , 'w' , score , doc.chain );
 
 		if('score' in doc){
 			return;
 		}
 
+		this.remaining--;
 		doc.score = score;
 
 		//delete doc.n;
 		//delete doc.nw;
 		//delete doc.w;
 
-		//if(score === 0){
-		//	doc._deleted = true;
-		//}
+		if(score === 0){
+			doc = {
+				_deleted : true,
+				_id : doc._id,
+				_rev : doc._rev
+			};
+		}
+		else{
+			console.debug("scoring: " + doc._id + ' (' + score + ') ' + this.remaining + ' of '+this.totalSize+'('+(100.0*this.remaining/this.totalSize).toFixed(0)+') ');
+		}
 		if(utils.docsEqual(doc,orig)){
 			return false;
 		}
-
-		console.log("scoring: " + doc._id + ' - ' + score);
 		this.db.put(doc);
 	}
 
