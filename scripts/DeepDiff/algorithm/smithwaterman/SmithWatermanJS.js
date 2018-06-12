@@ -218,13 +218,13 @@ class Matrix{
 
 		let score = doc.score;
 		if(typeof score === 'undefined'){
-			score = Math.max(doc.n, doc.w, doc.nw);
+			score = Math.max(doc.n.score, doc.w.score, doc.nw.score);
 		}
 
 		// create the record of the chain of matches. In general we favour
 		// 'nw', so in the event of a tie it is chosen. North and West are
 		// arbitrary.
-		switch(doc.score){
+		switch(score){
 			case doc.nw:
 				doc.chain = doc.nw.chain;
 				doc.chain.push([x-1,y-1,doc.score]);
