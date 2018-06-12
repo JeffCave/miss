@@ -28,13 +28,16 @@ class Matrix{
 
 		// initialize the calculations. Creates teh state for the first
 		// cell to be calculated
-		this.addToCell(0,0,'nw',0);
 		this.submissions[0].forEach((t,i)=>{
-			this.addToCell(i,0,'n',0);
+			this.addToCell(i ,0,'n',0);
+			this.addToCell(i+1,0,'nw',0);
 		});
 		this.submissions[1].forEach((t,i)=>{
 			this.addToCell(0,i,'w',0);
+			this.addToCell(0,i+1,'nw',0);
 		});
+		// drop the keystone in
+		this.addToCell(0,0,'nw',0);
 	}
 
 	async destroy(){
@@ -150,6 +153,12 @@ class Matrix{
 	}
 
 	addToCell(x,y,orig,score){
+		if(x < 0 || y < 0){
+			return;
+		}
+		if(x >= this.submissions[0].length || y >= this.submissions[1].length){
+			return;
+		}
 		let key = [this.name,x,y].join('.');
 		this.db.upsert(key,(doc)=>{
 			if(Object.keys(doc).length === 0){
@@ -198,6 +207,8 @@ class Matrix{
 		}
 		this.remaining--;
 
+		let orig = JSON.clone(doc);
+
 		let name = doc._id.split('.');
 		let y = parseInt(name.pop(),10);
 		let x = parseInt(name.pop(),10);
@@ -215,24 +226,22 @@ class Matrix{
 		if('score' in doc){
 			return;
 		}
-		let id = doc._id;
-		this.db.upsert(id,(doc)=>{
-			console.log("scoring: " + id);
-			let orig = JSON.clone(doc);
-			doc.score = score;
 
-			//delete doc.n;
-			//delete doc.nw;
-			//delete doc.w;
+		doc.score = score;
 
-			//if(score === 0){
-			//	doc._deleted = true;
-			//}
-			if(utils.docsEqual(doc,orig)){
-				return false;
-			}
-			return doc;
-		});
+		//delete doc.n;
+		//delete doc.nw;
+		//delete doc.w;
+
+		//if(score === 0){
+		//	doc._deleted = true;
+		//}
+		if(utils.docsEqual(doc,orig)){
+			return false;
+		}
+
+		console.log("scoring: " + doc._id + ' - ' + score);
+		this.db.put(doc);
 	}
 
 }
