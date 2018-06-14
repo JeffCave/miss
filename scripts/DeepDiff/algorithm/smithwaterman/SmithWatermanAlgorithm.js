@@ -436,12 +436,7 @@ export default class SmithWatermanAlgorithm {
 						let maxM = Math.max(aM, bM, cM);
 
 						// If S nonzero, predecessor table entry is largest of the predecessors in the S and M tables
-						if(max > maxM) {
-							newM = max;
-						}
-						else {
-							newM = maxM;
-						}
+						newM = Math.max(max, maxM);
 					}
 				}
 

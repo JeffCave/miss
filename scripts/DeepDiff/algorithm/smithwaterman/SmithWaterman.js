@@ -7,7 +7,7 @@ global performance
 import {AlgorithmRegistry} from '../../algorithm/AlgorithmRegistry.js';
 import * as AlgorithmResults from '../../algorithm/AlgorithmResults.js';
 import {TokenList} from '../../token/TokenList.js';
-import {SmithWatermanCompare} from '../../algorithm/smithwaterman/SmithWatermanJS.js';
+import {SmithWatermanCompare} from '../../algorithm/smithwaterman/SmithWatermanFast.js';
 import {checkNotNull} from '../../util/misc.js';
 
 (function(){
@@ -61,7 +61,7 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req) {
 	}
 
 	// Alright, easy cases taken care of. Generate an instance to perform the actual algorithm
-	let endLists = SmithWatermanCompare(req.name, aTokens, bTokens);
+	let endLists = await SmithWatermanCompare(req.name, aTokens, bTokens);
 
 	let notes = {
 		algorithm: 'smithwaterman'

@@ -102,3 +102,10 @@ export function docsEqual (aDoc,bDoc){
 	return areSame;
 }
 
+
+export function defer(func){
+	setTimeout(func,0);
+}
+
+
+
