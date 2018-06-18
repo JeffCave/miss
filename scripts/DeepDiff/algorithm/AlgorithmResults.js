@@ -70,13 +70,16 @@ export default async function Create(a, b, finalListA = null, finalListB = null,
 	for(let r = 0; r<results.submissions.length; r++){
 		let d = results.submissions[r];
 		if(!d.finalList){
-			d.finalList = new TokenList('mixed',[]);
+			d.finalList = [];
+		}
+		if(Array.isArray(d.finalList) && !(d.finalList instanceof TokenList)){
+			d.finalList = new TokenList('mixed',d.finalList);
 		}
 		d.finalList = await TokenList.cloneTokenList(d.finalList);
 		d.totalTokens = await d.totalTokens;
 
 		d.identicalTokens = Array.from(d.finalList).reduce((sum,token)=>{
-			sum = sum + (!token.valid);
+			sum = sum + (!token.valid || token.shared?1:0);
 			return sum;
 		},0);
 

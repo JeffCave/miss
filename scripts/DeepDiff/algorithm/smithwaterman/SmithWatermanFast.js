@@ -45,7 +45,7 @@ class Matrix{
 		this.finishedChains = [];
 
 		this.name = name;
-		this.submissions = [a,b];
+		this.submissions = [JSON.clone(a),JSON.clone(b)];
 
 		this.remaining = this.submissions[0].length * this.submissions[1].length;
 		this.totalSize = this.remaining;
@@ -103,7 +103,7 @@ class Matrix{
 		}
 	}
 
-	async addToCell(x,y,orig,score,chain){
+	async addToCell(x,y,orig,score,chain,highwater){
 		if(x < 0 || y < 0){
 			return;
 		}
@@ -145,14 +145,16 @@ class Matrix{
 		cell[orig] = {
 			score: score,
 			chain: chain,
+			highscore:highwater,
 		};
 
 		this.setCell(x,y,cell);
-		utils.defer(()=>{this.calcChain(cell);});
+		utils.defer(()=>{this.calcChain(cell.id);});
 		return cell;
 	}
 
-	async calcChain(chain){
+	async calcChain(coords){
+		let chain = this.getCell(coords[0],coords[1]);
 		if(!('n' in chain && 'w' in chain && 'nw' in chain)){
 			return;
 		}
@@ -160,42 +162,46 @@ class Matrix{
 		let x = chain.id[0];
 		let y = chain.id[1];
 
-		let score = chain.score;
-		if(typeof score === 'undefined'){
-			score = Math.max(chain.n.score, chain.w.score, chain.nw.score);
-		}
+		let score = Math.max(chain.n.score, chain.w.score, chain.nw.score);
 
 		// create the record of the chain of matches. In general we favour
 		// 'nw', so in the event of a tie it is chosen. North and West are
 		// arbitrary.
+		let highscore = null;
 		let history = null;
 		switch(score){
 			case chain.nw.score:
 				history = chain.nw.chain;
 				history.unshift([x-1,y-1,score]);
+				highscore = chain.nw.highscore;
 				break;
 			case chain.n.score:
 				history = chain.n.chain;
 				history.unshift([x,y-1,score]);
+				highscore = chain.n.highscore;
 				break;
 			case chain.w.score:
 				history = chain.w.chain;
 				history.unshift([x-1,y,score]);
+				highscore = chain.w.highscore;
 				break;
 		}
 		if(history[0][2] === 0){
 			history.shift();
 		}
-		history.highscore = Math.max(score, history.highscore || Number.MIN_SAFE_INTEGER);
+		highscore = Math.max(score, highscore || Number.MIN_SAFE_INTEGER);
 
 		this.remaining--;
-		chain.score = score;
 
+		// if we are running off the edge of the world, end the change
+		if(x+1 >= this.submissions[0].length || y+1 >= this.submissions[1].length){
+			score = Number.MIN_SAFE_INTEGER;
+		}
 		//console.debug("scoring: " + JSON.stringify(chain.id) + ' (' + score + ') ' + this.remaining + ' of '+this.totalSize+'('+(100.0*this.remaining/this.totalSize).toFixed(0)+'%) ');
-		if(history.highscore - score >= scores.terminator){
+		if(highscore - score >= scores.terminator){
 			if(history.length > scores.significant){
 				this.finishedChains.push({
-					score:history.highscore,
+					score:highscore,
 					history:history
 				});
 				score = 0;
@@ -204,10 +210,9 @@ class Matrix{
 		}
 		this.deleteCell(x,y);
 
-
-		utils.defer(()=>{this.addToCell( x+1 , y+1 , 'nw', score , history.slice(0) );});
-		utils.defer(()=>{this.addToCell( x+1 , y   , 'w' , score , history.slice(0) );});
-		utils.defer(()=>{this.addToCell( x   , y+1 , 'n' , score , history.slice(0) );});
+		utils.defer(()=>{this.addToCell( x+1 , y+1 , 'nw', score , history.slice(0) , highscore );});
+		utils.defer(()=>{this.addToCell( x+1 , y   , 'w' , score , history.slice(0) , highscore );});
+		utils.defer(()=>{this.addToCell( x   , y+1 , 'n' , score , history.slice(0) , highscore );});
 
 	}
 
@@ -216,8 +221,8 @@ class Matrix{
 			.sort((a,b)=>{return b.score-a.score;})
 			.forEach((chain)=>{
 				chain.history.forEach((coords)=>{
-					let x = coords.id[0];
-					let y = coords.id[1];
+					let x = coords[0];
+					let y = coords[1];
 					this.submissions[0][y].shared = true;
 					this.submissions[1][x].shared = true;
 				});
