@@ -172,6 +172,7 @@ class Matrix{
 		}
 
 
+
 		/***** CALCULATE CURRENT SCORE ******/
 		//console.log("updating: " + key);
 		let axis1 = this.submissions[1][y];
@@ -193,7 +194,6 @@ class Matrix{
 			score = 0;
 		}
 		highscore = Math.max(score, highscore || 0);
-
 
 
 
@@ -271,11 +271,10 @@ class Matrix{
 				// the chain's values have possibly changed, so it will need
 				// to be recalcualted
 				for(i = chain.history.length-1; i>=0; i--){
-					chain.history[i][2] -= truncatedScore;
-					if(chain.history[i][2] < 0){
-						truncatedScore = -1 * chain.history[i][2];
-						chain.history[i][2] = 0;
+					if(chain.history[i][2] < truncatedScore){
+						truncatedScore = chain.history[i][2];
 					}
+					chain.history[i][2] -= truncatedScore;
 				}
 				// having subtracted a value from the historical chain score,
 				// there is a reasonable chance we have changed the length of
@@ -293,13 +292,13 @@ class Matrix{
 				//
 				// That's annoying... proceeding with faulty assumption
 				truncated = false;
-				chain.highscore = 0;
+				chain.score = 0;
 				for(i = 0; i < chain.history.length; i++){
 					if(chain.history[i][2] === 0){
 						truncated = true;
 						break;
 					}
-					chain.highscore = Math.max(chain.highscore, chain.history[i][2]);
+					chain.score = Math.max(chain.score, chain.history[i][2]);
 				}
 				if(truncated){
 					chain.history = chain.history.slice(0,i);
@@ -307,7 +306,7 @@ class Matrix{
 
 				// put it back in processing queue (at the end because it is
 				// now going to be almost worthless?)
-				if(chain.history.length >= this.significant){
+				if(chain.history.length >= scores.significant){
 					this.finishedChains.push(chain);
 				}
 			}
@@ -315,23 +314,49 @@ class Matrix{
 			// we may have changed the scoring due to this
 			this.finishedChains.sort((a,b)=>{return b.score-a.score;});
 		}
+
+
+		// we removed a bunch of chains, but may have marked lexemes as shared.
+		// they aren't anymore, so re-run the entire "shared" markers
+		this.submissions.forEach((sequence)=>{
+			sequence.forEach((lexeme)=>{
+				delete lexeme.shared;
+			});
+		});
+		resolved.forEach((chain)=>{
+			chain.history.forEach((coord)=>{
+				let x = coord[0];
+				let y = coord[1];
+				this.submissions[0][x].shared = true;
+				this.submissions[1][y].shared = true;
+			});
+		});
+
 		return resolved;
 	}
 
 }
 
-export async function SmithWatermanCompare(id, a, b, dbname){
+export async function SmithWatermanCompare(id, a, b, dbname = 'sw'){
 	return new Promise((resolve,reject)=>{
-		let matrix = swMatrixes[dbname];
+		if(!(dbname in swMatrixes)){
+			swMatrixes[dbname] = {};
+		}
+		let db = swMatrixes[dbname];
+		let matrix = db[id];
 		if(!matrix){
 			matrix = new Matrix(id,a,b);
-			swMatrixes[dbname] = matrix;
+			db[id] = matrix;
 		}
 		let int = setInterval(()=>{
 			if(matrix.remaining <= 0){
 				clearInterval(int);
 				matrix.ResolveCandidates();
 				let entries = matrix.submissions;
+				console.log('Completed comparison: ' + id);
+				// REmove the caching. This is only for debugging
+				//delete db[id];
+
 				resolve(entries);
 			}
 		},1000);
