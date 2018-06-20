@@ -41,8 +41,10 @@ class Matrix{
 
 	constructor(name, a, b){
 		this.db = new PouchDB('smithwaterman');
-		this.matrix = {};
+		this.matrix = [];
+		this.partial = new Map();
 		this.finishedChains = [];
+		this.buffersize = 1;
 
 		this.name = name;
 		this.submissions = [JSON.clone(a),JSON.clone(b)];
@@ -53,86 +55,93 @@ class Matrix{
 
 		// initialize the calculations. Creates the state for the first
 		// cell to be calculated
-		let allAdditions = [];
-		this.submissions[0].forEach((t,i)=>{
-			allAdditions.push(this.addToCell(i  ,0,'n' ,0,[],Number.MIN_SAFE_INTEGER));
-			allAdditions.push(this.addToCell(i+1,0,'nw',0,[],Number.MIN_SAFE_INTEGER));
-		});
-		this.submissions[1].forEach((t,i)=>{
-			allAdditions.push(this.addToCell(0,i  ,'w' ,0,[],Number.MIN_SAFE_INTEGER));
-			allAdditions.push(this.addToCell(0,i+1,'nw',0,[],Number.MIN_SAFE_INTEGER));
-		});
-		// drop the keystone in
-		allAdditions.push(this.addToCell(0,0,'nw',0,[],Number.MIN_SAFE_INTEGER));
-		// run 'er all
-		Promise.all(allAdditions);
+		this.addToCell(0,0,'nw',0,[],Number.MIN_SAFE_INTEGER);
 	}
 
-	getCell(x,y){
-		let row = this.matrix[y];
-		if(row){
-			let cell = row[x];
-			if(cell){
-				return cell;
-			}
-		}
-		return {
-			id: [x,y]
-		};
+	CoordToIndex(x,y){
+		return y * this.submissions[0].length + x;
 	}
 
-	setCell(x,y,value){
-		let row = this.matrix[y];
-		if(!(y in this.matrix)){
-			row = {};
-			this.matrix[y] = row;
-		}
-		value.id = [x,y];
-		row[x] = value;
-	}
-
-	deleteCell(x,y){
-		if(y in this.matrix){
-			let row = this.matrix[y];
-			if(x in row){
-				delete row[x];
-			}
-			if(Object.keys(row).length === 0){
-				delete this.matrix[y];
-			}
-		}
+	IndexToCoord(i){
+		let len =this.submissions[0].length;
+		let x = i/len;
+		let y = i%len;
+		return [x,y];
 	}
 
 	async addToCell(x,y,orig,score,chain,highwater){
+		// bounds checking
 		if(x < 0 || y < 0){
 			return;
 		}
 		if(x >= this.submissions[0].length || y >= this.submissions[1].length){
 			return;
 		}
-		let cell = this.getCell(x,y);
+		// lookup the data at that location
+		let index = this.CoordToIndex(x,y);
+		let cell = this.partial.get(index);
+		if(!cell){
+			// create it if necessary
+			cell = {id:[x,y]};
+			this.partial.set(index,cell);
+		}
 
-		if(orig in cell || 'score' in cell){
+		// have we already processed this value?
+		if(orig in cell){
 			return false;
 		}
 
+		// initialize values that exist at the begining of the world
+		if(x === 0){
+			cell.w = {score:0,chain:[],highscore:Number.MIN_SAFE_INTEGER};
+			cell.nw = {score:0,chain:[],highscore:Number.MIN_SAFE_INTEGER};
+		}
+		if(y === 0){
+			cell.n = {score:0,chain:[],highscore:Number.MIN_SAFE_INTEGER};
+			cell.nw = {score:0,chain:[],highscore:Number.MIN_SAFE_INTEGER};
+		}
+
+		// set the values
 		cell[orig] = {
 			score: score,
 			chain: chain,
 			highscore:highwater,
 		};
 
-		this.setCell(x,y,cell);
-		utils.defer(()=>{this.calcChain(cell.id);});
+		// have we calcuated up the three pre-requisites sufficiently to
+		// solve the problem?
+		if('n' in cell && 'w' in cell && 'nw' in cell){
+			// take it out of the pre-processing queue, and add it to the
+			// processing queue
+			this.partial.delete(index);
+			this.matrix.push(cell);
+		}
+
+		// if the pre-processing queue is empty, do the actual calcuations
+		if(this.partial.size === 0){
+			utils.defer(()=>{
+				this.calcBuffer();
+			});
+		}
 		return cell;
 	}
 
-	async calcChain(coords){
-		let chain = this.getCell(coords[0],coords[1]);
-		if(!('n' in chain && 'w' in chain && 'nw' in chain)){
-			return;
+	calcBuffer(){
+		//console.log('Calculating buffersize of ' + this.matrix.size);
+		let worklist = this.matrix;
+		this.matrix = [];
+		for(let i=1000; i>=0 && worklist.length > 0; i--){
+			let cell = worklist.pop();
+			this.calcChain(cell);
 		}
+		this.matrix.concat(worklist);
+		if(this.matrix.length > 0){
+			utils.defer(()=>{this.calcBuffer();});
+		}
+		//console.log('- ' + worklist.length);
+	}
 
+	calcChain(chain){
 		let x = chain.id[0];
 		let y = chain.id[1];
 
@@ -198,7 +207,6 @@ class Matrix{
 
 
 		/****** PUSH SCORE FORWARD ********/
-
 		// if we are running off the edge of the world, end the chain
 		if(x+1 >= this.submissions[0].length || y+1 >= this.submissions[1].length){
 			history.unshift([x,y,score]);
@@ -220,11 +228,10 @@ class Matrix{
 				history = [];
 			}
 		}
-		this.deleteCell(x,y);
 
-		utils.defer(()=>{this.addToCell( x+1 , y+1 , 'nw', score , history.slice(0) , highscore );});
-		utils.defer(()=>{this.addToCell( x+1 , y   , 'w' , score , history.slice(0) , highscore );});
-		utils.defer(()=>{this.addToCell( x   , y+1 , 'n' , score , history.slice(0) , highscore );});
+		this.addToCell( x+1 , y+1 , 'nw', score , history.slice(0) , highscore );
+		this.addToCell( x+1 , y   , 'w' , score , history.slice(0) , highscore );
+		this.addToCell( x   , y+1 , 'n' , score , history.slice(0) , highscore );
 
 		// the "remaining" value is a sentinal, so make sure you do it very
 		// last (ensuring the work is actually complete)
@@ -355,7 +362,7 @@ export async function SmithWatermanCompare(id, a, b, dbname = 'sw'){
 				let entries = matrix.submissions;
 				console.log('Completed comparison: ' + id);
 				// REmove the caching. This is only for debugging
-				//delete db[id];
+				delete db[id];
 
 				resolve(entries);
 			}

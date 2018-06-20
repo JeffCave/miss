@@ -104,7 +104,7 @@ export function docsEqual (aDoc,bDoc){
 
 
 export function defer(func){
-	setTimeout(func,0);
+	setTimeout(func,50);
 }
 
 
