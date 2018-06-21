@@ -127,18 +127,23 @@ class Matrix{
 	}
 
 	calcBuffer(){
-		//console.log('Calculating buffersize of ' + this.matrix.size);
+		let oldPct = this.pct;
+		this.pct = Math.ceil(100.0*this.remaining/this.totalSize);
+		if(oldPct !== this.pct){
+			console.log('Calculating ' + this.name + ' as ' + this.pct + '%');
+		}
 		let worklist = this.matrix;
 		this.matrix = [];
 		for(let i=1000; i>=0 && worklist.length > 0; i--){
 			let cell = worklist.pop();
 			this.calcChain(cell);
 		}
-		this.matrix.concat(worklist);
+		if(worklist.length > 0){
+			this.matrix.concat(worklist);
+		}
 		if(this.matrix.length > 0){
 			utils.defer(()=>{this.calcBuffer();});
 		}
-		//console.log('- ' + worklist.length);
 	}
 
 	calcChain(chain){
