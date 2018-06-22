@@ -2,6 +2,7 @@
 
 import "https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.4.3/pouchdb.min.js";
 import "../../lib/pouchdb.upsert.min.js";
+//import {Progress} from "../../util/Progress.js";
 
 import * as utils from '../../util/misc.js';
 
@@ -47,15 +48,68 @@ class Matrix{
 		this.buffersize = 1;
 
 		this.name = name;
-		this.submissions = [JSON.clone(a),JSON.clone(b)];
+		this.submissions = [a,b];
 
 		this.remaining = this.submissions[0].length * this.submissions[1].length;
 		this.totalSize = this.remaining;
-		this.lastCompactionSeq = -1;
+		this.tokenMatch = 0;
+
+		this.handlers = {
+			progress:[],
+			complete:[]
+		};
+
+		this.stop();
 
 		// initialize the calculations. Creates the state for the first
 		// cell to be calculated
 		this.addToCell(0,0,'nw',0,[],Number.MIN_SAFE_INTEGER);
+	}
+
+	start(){
+		this.shouldStop = false;
+		utils.defer(()=>{
+			this.calcBuffer();
+		});
+	}
+
+	stop(){
+		this.shouldStop = true;
+	}
+
+	addEventListener(event,listener){
+		if(!(event in this.handlers)){
+			return;
+		}
+		let handlers = this.handlers[event];
+		let curr = handlers.filter((a)=>{
+			return a === listener;
+		});
+		if(curr.length !== 0){
+			return;
+		}
+		let name = listener.name;
+		if(name !== ''){
+			handlers[name] = listener;
+		}
+		else{
+			handlers.push(listener);
+		}
+	}
+
+	doEventListener(event,parameter){
+		if(!(event in this.handlers)){
+			return;
+		}
+		let handlers = this.handlers[event];
+		handlers.forEach((h)=>{
+			h(parameter);
+		});
+	}
+
+	get progress(){
+		let prog = new Progress(this.remaining, 0, this.totalSize);
+		return prog;
 	}
 
 	CoordToIndex(x,y){
@@ -127,23 +181,27 @@ class Matrix{
 	}
 
 	calcBuffer(){
-		let oldPct = this.pct;
-		this.pct = Math.ceil(100.0*this.remaining/this.totalSize);
-		if(oldPct !== this.pct){
-			console.log('Calculating ' + this.name + ' as ' + this.pct + '%');
+		// this thing is supposed to be a multi-threaded thing. We may need
+		// a way to stop it
+		if(this.shouldStop){
+			return;
 		}
-		let worklist = this.matrix;
-		this.matrix = [];
-		for(let i=1000; i>=0 && worklist.length > 0; i--){
-			let cell = worklist.pop();
+		// Process at most 1000 items, but just watch out because we may not
+		// have 1000 items
+		for(let i=1000; i>=0 && this.matrix.length > 0; i--){
+			let cell = this.matrix.pop();
 			this.calcChain(cell);
 		}
-		if(worklist.length > 0){
-			this.matrix.concat(worklist);
-		}
+		// if there are any left, schedule another round of processing
 		if(this.matrix.length > 0){
 			utils.defer(()=>{this.calcBuffer();});
 		}
+		// Periodically report it up
+		//let oldPct = this.pct;
+		//this.pct = Math.ceil(100.0*this.remaining/this.totalSize);
+		//if(oldPct !== this.pct){
+			this.doEventListener('progress',this);
+		//}
 	}
 
 	calcChain(chain){
@@ -241,10 +299,14 @@ class Matrix{
 		// the "remaining" value is a sentinal, so make sure you do it very
 		// last (ensuring the work is actually complete)
 		this.remaining--;
+		if(score > 0){
+			this.tokenMatch++;
+		}
 	}
 
 	ResolveCandidates(){
 		let resolved = [];
+		this.tokenMatch = 0;
 
 		// sort the chains to get the best scoring ones first
 		this.finishedChains.sort((a,b)=>{return b.score-a.score;});
@@ -273,6 +335,7 @@ class Matrix{
 			if(!truncated){
 				// add it to the finished list
 				resolved.push(chain);
+				this.tokenMatch += chain.history.length;
 			}
 			else{
 				let truncatedScore = chain.history[i][2];
@@ -321,10 +384,16 @@ class Matrix{
 				if(chain.history.length >= scores.significant){
 					this.finishedChains.push(chain);
 				}
-			}
 
-			// we may have changed the scoring due to this
-			this.finishedChains.sort((a,b)=>{return b.score-a.score;});
+				// we may have changed the scoring due to this
+				this.finishedChains.sort((a,b)=>{
+					let score = b.score-a.score;
+					if(score === 0){
+						score = b.history.length-a.history.length;
+					}
+					return score;
+				});
+			}
 		}
 
 
@@ -349,7 +418,7 @@ class Matrix{
 
 }
 
-export async function SmithWatermanCompare(id, a, b, dbname = 'sw'){
+export async function SmithWatermanCompare(id, a, b, dbname = 'sw', progress=()=>{}){
 	return new Promise((resolve,reject)=>{
 		if(!(dbname in swMatrixes)){
 			swMatrixes[dbname] = {};
@@ -359,7 +428,9 @@ export async function SmithWatermanCompare(id, a, b, dbname = 'sw'){
 		if(!matrix){
 			matrix = new Matrix(id,a,b);
 			db[id] = matrix;
+			matrix.addEventListener('progress',progress);
 		}
+		matrix.start();
 		let int = setInterval(()=>{
 			if(matrix.remaining <= 0){
 				clearInterval(int);

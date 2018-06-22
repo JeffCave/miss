@@ -30,8 +30,8 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req) {
 	let a = req.submissions[0];
 	let b = req.submissions[1];
 
-	let aTokens = await a.ContentAsTokens;
-	let bTokens = await b.ContentAsTokens;
+	let aTokens = a.finalList;
+	let bTokens = b.finalList;
 
 	//console.debug('Creating a SmithWaterman for ' + a.Name + ' and ' + b.Name);
 
@@ -50,18 +50,16 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req) {
 	// Handle a 0-token submission (no similarity)
 	if(aTokens.length === 0 || bTokens.length === 0) {
 		//TODO: return req
-		return AlgorithmResults(a, b, aTokens, bTokens);
-	}
-
-	// Handle identical submissions
-	if(await a.equals(b)) {
-		let aInval = await TokenList.cloneTokenList(aTokens);
-		aInval.forEach((token) => token.setValid(false));
-		return AlgorithmResults(a, b, aInval, aInval);
+		return AlgorithmResults.Create(a, b, aTokens, bTokens);
 	}
 
 	// Alright, easy cases taken care of. Generate an instance to perform the actual algorithm
-	let endLists = await SmithWatermanCompare(req.name, aTokens, bTokens);
+	let endLists = await SmithWatermanCompare(req.name, aTokens, bTokens, undefined, (comparer)=>{
+		req.complete = comparer.totalSize - comparer.remaining;
+		req.totalTokens = comparer.totalSize;
+		req.identicalTokens = comparer.tokenMatch;
+		req.percentMatched = req.identicalTokens / req.totalTokens;
+	});
 
 	let notes = {
 		algorithm: 'smithwaterman'

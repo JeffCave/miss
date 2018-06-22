@@ -401,22 +401,28 @@ class DeepDiff {
 			return pair;
 		}
 
-		let common = await this.CommonCode;
-		common = CommonCodeLineRemovalPreprocessor(common);
-		pair.submissions = pair.submissions.map(function(submission){
-			return 'submission.'+submission.submission;
-		});
-		pair.submissions = await this.db
-			.allDocs({keys:pair.submissions,include_docs:true})
-			.then(subs=>{
-				return subs.rows.map(s=>{
-					s = s.doc;
-					s = Submission.fromJSON(s);
-					s.Common = common;
-					return s;
-				});
+		if(pair.submissions[0].finalList.length === 0){
+			let common = await this.CommonCode;
+			common = CommonCodeLineRemovalPreprocessor(common);
+			let tokens = pair.submissions.map(function(submission){
+				return 'submission.'+submission.submission;
 			});
-		pair.submissions = await Promise.all(pair.submissions);
+			tokens = await this.db
+				.allDocs({keys:tokens,include_docs:true})
+				.then(subs=>{
+					return subs.rows.map(s=>{
+						s = s.doc;
+						s = Submission.fromJSON(s);
+						s.Common = common;
+
+						s = s.ContentAsTokens;
+						return s;
+					});
+				});
+			tokens = await Promise.all(tokens);
+			pair.submissions[0].finalList = tokens[0];
+			pair.submissions[1].finalList = tokens[1];
+		}
 		let algo = this.Algorithm;
 		console.log("Performing comparison on " + pair.name );
 		let result = await algo(pair);
