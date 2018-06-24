@@ -24,6 +24,7 @@ import * as Panels from './widgets/panel.js';
 import './widgets/treeview.js';
 import './widgets/submissions.js';
 import './widgets/filedrop.js';
+import './widgets/ResultsTable.js';
 
 
 /**
@@ -64,6 +65,13 @@ class indexPage {
 					});
 				}
 			}
+		});
+		new Vue({
+			el:'#results',
+			data: {
+				db: this.runner.db,
+				filter: 'checksims/results',
+			},
 		});
 		Panels.initialize();
 
@@ -182,46 +190,6 @@ class indexPage {
 		}
 	}
 
-	renderListTable(results,htmlContainers){
-		let cellTemplate = "  <td><meter min='-1' max='100' value='{{pct}}' title='{{pct}}% similar'></meter><span title='{{pct}}% similar'>{{name}}</span> </td>";
-		let html = [
-				'<thead>',
-				' <tr>',
-				'  <th>Student</th>',
-				'  <th>Student</th>',
-				' </tr>',
-				'</thead>',
-				'<tbody>',
-			];
-		html = html.concat(results.results
-			.sort(function(a,b){
-				let diff = b.percentMatched - a.percentMatched;
-				return diff;
-			})
-			.map(function(comp){
-				let html = comp.submissions
-					.sort(function(a,b){
-						let diff = b.percentMatched - a.percentMatched;
-						return diff;
-					})
-					.map(function(d){
-						return cellTemplate
-							.replace(/{{name}}/g,d.submission)
-							.replace(/{{pct}}/g,(d.percentMatched * 100).toFixed(0))
-							;
-					}).join('');
-				html = [' <tr>', html, '</tr>',];
-				return html.join('\n');
-			}))
-			;
-		html.push('</tbody>');
-
-		let lst = htmlContainers.lst;
-		lst = lst.querySelector('.result');
-		lst.innerHTML = html.join('\n');
-	}
-
-
 	renderListForce(results,htmlContainers){
 		//let container = htmlContainers.force.querySelector('ul.result');
 		//let dimensions = window.getComputedStyle(container);
@@ -272,7 +240,6 @@ class indexPage {
 			let htmlContainers = this.Containers;
 
 			this.renderMatrixes(report,htmlContainers);
-			this.renderListTable(report,htmlContainers);
 			this.renderListForce(report,htmlContainers);
 		},300);
 	}

@@ -47,6 +47,15 @@
    <submission v-for='(sub,key) in ordered' :key="sub.name" :submission="sub" :remover='remover' ></submission>
   </div>
  </template>
+ <template type='text/x-template' id='tornadoresult-template'>
+   <table>
+    <tbody>
+     <tr v-for='(result,key) in ordered' :class="{complete:isComplete(result)}" :key="result.name">
+      <td v-for='submission in result.submissions'><meter min='0' max='1' :value='submission.percentMatched' :title='submission.percentMatched'></meter><span :title='submission.percentMatched'>{{submission.name}}</span></td>
+     </tr>
+    </tbody>
+   </table>
+ </template>
 
 
  <link rel='stylesheet' href='index.css' />
@@ -113,7 +122,7 @@
    </details>
    <details data-type='lst' open>
     <summary>Listing</summary>
-    <table class="result"></table>
+    <tornadoresult-list class='result' :pouchdb="db"></tornadoresult-list>
    </details>
    <details data-type='html' open>
     <summary>HTML</summary>

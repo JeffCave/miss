@@ -6,11 +6,6 @@ import "../../lib/pouchdb.upsert.min.js";
 
 import * as utils from '../../util/misc.js';
 
-/*
-global PouchDB
-global emit
-*/
-
 const scores = {
 	// an exact positional match (diagonal in SmithWaterman terms). This is
 	// the highest possible match.
@@ -41,7 +36,6 @@ const swMatrixes = {};
 class Matrix{
 
 	constructor(name, a, b){
-		this.db = new PouchDB('smithwaterman');
 		this.matrix = [];
 		this.partial = new Map();
 		this.finishedChains = [];
@@ -107,10 +101,10 @@ class Matrix{
 		});
 	}
 
-	get progress(){
-		let prog = new Progress(this.remaining, 0, this.totalSize);
-		return prog;
-	}
+	//get progress(){
+	//	let prog = new Progress(this.remaining, 0, this.totalSize);
+	//	return prog;
+	//}
 
 	CoordToIndex(x,y){
 		return y * this.submissions[0].length + x;

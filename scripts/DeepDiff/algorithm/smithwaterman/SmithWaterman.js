@@ -22,7 +22,7 @@ import {checkNotNull} from '../../util/misc.js';
  * @param b Second submission to apply to
  * @return Similarity results of comparing submissions A and B
  */
-AlgorithmRegistry.processors['smithwaterman'] = async function(req) {
+AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=()=>{}) {
 	checkNotNull(req);
 
 	performance.mark('smithwaterman-start.'+req.name);
@@ -59,6 +59,7 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req) {
 		req.totalTokens = comparer.totalSize;
 		req.identicalTokens = comparer.tokenMatch;
 		req.percentMatched = req.identicalTokens / req.totalTokens;
+		progHandler();
 	});
 
 	let notes = {

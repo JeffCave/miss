@@ -18,6 +18,7 @@ import * as utils from './util/misc.js';
 
 /*
 global PouchDB
+global emit
 */
 
 /**
@@ -456,7 +457,11 @@ class DeepDiff {
 			;
 
 		console.log("Discovered " + results.length + " oustanding pairs");
-		results = await Promise.all(results);
+		// Turns out it's better to do them sequentially
+		//results = await Promise.all(results);
+		for(let i=results.length-1; i>=0; i--){
+			results[i] = await results[i]();
+		}
 		results = results.map((result)=>{
 			return this.db.upsert('result.'+result.name,function(oldDoc){
 				if(utils.docsEqual(result,oldDoc)){

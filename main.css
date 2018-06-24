@@ -16,6 +16,9 @@
 	--notice-pass-low:lightsalmon;
 	--notice-pass-high:darkred;
 	*/
+	--notice-pending-off:white;
+	--notice-pending-low:lightgray;
+	--notice-pending-high:darkgray;
 }
 
 * {
@@ -213,10 +216,10 @@ input[type=range]::-ms-track {
 	height:1.25em;
 }
 #results > details[data-type='lst'] tr > td > meter::-webkit-meter-bar {
-	background: var(--notice-info-low);
+	background: var(--notice-pending-low);
 }
 #results > details[data-type='lst'] tr > td > meter::-webkit-meter-optimum-value{
-	background: var(--notice-info-high);
+	background: var(--notice-pending-high);
 	border-top-right-radius:0.5em;
 	border-bottom-right-radius:0.5em;
 }
@@ -233,7 +236,7 @@ input[type=range]::-ms-track {
 
 #results > details[data-type='lst'] tr > td:nth-of-type(1) {
 	border-right: 0.1em solid white;
-	border-right-color: var(--notice-info-high);
+	border-right-color: var(--notice-pending-high);
 }
 #results > details[data-type='lst'] tr > td:nth-of-type(1) > meter {
 	transform:rotate(180deg);
@@ -242,3 +245,12 @@ input[type=range]::-ms-track {
 	right:0.5em;
 }
 
+#results > details[data-type='lst'] tr.complete > td > meter::-webkit-meter-bar {
+	background: var(--notice-info-low);
+}
+#results > details[data-type='lst'] tr.complete > td > meter::-webkit-meter-optimum-value{
+	background: var(--notice-info-high);
+}
+#results > details[data-type='lst'] tr.complete > td:nth-of-type(1) {
+	border-right-color: var(--notice-info-high);
+}
