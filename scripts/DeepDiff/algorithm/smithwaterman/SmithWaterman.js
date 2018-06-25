@@ -54,13 +54,7 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=
 	}
 
 	// Alright, easy cases taken care of. Generate an instance to perform the actual algorithm
-	let endLists = await SmithWatermanCompare(req.name, aTokens, bTokens, undefined, (comparer)=>{
-		req.complete = comparer.totalSize - comparer.remaining;
-		req.totalTokens = comparer.totalSize;
-		req.identicalTokens = comparer.tokenMatch;
-		req.percentMatched = req.identicalTokens / req.totalTokens;
-		progHandler();
-	});
+	let endLists = await SmithWatermanCompare(req.name, aTokens, bTokens, undefined, progHandler);
 
 	let notes = {
 		algorithm: 'smithwaterman'

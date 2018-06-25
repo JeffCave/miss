@@ -30,7 +30,7 @@ class DeepDiff {
 		this.numThreads = 1;
 		this._results = {};
 		this.submissions = {};
-		this.db = new PouchDB('checksim');
+		this.db = new PouchDB('DeepDiff');
 		this._events = {
 			'submissions':{},
 			'results':{},
@@ -307,23 +307,23 @@ class DeepDiff {
 	 * @param newSubmissions New set of submissions to work on. Must contain at least 1 submission.
 	 * @return This configuration
 	 */
-	async addResults(newResult) {
+	addResults(newResult) {
 		utils.checkNotNull(newResult);
-		if(newResult instanceof Submission){
+		if(!Array.isArray(newResult)){
 			newResult = [newResult];
 		}
-		if(!Array.isArray(newResult)){
-			newResult = Submission.submissionsFromFiles(newResult, this.Filter);
-		}
-		for(let d=0; d<newResult.length; d++){
-			let newDoc = newResult[d];
-			this.db.upsert('result.'+newDoc.name,function(oldDoc){
-				if(utils.docsEqual(newDoc,oldDoc)){
+
+		newResult.forEach((result)=>{
+			this.db.upsert('result.'+result.name,function(oldDoc){
+				if(oldDoc.complete === oldDoc.totalTokens){
 					return false;
 				}
-				return newDoc;
+				if(utils.docsEqual(result,oldDoc)){
+					return false;
+				}
+				return result;
 			});
-		}
+		});
 	}
 
 
@@ -426,8 +426,22 @@ class DeepDiff {
 		}
 		let algo = this.Algorithm;
 		console.log("Performing comparison on " + pair.name );
-		let result = await algo(pair);
+		let result = await algo(pair,async (comparer)=>{
+			pair.submissions.forEach((orig,i)=>{
+				let sub = comparer.submissions[i];
+				sub = Array.from(sub);
+				orig.identicalTokens = sub.filter(t=>t.shared).length;
+				orig.percentMatched = orig.identicalTokens / orig.totalTokens;
+			});
+			pair.complete = (comparer.totalSize - comparer.remaining) -1;
+			pair.totalTokens = comparer.totalSize;
+			pair.identicalTokens = comparer.tokenMatch;
+			pair.percentMatched = pair.identicalTokens / pair.totalTokens;
+			//this.addResults(pair);
+
+		});
 		result = AlgorithmResults.toJSON(result);
+		this.addResults(result);
 		return result;
 	}
 
@@ -451,27 +465,14 @@ class DeepDiff {
 				if (pair.complete === pair.totalTokens) return false;
 				return true;
 			})
-			.map((pair)=>{
-				return this.Compare(pair);
-			})
 			;
 
 		console.log("Discovered " + results.length + " oustanding pairs");
 		// Turns out it's better to do them sequentially
 		//results = await Promise.all(results);
 		for(let i=results.length-1; i>=0; i--){
-			results[i] = await results[i]();
+			this.Compare(results[i]);
 		}
-		results = results.map((result)=>{
-			return this.db.upsert('result.'+result.name,function(oldDoc){
-				if(utils.docsEqual(result,oldDoc)){
-					return false;
-				}
-				return result;
-			});
-		});
-
-		return Promise.all(results);
 	}
 
 }

@@ -247,10 +247,14 @@ input[type=range]::-ms-track {
 
 #results > details[data-type='lst'] tr.complete > td > meter::-webkit-meter-bar {
 	background: var(--notice-info-low);
+	transition: all 5s ease-out;
 }
 #results > details[data-type='lst'] tr.complete > td > meter::-webkit-meter-optimum-value{
+	border:0;
 	background: var(--notice-info-high);
+	transition: all 5s ease-out;
 }
 #results > details[data-type='lst'] tr.complete > td:nth-of-type(1) {
 	border-right-color: var(--notice-info-high);
+	transition: all 5s ease-in-out;
 }

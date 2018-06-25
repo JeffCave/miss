@@ -51,7 +51,7 @@
    <table>
     <tbody>
      <tr v-for='(result,key) in ordered' :class="{complete:isComplete(result)}" :key="result.name">
-      <td v-for='submission in result.submissions'><meter min='0' max='1' :value='submission.percentMatched' :title='submission.percentMatched'></meter><span :title='submission.percentMatched'>{{submission.name}}</span></td>
+      <td v-for='submission in result.submissions'><meter min='0' max='100' :value='formatPct(submission.percentMatched)' :title='formatTitle(submission.percentMatched)'></meter><span :title='formatTitle(submission.percentMatched)'>{{submission.name}}</span></td>
      </tr>
     </tbody>
    </table>

@@ -39,7 +39,6 @@ class Matrix{
 		this.matrix = [];
 		this.partial = new Map();
 		this.finishedChains = [];
-		this.buffersize = 1;
 
 		this.name = name;
 		this.submissions = [a,b];
@@ -47,6 +46,7 @@ class Matrix{
 		this.remaining = this.submissions[0].length * this.submissions[1].length;
 		this.totalSize = this.remaining;
 		this.tokenMatch = 0;
+		this.resetShareMarkers();
 
 		this.handlers = {
 			progress:[],
@@ -61,10 +61,12 @@ class Matrix{
 	}
 
 	start(){
+		if(this.shouldStop){
+			utils.defer(()=>{
+				this.calcBuffer();
+			});
+		}
 		this.shouldStop = false;
-		utils.defer(()=>{
-			this.calcBuffer();
-		});
 	}
 
 	stop(){
@@ -91,7 +93,7 @@ class Matrix{
 		}
 	}
 
-	doEventListener(event,parameter){
+	async doEventListener(event,parameter){
 		if(!(event in this.handlers)){
 			return;
 		}
@@ -295,12 +297,15 @@ class Matrix{
 		this.remaining--;
 		if(score > 0){
 			this.tokenMatch++;
+			this.submissions[0][x].shared = true;
+			this.submissions[1][y].shared = true;
 		}
 	}
 
 	ResolveCandidates(){
 		let resolved = [];
 		this.tokenMatch = 0;
+		this.resetShareMarkers();
 
 		// sort the chains to get the best scoring ones first
 		this.finishedChains.sort((a,b)=>{return b.score-a.score;});
@@ -393,11 +398,7 @@ class Matrix{
 
 		// we removed a bunch of chains, but may have marked lexemes as shared.
 		// they aren't anymore, so re-run the entire "shared" markers
-		this.submissions.forEach((sequence)=>{
-			sequence.forEach((lexeme)=>{
-				delete lexeme.shared;
-			});
-		});
+		this.resetShareMarkers();
 		resolved.forEach((chain)=>{
 			chain.history.forEach((coord)=>{
 				let x = coord[0];
@@ -408,6 +409,14 @@ class Matrix{
 		});
 
 		return resolved;
+	}
+
+	resetShareMarkers(){
+		this.submissions.forEach((sequence)=>{
+			sequence.forEach((lexeme)=>{
+				delete lexeme.shared;
+			});
+		});
 	}
 
 }
@@ -423,19 +432,19 @@ export async function SmithWatermanCompare(id, a, b, dbname = 'sw', progress=()=
 			matrix = new Matrix(id,a,b);
 			db[id] = matrix;
 			matrix.addEventListener('progress',progress);
+			let int = setInterval(()=>{
+				if(matrix.remaining <= 0){
+					clearInterval(int);
+					matrix.ResolveCandidates();
+					let entries = matrix.submissions;
+					console.log('Completed comparison: ' + id);
+					// REmove the caching. This is only for debugging
+					delete db[id];
+
+					resolve(entries);
+				}
+			},1000);
 		}
 		matrix.start();
-		let int = setInterval(()=>{
-			if(matrix.remaining <= 0){
-				clearInterval(int);
-				matrix.ResolveCandidates();
-				let entries = matrix.submissions;
-				console.log('Completed comparison: ' + id);
-				// REmove the caching. This is only for debugging
-				delete db[id];
-
-				resolve(entries);
-			}
-		},1000);
 	});
 }
