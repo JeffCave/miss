@@ -198,12 +198,17 @@ class Matrix{
 			// Process as many as we can for 100 milliseconds. Then stop and let
 			// other things get some processing in
 			let cutOff = Date.now()+500;
-			while(this.matrix.length > 0 && Date.now() < cutOff){
+			let bufferConsumed = 0;
+			while(bufferConsumed < this.matrix.length && Date.now() < cutOff){
 				// Just process 100 items... no matter what
-				for(let i=0; i<100 && this.matrix.length > 0; i++){
-					this.calcChain(this.matrix.shift());
+				for(let i=0; i<100 && bufferConsumed < this.matrix.length > 0; i++){
+					//console.log(this.matrix[bufferConsumed].id[0]+this.matrix[bufferConsumed].id[1] +':'+this.matrix[bufferConsumed].id+'('+this.matrix.length+')');
+					this.calcChain(this.matrix[bufferConsumed]);
+					bufferConsumed++;
 				}
 			}
+			this.matrix = this.matrix.slice(bufferConsumed);
+			//console.log('=====');
 
 			// Periodically report it up
 			this.doEventListener('progress',this);
