@@ -57,12 +57,15 @@ ContentHandlers.handlers.forEach(function(d){ContentHandlers.handlers[d.type] = 
 	// Video
 	'mpg','mpeg',
 	// Audio
+	'wav',
 	// Compression
-	'l7','rar','zip',
+	'l7','rar','zip', 'gz', 'tar',
 	// encrypted
 	'gpg',
 	// libraries and executables
 	'jar','exe','dll','suo','pyc','pyw',
+	// compiled
+	'pyc',
 	// other
 	'doc','docx',
 ].forEach(function(ext){

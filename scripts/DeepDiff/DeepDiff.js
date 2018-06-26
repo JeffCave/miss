@@ -140,7 +140,7 @@ class DeepDiff {
 				});
 				Vue.set(this.report.results,e.doc.name,summary);
 
-				self.Compare(e.doc);
+				this.runAllCompares();
 			}
 		});
 
@@ -482,25 +482,36 @@ class DeepDiff {
 	 */
 	async runAllCompares(){
 		// Perform parallel analysis of all submission pairs to generate a results list
-		let allPairs = await this.Results;
-		if(allPairs.length === 0){
-			return Promise.resolve();
-		}
+		if(!this.runAllComparesIsRunning){
+			this.runAllComparesIsRunning = true;
+			let allPairs = await this.Results;
+			if(allPairs.length === 0){
+				return Promise.resolve();
+			}
 
-		let results = allPairs
-			.filter((pair)=>{
-				if (!pair) return false;
-				if (pair.complete === pair.totalTokens) return false;
-				return true;
-			})
-			;
+			let results = allPairs
+				.filter((pair)=>{
+					if (!pair) return false;
+					if (pair.complete === pair.totalTokens) return false;
+					return true;
+				})
+				.sort((a,b)=>{
+					return a.totalTokens - b.totalTokens;
+				})
+				;
 
-		console.log("Discovered " + results.length + " oustanding pairs");
-		// Turns out it's better to do them sequentially
-		//results = await Promise.all(results);
-		for(let i=results.length-1; i>=0; i--){
-			let result = await this.Compare(results[i]);
-
+			console.log("Discovered " + results.length + " oustanding pairs");
+			if(results.length === 0){
+				return;
+			}
+			// Turns out it's better to do them sequentially
+			//results = await Promise.all(results);
+			for(let i=results.length-1; i>=0; i--){
+				let result = await this.Compare(results[i]);
+				console.log('Finished ' + result.name);
+			}
+			this.runAllComparesIsRunning = false;
+			utils.defer(()=>{this.runAllCompares();});
 		}
 	}
 
