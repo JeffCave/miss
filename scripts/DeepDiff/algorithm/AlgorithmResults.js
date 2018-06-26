@@ -91,6 +91,9 @@ export default async function Create(a, b, finalListA = null, finalListB = null,
 		results.totalTokens += d.totalTokens;
 		results.name.push(d.submission);
 	}
+	results.submissions.sort((a,b)=>{
+		return b.percentMatched - a.percentMatched;
+	});
 	results.percentMatched /= results.submissions.length;
 	results.name = results.name.join('.');
 

@@ -28,9 +28,20 @@ class DeepDiff {
 
 	constructor() {
 		this.numThreads = 1;
-		this._results = {};
-		this.submissions = {};
 		this.db = new PouchDB('DeepDiff');
+		this.report = new Vue({
+			data:{
+				results:{},
+				submissions:{},
+				archives:[]
+			}
+		});
+		this.Results.then(results=>{
+				this.report.results = results.reduce((a,d)=>{
+					a[d.name] = d;
+					return a;
+				},{});
+			});
 		this._events = {
 			'submissions':{},
 			'results':{},
@@ -114,23 +125,32 @@ class DeepDiff {
 		});
 
 
-		this.addEventListener('results',async function(e){
+		this.addEventListener('results',async (e)=>{
 			if(e.deleted){
+				let id = e.id.split('.');
+				id.shift();
+				id = id.join('.');
+				Vue.delete(this.report.results,id);
 				console.log("removed result: " + e.id);
 			}
 			else{
-				let result = await self.Compare(e.doc);
-				self.db.upsert('result.'+result.name,function(oldDoc){
-					if(utils.docsEqual(result,oldDoc)){
-						return false;
-					}
-					return result;
+				let summary = JSON.parse(JSON.stringify(e.doc));
+				summary.submissions.forEach((d)=>{
+					delete d.finalList;
 				});
+				Vue.set(this.report.results,e.doc.name,summary);
+
+				self.Compare(e.doc);
 			}
 		});
 
-		this.addEventListener('submissions',async function(e){
+		this.addEventListener('submissions',async (e)=>{
 			if(e.deleted){
+				let id = e.id.split('.');
+				id.shift();
+				id = id.join('.');
+				Vue.delete(this.report.submissions,id);
+
 				let results = await self.db.allDocs({startkey:'result.',endkey:'result.\ufff0'});
 				let submission = e.id.split('.').pop();
 				let deletes = results.rows.map(function(d){
@@ -148,6 +168,10 @@ class DeepDiff {
 				Promise.all(deletes);
 			}
 			else{
+				let summary = JSON.parse(JSON.stringify(e.doc));
+				delete summary.content;
+				Vue.set(this.report.submissions,e.doc.name,summary);
+
 				//let results = await self.Submissions;
 				let results = await self.db.allDocs({startkey:'submission.',endkey:'submission.\ufff0', include_docs:true});
 				results = results.rows
@@ -427,18 +451,18 @@ class DeepDiff {
 		let algo = this.Algorithm;
 		console.log("Performing comparison on " + pair.name );
 		let result = await algo(pair,async (comparer)=>{
-			pair.submissions.forEach((orig,i)=>{
+			let result = this.report.results[comparer.name];
+			result.submissions.forEach((orig,i)=>{
 				let sub = comparer.submissions[i];
 				sub = Array.from(sub);
 				orig.identicalTokens = sub.filter(t=>t.shared).length;
 				orig.percentMatched = orig.identicalTokens / orig.totalTokens;
 			});
-			pair.complete = (comparer.totalSize - comparer.remaining) -1;
-			pair.totalTokens = comparer.totalSize;
-			pair.identicalTokens = comparer.tokenMatch;
-			pair.percentMatched = pair.identicalTokens / pair.totalTokens;
+			result.complete = (comparer.totalSize - comparer.remaining) -1;
+			result.totalTokens = comparer.totalSize;
+			result.identicalTokens = comparer.tokenMatch;
+			result.percentMatched = result.identicalTokens / result.totalTokens;
 			//this.addResults(pair);
-
 		});
 		result = AlgorithmResults.toJSON(result);
 		this.addResults(result);

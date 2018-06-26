@@ -217,11 +217,13 @@ input[type=range]::-ms-track {
 }
 #results > details[data-type='lst'] tr > td > meter::-webkit-meter-bar {
 	background: var(--notice-pending-low);
+	transition: all 0.5s ease-out;
 }
 #results > details[data-type='lst'] tr > td > meter::-webkit-meter-optimum-value{
 	background: var(--notice-pending-high);
 	border-top-right-radius:0.5em;
 	border-bottom-right-radius:0.5em;
+	transition: all 0.5s ease-out;
 }
 #results > details[data-type='lst'] tr > td > span {
 	position:absolute;

@@ -69,8 +69,7 @@ class indexPage {
 		this.displayResults = new Vue({
 			el:'#results',
 			data: {
-				db: this.runner.db,
-				filter: 'checksims/results',
+				report:this.runner.report
 			},
 		});
 		Panels.initialize();
@@ -239,7 +238,6 @@ class indexPage {
 
 			let htmlContainers = this.Containers;
 
-			//this.displayResults.data.results = await this.runner.Results;
 			this.renderMatrixes(report,htmlContainers);
 			this.renderListForce(report,htmlContainers);
 		},300);
