@@ -187,19 +187,24 @@ class Matrix{
 			if(this.shouldStop){
 				return;
 			}
+
+			// Terminate if we are finished processing
+			if(this.matrix.length < 1){
+				return;
+			}
+			// schedule the next processing cycle
+			this.calcBuffer();
+
 			// Process as many as we can for 100 milliseconds. Then stop and let
 			// other things get some processing in
-			let cutOff = Date.now()+100;
+			let cutOff = Date.now()+500;
 			while(this.matrix.length > 0 && Date.now() < cutOff){
 				// Just process 100 items... no matter what
 				for(let i=0; i<100 && this.matrix.length > 0; i++){
-					this.calcChain(this.matrix.pop());
+					this.calcChain(this.matrix.shift());
 				}
 			}
-			// if there are any left, schedule another round of processing
-			if(this.matrix.length > 0){
-				this.calcBuffer();
-			}
+
 			// Periodically report it up
 			this.doEventListener('progress',this);
 		});

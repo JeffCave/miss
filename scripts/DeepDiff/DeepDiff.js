@@ -458,6 +458,7 @@ class DeepDiff {
 			//result.percentMatched = result.identicalTokens / result.totalTokens;
 			let completePct = (comparer.totalSize - comparer.remaining) -1;
 			completePct = completePct / comparer.totalSize;
+			result.percentMatched = completePct;
 			result.submissions.forEach((orig,i)=>{
 				//let sub = comparer.submissions[i];
 				//sub = Array.from(sub);
@@ -498,7 +499,8 @@ class DeepDiff {
 		// Turns out it's better to do them sequentially
 		//results = await Promise.all(results);
 		for(let i=results.length-1; i>=0; i--){
-			this.Compare(results[i]);
+			let result = await this.Compare(results[i]);
+
 		}
 	}
 
