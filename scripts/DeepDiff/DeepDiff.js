@@ -452,16 +452,19 @@ class DeepDiff {
 		console.log("Performing comparison on " + pair.name );
 		let result = await algo(pair,async (comparer)=>{
 			let result = this.report.results[comparer.name];
+			//result.complete = (comparer.totalSize - comparer.remaining) -1;
+			//result.totalTokens = comparer.totalSize;
+			//result.identicalTokens = comparer.tokenMatch;
+			//result.percentMatched = result.identicalTokens / result.totalTokens;
+			let completePct = (comparer.totalSize - comparer.remaining) -1;
+			completePct = completePct / comparer.totalSize;
 			result.submissions.forEach((orig,i)=>{
-				let sub = comparer.submissions[i];
-				sub = Array.from(sub);
-				orig.identicalTokens = sub.filter(t=>t.shared).length;
-				orig.percentMatched = orig.identicalTokens / orig.totalTokens;
+				//let sub = comparer.submissions[i];
+				//sub = Array.from(sub);
+				//orig.identicalTokens = sub.filter(t=>t.shared).length;
+				//orig.percentMatched = orig.identicalTokens / orig.totalTokens;
+				orig.percentMatched = completePct;
 			});
-			result.complete = (comparer.totalSize - comparer.remaining) -1;
-			result.totalTokens = comparer.totalSize;
-			result.identicalTokens = comparer.tokenMatch;
-			result.percentMatched = result.identicalTokens / result.totalTokens;
 			//this.addResults(pair);
 		});
 		result = AlgorithmResults.toJSON(result);

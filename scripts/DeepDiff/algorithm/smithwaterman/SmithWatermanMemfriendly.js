@@ -122,10 +122,10 @@ class Matrix{
 	async addToCell(x,y,orig,score,chain,highwater){
 		// bounds checking
 		if(x < 0 || y < 0){
-			return;
+			return false;
 		}
 		if(x >= this.submissions[0].length || y >= this.submissions[1].length){
-			return;
+			return false;
 		}
 		// lookup the data at that location
 		let index = this.CoordToIndex(x,y);
@@ -169,35 +169,40 @@ class Matrix{
 
 		// if the pre-processing queue is empty, do the actual calcuations
 		if(this.partial.size === 0){
-			utils.defer(()=>{
-				this.calcBuffer();
-			});
+			this.calcBuffer();
 		}
 		return cell;
 	}
 
 	calcBuffer(){
-		// this thing is supposed to be a multi-threaded thing. We may need
-		// a way to stop it
-		if(this.shouldStop){
+		if(this.calcBufferInstance){
 			return;
 		}
-		// Process at most 1000 items, but just watch out because we may not
-		// have 1000 items
-		for(let i=1000; i>=0 && this.matrix.length > 0; i--){
-			let cell = this.matrix.pop();
-			this.calcChain(cell);
-		}
-		// if there are any left, schedule another round of processing
-		if(this.matrix.length > 0){
-			utils.defer(()=>{this.calcBuffer();});
-		}
-		// Periodically report it up
-		//let oldPct = this.pct;
-		//this.pct = Math.ceil(100.0*this.remaining/this.totalSize);
-		//if(oldPct !== this.pct){
+
+		this.calcBufferInstance = utils.defer(()=>{
+			this.calcBufferInstance = null;
+
+			// this thing is supposed to be a multi-threaded thing. We may need
+			// a way to stop it
+			if(this.shouldStop){
+				return;
+			}
+			// Process as many as we can for 100 milliseconds. Then stop and let
+			// other things get some processing in
+			let cutOff = Date.now()+100;
+			while(this.matrix.length > 0 && Date.now() < cutOff){
+				// Just process 100 items... no matter what
+				for(let i=0; i<100 && this.matrix.length > 0; i++){
+					this.calcChain(this.matrix.pop());
+				}
+			}
+			// if there are any left, schedule another round of processing
+			if(this.matrix.length > 0){
+				this.calcBuffer();
+			}
+			// Periodically report it up
 			this.doEventListener('progress',this);
-		//}
+		});
 	}
 
 	calcChain(chain){
