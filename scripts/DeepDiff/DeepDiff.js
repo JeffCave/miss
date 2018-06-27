@@ -485,9 +485,6 @@ class DeepDiff {
 		if(!this.runAllComparesIsRunning){
 			this.runAllComparesIsRunning = true;
 			let allPairs = await this.Results;
-			if(allPairs.length === 0){
-				return Promise.resolve();
-			}
 
 			let results = allPairs
 				.filter((pair)=>{
@@ -500,10 +497,10 @@ class DeepDiff {
 				})
 				;
 
-			console.log("Discovered " + results.length + " oustanding pairs");
 			if(results.length === 0){
-				return;
+				return Promise.resolve();
 			}
+			console.log("Discovered " + results.length + " oustanding pairs");
 			// Turns out it's better to do them sequentially
 			//results = await Promise.all(results);
 			for(let i=results.length-1; i>=0; i--){

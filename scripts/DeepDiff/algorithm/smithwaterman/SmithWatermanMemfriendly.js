@@ -1,10 +1,17 @@
 'use strict';
 
-import "https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.4.3/pouchdb.min.js";
-import "../../lib/pouchdb.upsert.min.js";
+//import "https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.4.3/pouchdb.min.js";
+//import "../../lib/pouchdb.upsert.min.js";
 //import {Progress} from "../../util/Progress.js";
 
-import * as utils from '../../util/misc.js';
+//import * as utils from '../../util/misc.js';
+
+const utils = {
+	defer: function(func){
+		return setTimeout(func,0);
+	}
+};
+
 
 const scores = {
 	// an exact positional match (diagonal in SmithWaterman terms). This is
@@ -72,41 +79,6 @@ class Matrix{
 	stop(){
 		this.shouldStop = true;
 	}
-
-	addEventListener(event,listener){
-		if(!(event in this.handlers)){
-			return;
-		}
-		let handlers = this.handlers[event];
-		let curr = handlers.filter((a)=>{
-			return a === listener;
-		});
-		if(curr.length !== 0){
-			return;
-		}
-		let name = listener.name;
-		if(name !== ''){
-			handlers[name] = listener;
-		}
-		else{
-			handlers.push(listener);
-		}
-	}
-
-	async doEventListener(event,parameter){
-		if(!(event in this.handlers)){
-			return;
-		}
-		let handlers = this.handlers[event];
-		handlers.forEach((h)=>{
-			h(parameter);
-		});
-	}
-
-	//get progress(){
-	//	let prog = new Progress(this.remaining, 0, this.totalSize);
-	//	return prog;
-	//}
 
 	CoordToIndex(x,y){
 		return y * this.submissions[0].length + x;
@@ -204,11 +176,15 @@ class Matrix{
 			//console.log('=====');
 
 			// Periodically report it up
-			this.doEventListener('progress',this);
+			let msg = {type:'progress', data:this.toJSON()};
+			postMessage(msg);
 
 			// schedule the next processing cycle
 			if(this.matrix.length > 0){
 				this.calcBuffer();
+			}
+			else{
+				this.postProcess();
 			}
 
 		});
@@ -433,32 +409,47 @@ class Matrix{
 		});
 	}
 
+	postProcess(){
+		this.ResolveCandidates();
+		let entries = this.submissions;
+		postMessage({type:'complete',data:entries});
+		close();
+	}
+
+	toJSON(){
+		let json = {
+			name: this.name,
+			totalSize: this.totalSize,
+			remaining: this.remaining,
+			tokenMatch: this.tokenMatch,
+			submissions: [
+					{
+						totalTokens:this.submissions[0].length
+					},
+					{
+						totalTokens:this.submissions[1].length
+					}
+				]
+		};
+		return json;
+	}
+
 }
 
-export async function SmithWatermanCompare(id, a, b, dbname = 'sw', progress=()=>{}){
-	return new Promise((resolve,reject)=>{
-		if(!(dbname in swMatrixes)){
-			swMatrixes[dbname] = {};
-		}
-		let db = swMatrixes[dbname];
-		let matrix = db[id];
-		if(!matrix){
-			matrix = new Matrix(id,a,b);
-			db[id] = matrix;
-			matrix.addEventListener('progress',progress);
-			let int = setInterval(()=>{
-				if(matrix.remaining <= 0){
-					clearInterval(int);
-					matrix.ResolveCandidates();
-					let entries = matrix.submissions;
-					console.log('Completed comparison: ' + id);
-					// REmove the caching. This is only for debugging
-					delete db[id];
 
-					resolve(entries);
-				}
-			},1000);
-		}
+let matrix = null;
+
+
+onmessage = function(params){
+	if(params.data.action === 'start'){
+		let id = params.data.name;
+		let a = params.data.submissions[0];
+		let b = params.data.submissions[1];
+
+		matrix = new Matrix(id,a,b);
 		matrix.start();
-	});
-}
+	}
+	else if(params.data.action === 'stop'){
+		matrix.stop();
+	}
+};

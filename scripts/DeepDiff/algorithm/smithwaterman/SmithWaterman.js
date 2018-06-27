@@ -6,11 +6,12 @@ global performance
 
 import {AlgorithmRegistry} from '../../algorithm/AlgorithmRegistry.js';
 import * as AlgorithmResults from '../../algorithm/AlgorithmResults.js';
-import {TokenList} from '../../token/TokenList.js';
-import {SmithWatermanCompare} from '../../algorithm/smithwaterman/SmithWatermanMemfriendly.js';
 import {checkNotNull} from '../../util/misc.js';
 
 (function(){
+
+const largeCompare = (1024**3)*4;
+
 
 
 /**
@@ -50,27 +51,50 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=
 	// Handle a 0-token submission (no similarity)
 	if(aTokens.length === 0 || bTokens.length === 0) {
 		//TODO: return req
-		return AlgorithmResults.Create(a, b, aTokens, bTokens);
+		let result = await AlgorithmResults.Create(a, b, aTokens, bTokens, {error:'0 token submission'});
+		result.complete = result.totalTokens;
+		return result;
 	}
-
-	// Alright, easy cases taken care of. Generate an instance to perform the actual algorithm
-	let endLists = await SmithWatermanCompare(req.name, aTokens, bTokens, undefined, progHandler);
 
 	let notes = {
 		algorithm: 'smithwaterman'
 	};
-	if(endLists.massive){
-		notes.error = 'Massive compare';
+	if(aTokens.length * bTokens.length > largeCompare){
+		notes.isMassive = true;
 	}
 
-	let results = await AlgorithmResults.Create(a, b, endLists[0], endLists[1], notes);
-	results.complete = results.totalTokens;
+	// Alright, easy cases taken care of. Generate an instance to perform the actual algorithm
+	let endLists = await new Promise((resolve,reject)=>{
+		let thread = new Worker('/scripts/DeepDiff/algorithm/smithwaterman/SmithWatermanMemfriendly.js');
+		thread.onmessage = function(msg){
+			let handler = progHandler;
+			switch(msg.data.type){
+				case 'complete':
+					handler = resolve;
+					thread.terminate();
+					break;
+				case 'progress':
+					handler = progHandler;
+					break;
+			}
+			handler(msg.data.data);
+			thread = null;
+		};
+		thread.postMessage(JSON.clone({
+			action:'start',
+			name:req.name,
+			submissions:[aTokens, bTokens]
+		}));
+	});
+
 
 	performance.mark('smithwaterman-end.'+req.name);
 	performance.measure('smithwaterman.'+req.name,'smithwaterman-start.'+req.name,'smithwaterman-end.'+req.name);
 	let perf = performance.getEntriesByName('smithwaterman.'+req.name);
-	results.duration = JSON.stringify(perf.pop());
+	notes.duration = JSON.stringify(perf.pop());
 
+	let results = await AlgorithmResults.Create(a, b, endLists[0], endLists[1], notes);
+	results.complete = results.totalTokens;
 
 	return results;
 };
