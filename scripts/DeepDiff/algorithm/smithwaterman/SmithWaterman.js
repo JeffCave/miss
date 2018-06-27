@@ -12,6 +12,11 @@ import {checkNotNull} from '../../util/misc.js';
 
 const largeCompare = (1024**3)*4;
 
+let WorkerUrl = window.location.pathname.split('/');
+WorkerUrl.pop();
+WorkerUrl = WorkerUrl.concat('/scripts/DeepDiff/algorithm/smithwaterman/SmithWatermanMemfriendly.js'.split('/'));
+WorkerUrl = WorkerUrl.filter((u)=>{return u;});
+WorkerUrl = WorkerUrl.join('/');
 
 
 /**
@@ -65,20 +70,20 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=
 
 	// Alright, easy cases taken care of. Generate an instance to perform the actual algorithm
 	let endLists = await new Promise((resolve,reject)=>{
-		let thread = new Worker('/scripts/DeepDiff/algorithm/smithwaterman/SmithWatermanMemfriendly.js');
+		let thread = new Worker(WorkerUrl);
 		thread.onmessage = function(msg){
 			let handler = progHandler;
 			switch(msg.data.type){
 				case 'complete':
 					handler = resolve;
 					thread.terminate();
+					thread = null;
 					break;
 				case 'progress':
 					handler = progHandler;
 					break;
 			}
 			handler(msg.data.data);
-			thread = null;
 		};
 		thread.postMessage(JSON.clone({
 			action:'start',

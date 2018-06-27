@@ -446,6 +446,7 @@ onmessage = function(params){
 		let a = params.data.submissions[0];
 		let b = params.data.submissions[1];
 
+		console.log("starting web worker");
 		matrix = new Matrix(id,a,b);
 		matrix.start();
 	}

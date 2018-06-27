@@ -435,14 +435,18 @@ class DeepDiff {
 			tokens = await this.db
 				.allDocs({keys:tokens,include_docs:true})
 				.then(subs=>{
-					return subs.rows.map(s=>{
-						s = s.doc;
-						s = Submission.fromJSON(s);
-						s.Common = common;
+					return subs.rows
+						.filter(s=>{
+							return s.doc;
+						})
+						.map(s=>{
+							s = s.doc;
+							s = Submission.fromJSON(s);
+							s.Common = common;
 
-						s = s.ContentAsTokens;
-						return s;
-					});
+							s = s.ContentAsTokens;
+							return s;
+						});
 				});
 			tokens = await Promise.all(tokens);
 			pair.submissions[0].finalList = tokens[0];
@@ -493,7 +497,9 @@ class DeepDiff {
 					return true;
 				})
 				.sort((a,b)=>{
-					return a.totalTokens - b.totalTokens;
+					a = a.submissions[0].totalTokens * a.submissions[1].totalTokens;
+					b = b.submissions[0].totalTokens * b.submissions[1].totalTokens;
+					return b - a;
 				})
 				;
 
@@ -503,10 +509,15 @@ class DeepDiff {
 			console.log("Discovered " + results.length + " oustanding pairs");
 			// Turns out it's better to do them sequentially
 			//results = await Promise.all(results);
-			for(let i=results.length-1; i>=0; i--){
-				let result = await this.Compare(results[i]);
-				console.log('Finished ' + result.name);
-			}
+			// Try #2
+			//for(let i=results.length-1; i>=0; i--){
+			//	let result = await this.Compare(results[i]);
+			//	console.log('Finished ' + result.name);
+			//}
+			// Try #3
+			let result = await this.Compare(results.pop());
+			console.log('Finished ' + result.name);
+
 			this.runAllComparesIsRunning = false;
 			utils.defer(()=>{this.runAllCompares();});
 		}
