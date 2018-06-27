@@ -18,9 +18,9 @@ export{
 };
 
 /**
- * An immutable 2-D coordinate.
+ * A 2-D coordinate.
  */
-export default class Coordinate{
+export default class Coordinate extends Array{
 	/**
 	* Construct a 2D coordinate.
 	*
@@ -28,18 +28,46 @@ export default class Coordinate{
 	* @param y Desired Y coordinate
 	*/
 	constructor(x, y) {
+		// resolve any JSON
 		if(typeof x === 'string' && Number.isNaN(+x)){
-			let val = JSON.parse(x);
-			x = val.x;
-			y = val.y;
+			x = JSON.parse(x);
 		}
 
-		this.x = +x;
-		this.y = +y;
+		// convert objects to arrays
+		if(x instanceof Object && 'y' in x){
+			x = [x.x, x.y];
+		}
+
+		// convert parameters to an array
+		if(!Number.isNaN(x) && !Number.isNaN(y)){
+			x = [x, y];
+		}
+
+		super();
+
+		// copy arrays to itself
+		x.forEach((d,i)=>{
+			this[i] = +d;
+		});
 	}
 
 	static from(x,y){
+		if(x instanceof Coordinate){
+			return x;
+		}
 		return new Coordinate(x,y);
+	}
+
+	get x(){
+		return this[0] || 0;
+	}
+
+	get y(){
+		return this[1] || 0;
+	}
+
+	get z(){
+		return this[2] || 0;
 	}
 
 	/**
@@ -83,12 +111,8 @@ export default class Coordinate{
 	}
 
 	toString() {
-		let val = {
-			x: this.x,
-			y: this.y
-		};
-		val = JSON.stringify(val);
-		return val;
+		let str = JSON.stringify(this);
+		return str;
 	}
 
 }

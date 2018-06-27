@@ -18,6 +18,7 @@ import * as utils from './util/misc.js';
 
 /*
 global PouchDB
+global emit
 */
 
 /**
@@ -27,9 +28,20 @@ class DeepDiff {
 
 	constructor() {
 		this.numThreads = 1;
-		this._results = {};
-		this.submissions = {};
-		this.db = new PouchDB('checksim');
+		this.db = new PouchDB('DeepDiff');
+		this.report = new Vue({
+			data:{
+				results:{},
+				submissions:{},
+				archives:[]
+			}
+		});
+		this.Results.then(results=>{
+				this.report.results = results.reduce((a,d)=>{
+					a[d.name] = d;
+					return a;
+				},{});
+			});
 		this._events = {
 			'submissions':{},
 			'results':{},
@@ -113,23 +125,32 @@ class DeepDiff {
 		});
 
 
-		this.addEventListener('results',async function(e){
+		this.addEventListener('results',async (e)=>{
 			if(e.deleted){
+				let id = e.id.split('.');
+				id.shift();
+				id = id.join('.');
+				Vue.delete(this.report.results,id);
 				console.log("removed result: " + e.id);
 			}
 			else{
-				let result = await self.Compare(e.doc);
-				self.db.upsert('result.'+result.name,function(oldDoc){
-					if(utils.docsEqual(result,oldDoc)){
-						return false;
-					}
-					return result;
+				let summary = JSON.parse(JSON.stringify(e.doc));
+				summary.submissions.forEach((d)=>{
+					delete d.finalList;
 				});
+				Vue.set(this.report.results,e.doc.name,summary);
+
+				this.runAllCompares();
 			}
 		});
 
-		this.addEventListener('submissions',async function(e){
+		this.addEventListener('submissions',async (e)=>{
 			if(e.deleted){
+				let id = e.id.split('.');
+				id.shift();
+				id = id.join('.');
+				Vue.delete(this.report.submissions,id);
+
 				let results = await self.db.allDocs({startkey:'result.',endkey:'result.\ufff0'});
 				let submission = e.id.split('.').pop();
 				let deletes = results.rows.map(function(d){
@@ -147,6 +168,10 @@ class DeepDiff {
 				Promise.all(deletes);
 			}
 			else{
+				let summary = JSON.parse(JSON.stringify(e.doc));
+				delete summary.content;
+				Vue.set(this.report.submissions,e.doc.name,summary);
+
 				//let results = await self.Submissions;
 				let results = await self.db.allDocs({startkey:'submission.',endkey:'submission.\ufff0', include_docs:true});
 				results = results.rows
@@ -306,23 +331,23 @@ class DeepDiff {
 	 * @param newSubmissions New set of submissions to work on. Must contain at least 1 submission.
 	 * @return This configuration
 	 */
-	async addResults(newResult) {
+	addResults(newResult) {
 		utils.checkNotNull(newResult);
-		if(newResult instanceof Submission){
+		if(!Array.isArray(newResult)){
 			newResult = [newResult];
 		}
-		if(!Array.isArray(newResult)){
-			newResult = Submission.submissionsFromFiles(newResult, this.Filter);
-		}
-		for(let d=0; d<newResult.length; d++){
-			let newDoc = newResult[d];
-			this.db.upsert('result.'+newDoc.name,function(oldDoc){
-				if(utils.docsEqual(newDoc,oldDoc)){
+
+		newResult.forEach((result)=>{
+			this.db.upsert('result.'+result.name,function(oldDoc){
+				if(oldDoc.complete === oldDoc.totalTokens){
 					return false;
 				}
-				return newDoc;
+				if(utils.docsEqual(result,oldDoc)){
+					return false;
+				}
+				return result;
 			});
-		}
+		});
 	}
 
 
@@ -401,30 +426,54 @@ class DeepDiff {
 			return pair;
 		}
 
-		let common = await this.CommonCode;
-		common = CommonCodeLineRemovalPreprocessor(common);
-		pair.submissions = pair.submissions.map(function(submission){
-			return 'submission.'+submission.submission;
-		});
-		pair.submissions = await this.db
-			.allDocs({keys:pair.submissions,include_docs:true})
-			.then(subs=>{
-				return subs.rows.map(s=>{
-					s = s.doc;
-					s = Submission.fromJSON(s);
-					s.Common = common;
-					return s;
-				});
+		if(pair.submissions[0].finalList.length === 0){
+			let common = await this.CommonCode;
+			common = CommonCodeLineRemovalPreprocessor(common);
+			let tokens = pair.submissions.map(function(submission){
+				return 'submission.'+submission.submission;
 			});
-		pair.submissions = await Promise.all(pair.submissions);
+			tokens = await this.db
+				.allDocs({keys:tokens,include_docs:true})
+				.then(subs=>{
+					return subs.rows
+						.filter(s=>{
+							return s.doc;
+						})
+						.map(s=>{
+							s = s.doc;
+							s = Submission.fromJSON(s);
+							s.Common = common;
+
+							s = s.ContentAsTokens;
+							return s;
+						});
+				});
+			tokens = await Promise.all(tokens);
+			pair.submissions[0].finalList = tokens[0];
+			pair.submissions[1].finalList = tokens[1];
+		}
 		let algo = this.Algorithm;
 		console.log("Performing comparison on " + pair.name );
-		let startTime = performance.now();
-		let result = await algo(pair.submissions[0],pair.submissions[1]);
-		let endTime = performance.now();
-		let timeElapsed = endTime - startTime;
-		console.log("Finished comparison on " + pair.name + "(" + timeElapsed.toFixed(1) + " ms)" );
+		let result = await algo(pair,async (comparer)=>{
+			let result = this.report.results[comparer.name];
+			//result.complete = (comparer.totalSize - comparer.remaining) -1;
+			//result.totalTokens = comparer.totalSize;
+			//result.identicalTokens = comparer.tokenMatch;
+			//result.percentMatched = result.identicalTokens / result.totalTokens;
+			let completePct = (comparer.totalSize - comparer.remaining) -1;
+			completePct = completePct / comparer.totalSize;
+			result.percentMatched = completePct;
+			result.submissions.forEach((orig,i)=>{
+				//let sub = comparer.submissions[i];
+				//sub = Array.from(sub);
+				//orig.identicalTokens = sub.filter(t=>t.shared).length;
+				//orig.percentMatched = orig.identicalTokens / orig.totalTokens;
+				orig.percentMatched = completePct;
+			});
+			//this.addResults(pair);
+		});
 		result = AlgorithmResults.toJSON(result);
+		this.addResults(result);
 		return result;
 	}
 
@@ -437,34 +486,41 @@ class DeepDiff {
 	 */
 	async runAllCompares(){
 		// Perform parallel analysis of all submission pairs to generate a results list
-		let allPairs = await this.Results;
-		if(allPairs.length === 0){
-			return Promise.resolve();
+		if(!this.runAllComparesIsRunning){
+			this.runAllComparesIsRunning = true;
+			let allPairs = await this.Results;
+
+			let results = allPairs
+				.filter((pair)=>{
+					if (!pair) return false;
+					if (pair.complete === pair.totalTokens) return false;
+					return true;
+				})
+				.sort((a,b)=>{
+					a = a.submissions[0].totalTokens * a.submissions[1].totalTokens;
+					b = b.submissions[0].totalTokens * b.submissions[1].totalTokens;
+					return b - a;
+				})
+				;
+
+			if(results.length === 0){
+				return Promise.resolve();
+			}
+			console.log("Discovered " + results.length + " oustanding pairs");
+			// Turns out it's better to do them sequentially
+			//results = await Promise.all(results);
+			// Try #2
+			//for(let i=results.length-1; i>=0; i--){
+			//	let result = await this.Compare(results[i]);
+			//	console.log('Finished ' + result.name);
+			//}
+			// Try #3
+			let result = await this.Compare(results.pop());
+			console.log('Finished ' + result.name);
+
+			this.runAllComparesIsRunning = false;
+			utils.defer(()=>{this.runAllCompares();});
 		}
-
-		let results = allPairs
-			.filter((pair)=>{
-				if (!pair) return false;
-				if (pair.complete === pair.totalTokens) return false;
-				return true;
-			})
-			.map((pair)=>{
-				return this.Compare(pair);
-			})
-			;
-
-		console.log("Discovered " + results.length + " oustanding pairs");
-		results = await Promise.all(results);
-		results = results.map((result)=>{
-			return this.db.upsert('result.'+result.name,function(oldDoc){
-				if(utils.docsEqual(result,oldDoc)){
-					return false;
-				}
-				return result;
-			});
-		});
-
-		return Promise.all(results);
 	}
 
 }

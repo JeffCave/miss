@@ -28,6 +28,20 @@ export default async function Create(a, b, finalListA = null, finalListB = null,
 	checkNotNull(b);
 
 	let results = {};
+
+	// Notes must be the very first thing applied since they are free form.
+	// Free form means there is a risk that someone will overwrite a variable
+	// we use for our calculations. The easiest way to resolve this is not to
+	// put a bunch of error checking in the way, instead we let them set
+	// anything they want, then we apply our variables to anythign we need to.
+	// If we are sharing a variable, we will overwrite theirs.
+	if(notes){
+		Object.entries(notes).forEach(function(d){
+			results[d[0]] = d[1];
+		});
+	}
+
+
 	results.submissions = [
 			{submission: a, finalList: finalListA},
 			{submission: b, finalList: finalListB}
@@ -38,7 +52,7 @@ export default async function Create(a, b, finalListA = null, finalListB = null,
 				name : d.submission.name,
 				totalTokens : d.submission.totalTokens,
 				hash: d.submission.hash,
-				finalList: d.finalList
+				finalList: d.finalList || d.submission.tokenList,
 			};
 		})
 		.sort(function(a,b){
@@ -50,25 +64,22 @@ export default async function Create(a, b, finalListA = null, finalListB = null,
 	results.hash = hasher(a.hash + b.hash);
 	results.complete = 0;
 
-	if(notes){
-		Object.entries(notes).forEach(function(d){
-			results[d[0]] = d[1];
-		});
-	}
-
 	results.name = [];
 	results.totalTokens = 0;
 	results.percentMatched=0;
 	for(let r = 0; r<results.submissions.length; r++){
 		let d = results.submissions[r];
 		if(!d.finalList){
-			d.finalList = new TokenList('mixed',[]);
+			d.finalList = [];
+		}
+		if(Array.isArray(d.finalList) && !(d.finalList instanceof TokenList)){
+			d.finalList = new TokenList('mixed',d.finalList);
 		}
 		d.finalList = await TokenList.cloneTokenList(d.finalList);
 		d.totalTokens = await d.totalTokens;
 
 		d.identicalTokens = Array.from(d.finalList).reduce((sum,token)=>{
-			sum = sum + (!token.valid);
+			sum = sum + (!token.valid || token.shared?1:0);
 			return sum;
 		},0);
 
@@ -80,6 +91,9 @@ export default async function Create(a, b, finalListA = null, finalListB = null,
 		results.totalTokens += d.totalTokens;
 		results.name.push(d.submission);
 	}
+	results.submissions.sort((a,b)=>{
+		return b.percentMatched - a.percentMatched;
+	});
 	results.percentMatched /= results.submissions.length;
 	results.name = results.name.join('.');
 

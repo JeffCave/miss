@@ -32,11 +32,11 @@ function addLinesToMap(lines, lineDatabase, submitter, hasher) {
  * @throws TokenTypeMismatchException Thrown comparing two submissions with different token types
  * @throws InternalAlgorithmError Thrown on error obtaining a hash algorithm instance
  */
-AlgorithmRegistry.processors["linecompare"] = async function(a, b){
-	checkNotNull(a);
-	checkNotNull(b);
-	checkArgument(a instanceof Submission, "Expecting to compare Submissions (a is " + (typeof a) + ")");
-	checkArgument(b instanceof Submission, "Expecting to compare Submissions (b is " + (typeof b) + ")");
+AlgorithmRegistry.processors["linecompare"] = async function(currentResults){
+	checkNotNull(currentResults);
+
+	let a = currentResults.submissions[0];
+	let b = currentResults.submissions[1];
 
 	let linesA = await a.ContentAsTokens;
 	let linesB = await b.ContentAsTokens;

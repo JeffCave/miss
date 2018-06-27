@@ -1,12 +1,22 @@
 'use strict';
 
+/*
+global performance
+*/
+
 import {AlgorithmRegistry} from '../../algorithm/AlgorithmRegistry.js';
 import * as AlgorithmResults from '../../algorithm/AlgorithmResults.js';
-import {TokenList} from '../../token/TokenList.js';
-import {SmithWatermanAlgorithm} from '../../algorithm/smithwaterman/SmithWatermanAlgorithm.js';
 import {checkNotNull} from '../../util/misc.js';
 
 (function(){
+
+const largeCompare = (1024**3)*4;
+
+let WorkerUrl = window.location.pathname.split('/');
+WorkerUrl.pop();
+WorkerUrl = WorkerUrl.concat('/scripts/DeepDiff/algorithm/smithwaterman/SmithWatermanMemfriendly.js'.split('/'));
+WorkerUrl = WorkerUrl.filter((u)=>{return u;});
+WorkerUrl = WorkerUrl.join('/');
 
 
 /**
@@ -18,12 +28,16 @@ import {checkNotNull} from '../../util/misc.js';
  * @param b Second submission to apply to
  * @return Similarity results of comparing submissions A and B
  */
-AlgorithmRegistry.processors['smithwaterman'] = async function(a, b) {
-	checkNotNull(a);
-	checkNotNull(b);
+AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=()=>{}) {
+	checkNotNull(req);
 
-	let aTokens = await a.ContentAsTokens;
-	let bTokens = await b.ContentAsTokens;
+	performance.mark('smithwaterman-start.'+req.name);
+
+	let a = req.submissions[0];
+	let b = req.submissions[1];
+
+	let aTokens = a.finalList;
+	let bTokens = b.finalList;
 
 	//console.debug('Creating a SmithWaterman for ' + a.Name + ' and ' + b.Name);
 
@@ -41,29 +55,52 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(a, b) {
 
 	// Handle a 0-token submission (no similarity)
 	if(aTokens.length === 0 || bTokens.length === 0) {
-		return AlgorithmResults(a, b, aTokens, bTokens);
+		//TODO: return req
+		let result = await AlgorithmResults.Create(a, b, aTokens, bTokens, {error:'0 token submission'});
+		result.complete = result.totalTokens;
+		return result;
 	}
-
-	// Handle identical submissions
-	if(await a.equals(b)) {
-		let aInval = await TokenList.cloneTokenList(aTokens);
-		aInval.forEach((token) => token.setValid(false));
-		return AlgorithmResults(a, b, aInval, aInval);
-	}
-
-	// Alright, easy cases taken care of. Generate an instance to perform the actual algorithm
-	let algorithm = new SmithWatermanAlgorithm(aTokens, bTokens);
-	let endLists = algorithm.computeSmithWatermanAlignmentExhaustive();
 
 	let notes = {
 		algorithm: 'smithwaterman'
 	};
-	if(algorithm.massive){
-		notes.error = 'Massive compare';
+	if(aTokens.length * bTokens.length > largeCompare){
+		notes.isMassive = true;
 	}
+
+	// Alright, easy cases taken care of. Generate an instance to perform the actual algorithm
+	let endLists = await new Promise((resolve,reject)=>{
+		let thread = new Worker(WorkerUrl);
+		thread.onmessage = function(msg){
+			let handler = progHandler;
+			switch(msg.data.type){
+				case 'complete':
+					handler = resolve;
+					thread.terminate();
+					thread = null;
+					break;
+				case 'progress':
+					handler = progHandler;
+					break;
+			}
+			handler(msg.data.data);
+		};
+		thread.postMessage(JSON.clone({
+			action:'start',
+			name:req.name,
+			submissions:[aTokens, bTokens]
+		}));
+	});
+
+
+	performance.mark('smithwaterman-end.'+req.name);
+	performance.measure('smithwaterman.'+req.name,'smithwaterman-start.'+req.name,'smithwaterman-end.'+req.name);
+	let perf = performance.getEntriesByName('smithwaterman.'+req.name);
+	notes.duration = JSON.stringify(perf.pop());
 
 	let results = await AlgorithmResults.Create(a, b, endLists[0], endLists[1], notes);
 	results.complete = results.totalTokens;
+
 	return results;
 };
 

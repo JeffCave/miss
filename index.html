@@ -9,6 +9,7 @@
  <!-- script async src="https://cdnjs.cloudflare.com/ajax/libs/object-observe/0.2.6/object-observe.js" integrity="sha256-bv022XiEHbrp9bLG8/z2fZXtDNYmdl/Uv/p30JMbXVk=" crossorigin="anonymous"></script -->
  <script async src="https://unpkg.com/vue/dist/vue.js"></script>
  <script async src="https://unpkg.com/vue-material@beta"></script>
+ <script async src="https://unpkg.com/http-vue-loader"></script>
 
 
  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:400,500,700,400italic|Material+Icons">
@@ -46,6 +47,15 @@
    <submission v-for='(sub,key) in ordered' :key="sub.name" :submission="sub" :remover='remover' ></submission>
   </div>
  </template>
+ <template type='text/x-template' id='tornadoresult-template'>
+   <table>
+    <tbody>
+     <tr v-for='(result,key) in ordered' :class="{complete:isComplete(result)}" :key="result.name">
+      <td v-for='submission in result.submissions'><meter min='0' max='1' :value='submission.percentMatched' :title='formatTitle(submission.percentMatched)'></meter><span :title='formatTitle(submission.percentMatched)'>{{submission.name}}</span></td>
+     </tr>
+    </tbody>
+   </table>
+ </template>
 
 
  <link rel='stylesheet' href='index.css' />
@@ -72,6 +82,16 @@
       A few demo files that I have used in classes. Formatted
       appropriately for student submission, and copied a couple of way.
       Gives some data that will match and some data that will not match.
+     </dd>
+    <dt><a href='./tests/smallcompares.zip'>Small Compares</a></dt>
+     <dd>
+      Two files with a very small comparison dataset. Suitable for debugging,
+      and manually tracing of the algorithm.
+      <ol>
+       <li><pre><a href="https://en.wikipedia.org/wiki/Coelacanth">C O E L A C A N T H</a></pre></li>
+       <li><pre>  P E L I C A N</pre></li>
+      </ol>
+      From a bioinformatics class slides I <a href="http://slideplayer.com/slide/5142106/16/images/21/Smith-Waterman-Algorithm.jpg">found online</a>
      </dd>
     <dt><a href='./tests/bigcompares.zip'>Big Compares</a></dt>
      <dd>
@@ -102,7 +122,7 @@
    </details>
    <details data-type='lst' open>
     <summary>Listing</summary>
-    <table class="result"></table>
+    <tornadoresult-list class='result' :report="report"></tornadoresult-list>
    </details>
    <details data-type='html' open>
     <summary>HTML</summary>
