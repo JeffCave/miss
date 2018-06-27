@@ -16,6 +16,7 @@ let WorkerUrl = window.location.pathname.split('/');
 WorkerUrl.pop();
 WorkerUrl = WorkerUrl.concat('/scripts/DeepDiff/algorithm/smithwaterman/SmithWatermanMemfriendly.js'.split('/'));
 WorkerUrl = WorkerUrl.filter((u)=>{return u;});
+WorkerUrl.unshift(window.location.origin);
 WorkerUrl = WorkerUrl.join('/');
 
 
