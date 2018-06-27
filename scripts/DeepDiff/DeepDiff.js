@@ -504,6 +504,7 @@ class DeepDiff {
 				;
 
 			if(results.length === 0){
+				this.runAllComparesIsRunning = false;
 				return Promise.resolve();
 			}
 			console.log("Discovered " + results.length + " oustanding pairs");
