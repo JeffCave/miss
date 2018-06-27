@@ -25,8 +25,8 @@ export const ContentHandlers = {
 			'type' : 'js',
 			'mime' : 'text/javascript',
 			'ext' : ['js'],
-			'tokenizer' : TokenizerRegistry.processors.line.tokentype,
-			'preprocessors': ['lowercase','deduplicate']
+			'tokenizer' : TokenizerRegistry.processors.ecmascript.tokentype,
+			'preprocessors': ['deduplicate']
 		},
 		{
 			'type' : 'text',
