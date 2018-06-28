@@ -152,14 +152,10 @@ class DeepDiff {
 				id = id.join('.');
 				Vue.delete(this.report.submissions,id);
 
-				let results = await self.db.allDocs({startkey:'result.',endkey:'result.\ufff0'});
-				let submission = e.id.split('.').pop();
+				let results = await self.db.allDocs({startkey:'result.',endkey:'result.\ufff0',include_docs:true});
 				let deletes = results.rows.map(function(d){
-					let keys = d.id.split('.');
-					keys.shift();
-					let match = keys.some(function(name){
-						let m = name === submission;
-						return m;
+					let match = d.doc.submissions.some((s)=>{
+						return s.name === id;
 					});
 					if(!match){
 						return false;
