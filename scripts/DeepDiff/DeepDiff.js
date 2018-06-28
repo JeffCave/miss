@@ -131,6 +131,7 @@ class DeepDiff {
 				id.shift();
 				id = id.join('.');
 				Vue.delete(this.report.results,id);
+				this.Algorithm({name:id,action:'stop'});
 				console.log("removed result: " + e.id);
 			}
 			else{
@@ -455,7 +456,9 @@ class DeepDiff {
 		let algo = this.Algorithm;
 		console.log("Performing comparison on " + pair.name );
 		let result = await algo(pair,async (comparer)=>{
+			comparer = comparer.data.data;
 			let result = this.report.results[comparer.name];
+			if(!result) return;
 			//result.complete = (comparer.totalSize - comparer.remaining) -1;
 			//result.totalTokens = comparer.totalSize;
 			//result.identicalTokens = comparer.tokenMatch;

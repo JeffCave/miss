@@ -60,7 +60,7 @@ class Matrix{
 			complete:[]
 		};
 
-		this.stop();
+		this.pause();
 
 		// initialize the calculations. Creates the state for the first
 		// cell to be calculated
@@ -68,17 +68,30 @@ class Matrix{
 	}
 
 	start(){
-		if(this.shouldStop){
+		if(this.isPaused){
 			utils.defer(()=>{
 				this.calcBuffer();
 			});
 		}
-		this.shouldStop = false;
+		this.isPaused = false;
+	}
+
+	pause(){
+		this.isPaused = true;
 	}
 
 	stop(){
-		this.shouldStop = true;
+		this.ResolveCandidates();
+		let entries = this.submissions;
+		let msg = {type:'complete',data:entries};
+		if(this.remaining !== this.totalSize){
+			msg.type = 'stopped';
+		}
+		postMessage(msg);
+		close();
 	}
+
+
 
 	CoordToIndex(x,y){
 		return y * this.submissions[0].length + x;
@@ -156,7 +169,7 @@ class Matrix{
 
 			// this thing is supposed to be a multi-threaded thing. We may need
 			// a way to stop it
-			if(this.shouldStop){
+			if(this.isPaused){
 				return;
 			}
 
@@ -184,7 +197,23 @@ class Matrix{
 				this.calcBuffer();
 			}
 			else{
-				this.postProcess();
+				// we are finished processing, but may not quite be finished
+				// all the clean up. To be honest, I think I'm implementing
+				// this due to a memory of and bug that has since been fixed.
+				//
+				// Since I'm implementing it:
+				//
+				// Create a function that watches for the current cycle to be
+				// finished. Once the cycle is finished, then do a full stop.
+				const stopper = ()=>{
+					if(this.calcBufferInstance){
+						utils.defer(stopper);
+					}
+					else{
+						this.stop();
+					}
+				};
+				stopper();
 			}
 
 		});
@@ -409,13 +438,6 @@ class Matrix{
 		});
 	}
 
-	postProcess(){
-		this.ResolveCandidates();
-		let entries = this.submissions;
-		postMessage({type:'complete',data:entries});
-		close();
-	}
-
 	toJSON(){
 		let json = {
 			name: this.name,
@@ -450,7 +472,7 @@ onmessage = function(params){
 		matrix = new Matrix(id,a,b);
 		matrix.start();
 	}
-	else if(params.data.action === 'stop'){
-		matrix.stop();
+	else if(params.data.action === 'pause'){
+		matrix.pause();
 	}
 };
