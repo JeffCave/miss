@@ -47,16 +47,12 @@ LexemeMap.getLexemeForToken = function(token) {
  * Throws RuntimeException if lexeme does not map to any key.
  */
 LexemeMap.getTokenForLexeme = function(lexeme) {
-	if(lexeme < 0 || lexeme > (LexemeMap.length-1)) {
-		throw new Error("Lexeme " + lexeme + " does not map to any value!");
-	}
-	return LexemeMap[lexeme];
+	let token = LexemeMap[lexeme] || null;
+	return token;
 };
 
 
 /**
- * Interface for Tokens.
- *
  * A Token is the basic unit of comparison in DeepDiff. A token
  * represents a "chunk" of a submission --- typically a substring of
  * the submission, or a single character.
