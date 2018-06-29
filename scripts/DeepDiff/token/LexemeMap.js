@@ -62,12 +62,16 @@ LexemeMap.getTokenForLexeme = function(lexeme) {
  * This interface enables easy use of Decorators for tokens.
  */
 LexemeMap.CreateToken = function(token, type, valid=true, range=null) {
+	if(!token){
+		token = 0;
+	}
 	let rtn = {
 		valid: valid,
 		type: type,
 	};
 	if(Array.isArray(range)){
-		rtn.range = range.splice(0,2);
+		rtn.range = range.splice(0);
+		rtn.range = rtn.range.splice(0,2);
 	}
 	if(typeof token === 'number'){
 		rtn.lexeme = token;

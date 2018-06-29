@@ -26,7 +26,14 @@ export const ContentHandlers = {
 			'mime' : 'text/javascript',
 			'ext' : ['js'],
 			'tokenizer' : TokenizerRegistry.processors.ecmascript.tokentype,
-			'preprocessors': ['deduplicate']
+			'preprocessors': []
+		},
+		{
+			'type' : 'python',
+			'mime' : 'text/python',
+			'ext' : ['py'],
+			'tokenizer' : TokenizerRegistry.processors.python.tokentype,
+			'preprocessors': []
 		},
 		{
 			'type' : 'text',
@@ -64,8 +71,6 @@ ContentHandlers.handlers.forEach(function(d){ContentHandlers.handlers[d.type] = 
 	'gpg',
 	// libraries and executables
 	'jar','exe','dll','suo','pyc','pyw',
-	// compiled
-	'pyc',
 	// other
 	'doc','docx',
 ].forEach(function(ext){

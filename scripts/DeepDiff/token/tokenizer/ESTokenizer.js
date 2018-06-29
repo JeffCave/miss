@@ -19,7 +19,6 @@ let TOKENTYPE = 'ecmascript';
  * Split a file into tokens based on spaces.
  */
 TokenizerRegistry.processors[TOKENTYPE] = {
-	seperator: ' ',
 	tokentype: TOKENTYPE,
 	split: function(string) {
 		utils.checkNotNull(string);

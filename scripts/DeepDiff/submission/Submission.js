@@ -11,6 +11,7 @@ import '../token/tokenizer/LineTokenizer.js';
 import '../token/tokenizer/CharTokenizer.js';
 import '../token/tokenizer/WhitespaceTokenizer.js';
 import '../token/tokenizer/ESTokenizer.js';
+import '../token/tokenizer/PyTokenizer.js';
 import {ContentHandlers} from '../submission/ContentHandlers.js';
 import {PreprocessorRegistry} from '../preprocessor/PreprocessorRegistry.js';
 import {TokenList} from '../token/TokenList.js';
@@ -56,6 +57,11 @@ export default class Submission {
 		checkArgument(name !== '', "Submission name cannot be empty");
 		checkNotNull(files);
 		checkArgument(typeof files === 'object','Expecting a list of promised files');
+
+		if('' in files){
+			files[name] = files[''];
+			delete files[''];
+		}
 
 		// Group the files by the various types we handle
 		let content = Object.entries(files)
