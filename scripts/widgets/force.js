@@ -78,7 +78,9 @@ export function d3ForceDirected(results){
 				if(d.original.error){
 					width = 1;
 				}
-				width = Math.floor((width * radius) + 1) + 'px';
+				width = width * (radius+1);
+				width = Math.floor(width);
+				width = width + 'px';
 				return width;
 			})
 			.attr("opacity", function(d) {
