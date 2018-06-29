@@ -29,9 +29,8 @@ export default class TokenList extends Array{
 		checkArgument(isType,"Expected type to be of TokenType. Received " + type);
 
 		if(Array.isArray(baseList)){
-			let the = this;
-			baseList.forEach(function(d){
-				the.push(d);
+			baseList.forEach((d)=>{
+				this.push(d);
 			});
 		}
 
