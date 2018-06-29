@@ -20,7 +20,6 @@ export {
 import '../algorithm/linesimilarity/LineSimilarityChecker.js';
 import {AlgorithmRegistry} from '../algorithm/AlgorithmRegistry.js';
 import {Submission} from '../submission/Submission.js';
-import {ValidityIgnoringSubmission} from '../submission/ValidityIgnoringSubmission.js';
 import {checkNotNull,checkArgument} from '../util/misc.js';
 
 

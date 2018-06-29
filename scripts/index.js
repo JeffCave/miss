@@ -4,11 +4,13 @@
 global Vue
 */
 
-//import vue from 'https://unpkg.com/vue/dist/vue.js'
-//import vuetify from 'https://unpkg.com/vuetify/dist/vuetify.js'
-//import "https://unpkg.com/http-vue-loader";
-
 import "https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.0/underscore-min.js";
+
+//import 'https://unpkg.com/vue/dist/vue.js';
+import 'https://unpkg.com/vuetify/dist/vuetify.js';
+import 'https://unpkg.com/vue-material';
+//import 'https://unpkg.com/http-vue-loader';
+
 
 import {DeepDiff} from './DeepDiff/DeepDiff.js';
 import {SimilarityMatrix} from './DeepDiff/visualizations/similaritymatrix/SimilarityMatrix.js';

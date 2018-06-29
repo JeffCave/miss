@@ -1,5 +1,6 @@
 'use strict';
-import {newToken}     from '../Token.js';
+
+import {LexemeMap} from '../../token/LexemeMap.js';
 import {TokenizerRegistry} from '../TokenizerRegistry.js';
 import {TokenList} from '../TokenList.js';
 
@@ -21,7 +22,7 @@ TokenizerRegistry.processors[TOKENTYPE] = {
 
 		let tokens = content.split('')
 			.map((character) => {
-				return newToken(character, TOKENTYPE);
+				return LexemeMap.CreateToken(character, TOKENTYPE);
 			});
 
 		let toReturn = new TokenList(TOKENTYPE,tokens);

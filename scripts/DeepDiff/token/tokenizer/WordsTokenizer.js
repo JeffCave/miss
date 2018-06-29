@@ -1,7 +1,6 @@
 'use strict';
 import {TokenizerRegistry} from '../../token/TokenizerRegistry.js';
-import {TokenList} from '../../token/TokenList.js';
-import {newToken} from '../../token/Token.js';
+import {LexemeMap} from '../../token/LexemeMap.js';
 import {checkNotNull} from '../../util/misc.js';
 
 (function(){
@@ -29,7 +28,7 @@ TokenizerRegistry.processors[TOKENTYPE] = {
 				return str !== "";
 			})
 			.map((str) => {
-				return newToken(str, TOKENTYPE);
+				return LexemeMap.CreateToken(str, TOKENTYPE);
 			})
 			;
 

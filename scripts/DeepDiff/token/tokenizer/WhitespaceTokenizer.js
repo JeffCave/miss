@@ -1,6 +1,8 @@
 'use strict';
+
+import {LexemeMap} from '../../token/LexemeMap.js';
 import {TokenizerRegistry} from '../../token/TokenizerRegistry.js';
-import {newToken} from '../../token/Token.js';
+import {TokenList} from '../TokenList.js';
 import {checkNotNull} from '../../util/misc.js';
 
 (function(){
@@ -18,16 +20,17 @@ TokenizerRegistry.processors[TOKENTYPE] = {
 	split: function(string) {
 		checkNotNull(string);
 
-		let toReturn = string
+		let tokens = string
 			.split(/\s+/)
 			.filter((str) => {
 				return str !== "";
 			})
 			.map((str) => {
-				return newToken(str, TOKENTYPE);
+				return LexemeMap.CreateToken(str, TOKENTYPE);
 			})
 			;
 
+		let toReturn = new TokenList(TOKENTYPE,tokens);
 		return toReturn;
 	}
 };

@@ -10,6 +10,7 @@ global JSZip
 import '../token/tokenizer/LineTokenizer.js';
 import '../token/tokenizer/CharTokenizer.js';
 import '../token/tokenizer/WhitespaceTokenizer.js';
+import '../token/tokenizer/ESTokenizer.js';
 import {ContentHandlers} from '../submission/ContentHandlers.js';
 import {PreprocessorRegistry} from '../preprocessor/PreprocessorRegistry.js';
 import {TokenList} from '../token/TokenList.js';

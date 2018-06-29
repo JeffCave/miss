@@ -131,6 +131,7 @@ class DeepDiff {
 				id.shift();
 				id = id.join('.');
 				Vue.delete(this.report.results,id);
+				this.Algorithm({name:id,action:'stop'});
 				console.log("removed result: " + e.id);
 			}
 			else{
@@ -151,14 +152,10 @@ class DeepDiff {
 				id = id.join('.');
 				Vue.delete(this.report.submissions,id);
 
-				let results = await self.db.allDocs({startkey:'result.',endkey:'result.\ufff0'});
-				let submission = e.id.split('.').pop();
+				let results = await self.db.allDocs({startkey:'result.',endkey:'result.\ufff0',include_docs:true});
 				let deletes = results.rows.map(function(d){
-					let keys = d.id.split('.');
-					keys.shift();
-					let match = keys.some(function(name){
-						let m = name === submission;
-						return m;
+					let match = d.doc.submissions.some((s)=>{
+						return s.name === id;
 					});
 					if(!match){
 						return false;
@@ -455,7 +452,9 @@ class DeepDiff {
 		let algo = this.Algorithm;
 		console.log("Performing comparison on " + pair.name );
 		let result = await algo(pair,async (comparer)=>{
+			comparer = comparer.data.data;
 			let result = this.report.results[comparer.name];
+			if(!result) return;
 			//result.complete = (comparer.totalSize - comparer.remaining) -1;
 			//result.totalTokens = comparer.totalSize;
 			//result.identicalTokens = comparer.tokenMatch;
@@ -472,8 +471,10 @@ class DeepDiff {
 			});
 			//this.addResults(pair);
 		});
-		result = AlgorithmResults.toJSON(result);
-		this.addResults(result);
+		if(result){
+			result = AlgorithmResults.toJSON(result);
+			this.addResults(result);
+		}
 		return result;
 	}
 
@@ -504,6 +505,7 @@ class DeepDiff {
 				;
 
 			if(results.length === 0){
+				this.runAllComparesIsRunning = false;
 				return Promise.resolve();
 			}
 			console.log("Discovered " + results.length + " oustanding pairs");
