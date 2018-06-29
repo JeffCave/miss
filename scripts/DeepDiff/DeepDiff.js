@@ -446,6 +446,14 @@ class DeepDiff {
 						});
 				});
 			tokens = await Promise.all(tokens);
+
+			if(tokens.length < 2){
+				let result = await AlgorithmResults.Create(pair.submissions[0], pair.submissions[1], [], [], {error:'Invalid Token Length'});
+				result.totalTokens = 0;
+				this.addResults(result);
+				return result;
+			}
+
 			pair.submissions[0].finalList = tokens[0];
 			pair.submissions[1].finalList = tokens[1];
 		}
