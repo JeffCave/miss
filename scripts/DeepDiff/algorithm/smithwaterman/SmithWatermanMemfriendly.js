@@ -83,9 +83,9 @@ class Matrix{
 	stop(){
 		this.ResolveCandidates();
 		let entries = this.submissions;
-		let msg = {type:'complete',data:entries};
-		if(this.remaining !== this.totalSize){
-			msg.type = 'stopped';
+		let msg = {type:'stopped',data:entries};
+		if(this.remaining === 0){
+			msg.type = 'complete';
 		}
 		postMessage(msg);
 		close();

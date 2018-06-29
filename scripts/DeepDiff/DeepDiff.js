@@ -471,8 +471,10 @@ class DeepDiff {
 			});
 			//this.addResults(pair);
 		});
-		result = AlgorithmResults.toJSON(result);
-		this.addResults(result);
+		if(result){
+			result = AlgorithmResults.toJSON(result);
+			this.addResults(result);
+		}
 		return result;
 	}
 

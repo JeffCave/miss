@@ -111,11 +111,11 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=
 	let perf = performance.getEntriesByName('smithwaterman.'+req.name);
 	notes.duration = JSON.stringify(perf.pop());
 
-	if(endLists.type === 'stopped'){
+	if(endLists.data.type === 'stopped'){
 		return null;
 	}
 
-	let results = await AlgorithmResults.Create(a, b, endLists[0], endLists[1], notes);
+	let results = await AlgorithmResults.Create(a, b, endLists.data.data[0], endLists.data.data[1], notes);
 	results.complete = results.totalTokens;
 
 	return results;
