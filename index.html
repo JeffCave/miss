@@ -55,7 +55,7 @@
  <template type='text/x-template' id='tornadoresult-template'>
    <table>
     <tbody>
-     <tr v-for='(result,key) in ordered' :class="{complete:isComplete(result)}" :key="result.name">
+     <tr v-for='(result,key) in ordered' :class="{complete:isComplete(result),significant:isComplete(result) && report.isSignificantResult(result)}" :key="result.name">
       <td v-for='submission in result.submissions'><meter min='0' max='1' :value='submission.percentMatched' :title='formatTitle(submission.percentMatched)'></meter><span :title='formatTitle(submission.percentMatched)'>{{submission.name}}</span></td>
      </tr>
     </tbody>

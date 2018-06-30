@@ -260,3 +260,18 @@ input[type=range]::-ms-track {
 	border-right-color: var(--notice-info-high);
 	transition: all 5s ease-in-out;
 }
+
+#results > details[data-type='lst'] tr.significant > td > meter::-webkit-meter-bar {
+	background: var(--notice-fail-low);
+	transition: all 5s ease-out;
+}
+#results > details[data-type='lst'] tr.significant > td > meter::-webkit-meter-optimum-value{
+	border:0;
+	background: var(--notice-fail-high);
+	transition: all 5s ease-out;
+}
+#results > details[data-type='lst'] tr.significant > td:nth-of-type(1) {
+	border-right-color: var(--notice-fail-high);
+	transition: all 5s ease-in-out;
+}
+
