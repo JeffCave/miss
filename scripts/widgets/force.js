@@ -131,53 +131,42 @@ Vue.component('forcedirected', {
 		},
 		UpdateFrame:function(){
 			const now = Date.now();
-			/*
-			const DELAY = 20;
-			const DELTAT = 0.01;
-			const SEGLEN = 10;
-			const SPRINGK = 10;
-			const MASS = 1;
-			const GRAVITY = 50;
-			const RESISTANCE = 10;
-			const STOPVEL = 0.1;
-			const STOPACC = 0.1;
-			const BOUNCE = 0.75;
-			*/
-			const DELAY = 20;
-			const DELTAT = 0.01;
-			const SEGLEN = 10;
-			const SPRINGK = 10;
-			const MASS = 1;
-			const GRAVITY = 50;
-			const RESISTANCE = 10;
-			const STOPVEL = 0.1;
-			const STOPACC = 0.1;
-			const BOUNCE = 0.75;
+
+			//let DELAY = 20;
+			let DELTAT = 0.01;
+			let SEGLEN = this.opts.radius*2;
+			let SPRINGK = 30;
+			let MASS = 1;
+			let GRAVITY = 50;
+			let RESISTANCE = 10;
+			let STOPVEL = 0.1;
+			let STOPACC = 0.1;
+			let BOUNCE = 0.75;
 			const springForce = function(dotA, dotB, strength){
-				let dx = (dotA.x - dotB.x);
-				let dy = (dotA.y - dotB.y);
+				let dx = (dotB.x - dotA.x);
+				let dy = (dotB.y - dotA.y);
 				let len = Math.sqrt(dx*dx + dy*dy);
 				let spring = {x:0,y:0};
 				if (len > SEGLEN) {
-					let force = SPRINGK * (len - SEGLEN) * strength;
-					spring.x = (dx / len) * force;
-					spring.y = (dy / len) * force;
+					len = len - SEGLEN;
+					let force = SPRINGK * len * strength;
+					let ratioBase = Math.abs(dx) + Math.abs(dy);
+					spring.x = (dx / ratioBase) * force;
+					spring.y = (dy / ratioBase) * force;
 				}
 				return spring;
 			};
 			const gravityForce = function(dotA, dotB, strength){
-				let dx = (dotA.x - dotB.x);
-				let dy = (dotA.y - dotB.y);
+				let dx = (dotB.x - dotA.x);
+				let dy = (dotB.y - dotA.y);
 				let len = Math.sqrt(dx*dx + dy*dy);
-				let force = GRAVITY * strength;
-				let gravity = {};
-				if(len === 0){
-					dx = 0;
-					dy = 0;
-					len = 1;
+				let gravity = {x:0,y:0};
+				if(len !== 0){
+					let force = GRAVITY * strength;
+					let ratioBase = Math.abs(dx) + Math.abs(dy);
+					gravity.x = (dx / ratioBase) * force;
+					gravity.y = (dy / ratioBase) * force;
 				}
-				gravity.x = (1 - dx / len) * force;
-				gravity.y = (1 - dy / len) * force;
 				return gravity;
 			};
 
@@ -185,16 +174,18 @@ Vue.component('forcedirected', {
 				let spring = springForce(link.points[0].pos,link.points[1].pos,link.value);
 				let gravity = gravityForce(link.points[0].pos,link.points[1].pos,-1);
 
-				let a = link.points[0].force;
-				a.x += spring.x;
-				a.y += spring.y;
-				a.x += gravity.x;
-				a.y += gravity.y;
-				let b = link.points[1].force;
-				b.x -= spring.x;
-				b.y -= spring.y;
-				b.x -= gravity.x;
-				b.y -= gravity.y;
+				spring.x += gravity.x;
+				spring.y += gravity.y;
+
+				spring.x /= 2;
+				spring.y /= 2;
+
+				let direction = 1;
+				link.points.forEach((point)=>{
+					point.force.x += spring.x * direction;
+					point.force.y += spring.y * direction;
+					direction = -1;
+				});
 			});
 
 			let shouldStop = true;
@@ -209,30 +200,14 @@ Vue.component('forcedirected', {
 					x : node.force.x + resist.x,
 					y : node.force.y + resist.y,
 				};
+				accel.x *= DELTAT;
+				accel.y *= DELTAT;
+				// apply the acceleration to the velocity
+				node.velocity.x += accel.x;
+				node.velocity.y += accel.y;
+				// This force has been accumulated, and consumed: set it to zero
 				node.force.x = 0;
 				node.force.y = 0;
-
-				node.velocity.x += (DELTAT * accel.x);
-				node.velocity.y += (DELTAT * accel.y);
-
-				// check the item has settled down
-				// at some point there is so little movement we may as well call it
-				// check our stop constants to see if the movement is too small to
-				// really consider
-				let isStopped =
-					Math.abs(node.velocity.x) < STOPVEL &&
-					Math.abs(node.velocity.y) < STOPVEL &&
-					Math.abs(accel.x) < STOPACC &&
-					Math.abs(accel.y) < STOPACC
-					;
-				if (isStopped) {
-					node.velocity.x = 0;
-					node.velocity.y = 0;
-				}
-				else{
-					// if any of them aren't stopped, we should not stop
-					shouldStop = false;
-				}
 
 				// move the node
 				node.pos.x += node.velocity.x;
@@ -264,8 +239,28 @@ Vue.component('forcedirected', {
 					node.velocity.y = -1 * node.velocity.y * BOUNCE;
 				}
 
-				node.pos.x = Math.round(node.pos.x);
-				node.pos.y = Math.round(node.pos.y);
+				// check the item has settled down
+				// at some point there is so little movement we may as well call it
+				// check our stop constants to see if the movement is too small to
+				// really consider
+				let isStopped =
+					Math.abs(node.velocity.x) < STOPVEL &&
+					Math.abs(node.velocity.y) < STOPVEL &&
+					Math.abs(accel.x) < STOPACC &&
+					Math.abs(accel.y) < STOPACC
+					;
+				if (isStopped) {
+					node.velocity.x = 0;
+					node.velocity.y = 0;
+				}
+				else{
+					// if any of them aren't stopped, we should not stop
+					shouldStop = false;
+				}
+
+				// round and apply the final values
+				//node.pos.x = Math.round(node.pos.x);
+				//node.pos.y = Math.round(node.pos.y);
 
 			});
 
@@ -280,12 +275,14 @@ Vue.component('forcedirected', {
 			node = this.nodes[node];
 
 			let svg = e.target.parentNode.parentNode;
+			let restart = this.start;
 
 			function mousemove(m){
 				node.velocity.x = 0;
 				node.velocity.y = 0;
 				node.pos.x = m.layerX;
 				node.pos.y = m.layerY;
+				restart();
 			}
 			function remover(m){
 				svg.removeEventListener('mousemove',mousemove);
