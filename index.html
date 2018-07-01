@@ -61,6 +61,30 @@
     </tbody>
    </table>
  </template>
+ <template type='text/x-template' id='forcedirected-template'>
+  <svg>
+   <g class='links'>
+    <line
+        v-for='link in links'
+        stroke='darkgray'
+        stroke-width='5px'
+        opacity='1'
+        />
+   </g>
+   <g class='nodes'>
+    <circle
+        v-for='node in nodes'
+        cx='10'
+        cy='10'
+        r='5'
+        fill='gray'
+        @mousedown='MouseDown'
+        >
+     <title>{{node.key}}</title>
+    </circle>
+   </g>
+  </svg>
+ </template>
 
 
  <link rel='stylesheet' href='index.css' />
@@ -123,7 +147,7 @@
    <details data-type='force' open>
     <summary>Force</summary>
     <svg width="300" height="300"></svg>
-    <ul class='result' style="padding:0;height:300px;width:300px;list-style-type:none;position:relative;display:none;"></ul>
+    <forcedirected :width='300' :height="300" :results='report.results'></forcedirected>
    </details>
    <details data-type='lst' open>
     <summary>Listing</summary>

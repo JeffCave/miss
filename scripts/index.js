@@ -27,6 +27,8 @@ import './widgets/treeview.js';
 import './widgets/submissions.js';
 import './widgets/filedrop.js';
 import './widgets/ResultsTable.js';
+import './widgets/force.js';
+
 
 
 /**
