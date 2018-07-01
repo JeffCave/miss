@@ -65,8 +65,9 @@ function hashCode(str){
 	//console.debug("Done: "+ hash.toString(2));
 	return hash;
 }
-String.prototype.hashCode = hashCode;
-
+String.prototype.hashCode = function(){
+	return hashCode(this);
+};
 
 JSON.clone = function(obj){
 	return JSON.parse(JSON.stringify(obj));
@@ -108,4 +109,15 @@ export function defer(func){
 }
 
 
+/**
+ * Given a seed number, will generate a consistently uniform distribution of numbers
+ *
+ * https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
+ */
+export function UniformDistribution(seed) {
+	function lcg(a) {return a * 48271 % 2147483647}
+	seed = Math.abs(seed);
+	seed = seed ? lcg(seed) : lcg(Math.random());
+	return function() {return (seed = lcg(seed)) / 2147483648};
+}
 

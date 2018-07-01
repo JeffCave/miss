@@ -66,18 +66,22 @@
    <g class='links'>
     <line
         v-for='link in links'
-        stroke='darkgray'
-        stroke-width='5px'
-        opacity='1'
+        :stroke='opts.lineColour'
+        :stroke-width='Math.round(opts.radius*link.value)'
+        :opacity='link.value'
+        :x1='link.points[0].pos.x'
+        :y1='link.points[0].pos.y'
+        :x2='link.points[1].pos.x'
+        :y2='link.points[1].pos.y'
         />
    </g>
    <g class='nodes'>
     <circle
         v-for='node in nodes'
-        cx='10'
-        cy='10'
-        r='5'
-        fill='gray'
+        :cx='node.pos.x'
+        :cy='node.pos.y'
+        :r='opts.radius'
+        :fill='opts.nodeColour[node.group]'
         @mousedown='MouseDown'
         >
      <title>{{node.key}}</title>

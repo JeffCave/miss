@@ -1,3 +1,7 @@
+'use strict';
+
+import * as utils from '../DeepDiff/util/misc.js';
+
 /*
 global d3
 global Vue
@@ -54,7 +58,7 @@ Vue.component('forcedirected', {
 		results:function(newval,oldval){
 			let results = Object.entries(newval);
 			Object.keys(this.links).forEach(name=>{
-				if(!(name in results)){
+				if(!(name in newval)){
 					Vue.delete(this.links, name);
 				}
 			});
@@ -66,12 +70,23 @@ Vue.component('forcedirected', {
 					link = {
 						points : val.submissions.map(d=>{
 								if(!(d.name in this.nodes)){
+									let initPos = d.name;
+									initPos = initPos.hashCode();
+									initPos = utils.UniformDistribution(initPos);
+									initPos = initPos();
+
+									initPos = {
+										y: Math.floor(initPos * this.opts.width),
+										x: (initPos%2) ? -1 : this.opts.width+1,
+									};
+
 									let node = {
 										key: d.name,
-										pos:{x: 0, y: 0},
+										pos:initPos,
 										velocity:{x: 0, y: 0},
 										force:{x: 0, y: 0},
-										links:{}
+										links:{},
+										group:0
 									};
 									Vue.set(this.nodes,d.name,node);
 								}
@@ -87,12 +102,14 @@ Vue.component('forcedirected', {
 				}
 				link.value = val.percentMatched;
 			});
-			Object.values(this.links).forEach(link=>{
-				link.points.forEach(node=>{
-					if(!(node.key in this.nodes)){
-						Vue.delete(this.nodes,node.key);
-					}
+			// search the nodes for items that there is no longer a link for
+			Object.keys(this.nodes).forEach(node=>{
+				let found = Object.values(this.links).some((link)=>{
+					return link.points[0].key === node || link.points[1].key === node;
 				});
+				if(!found){
+					Vue.delete(this.nodes,node);
+				}
 			});
 			this.start();
 		}
@@ -113,6 +130,7 @@ Vue.component('forcedirected', {
 			this.animation.timer = null;
 		},
 		UpdateFrame:function(){
+			const now = Date.now();
 			/*
 			const DELAY = 20;
 			const DELTAT = 0.01;
@@ -219,23 +237,63 @@ Vue.component('forcedirected', {
 				// move the node
 				node.pos.x += node.velocity.x;
 				node.pos.y += node.velocity.y;
+
+				// apply boundary checking
+				if(node.pos.x < 0){
+					let boundary = 0;
+					let overflow = (boundary - node.pos.x);
+					node.pos.x = boundary + overflow * BOUNCE;
+					node.velocity.x = -1 * node.velocity.x * BOUNCE;
+				}
+				else if(node.pos.x > this.opts.width){
+					let boundary = this.opts.width;
+					let overflow = (boundary - node.pos.x);
+					node.pos.x = boundary + overflow * BOUNCE;
+					node.velocity.x = -1 * node.velocity.x * BOUNCE;
+				}
+				if(node.pos.y < 0){
+					let boundary = 0;
+					let overflow = (boundary - node.pos.y);
+					node.pos.y = boundary + overflow * BOUNCE;
+					node.velocity.y = -1 * node.velocity.y * BOUNCE;
+				}
+				else if(node.pos.y > this.opts.height){
+					let boundary = this.opts.height;
+					let overflow = (boundary - node.pos.y);
+					node.pos.y = boundary + overflow * BOUNCE;
+					node.velocity.y = -1 * node.velocity.y * BOUNCE;
+				}
+
+				node.pos.x = Math.round(node.pos.x);
+				node.pos.y = Math.round(node.pos.y);
+
 			});
 
 			if(shouldStop){
 				this.stop();
 			}
+
+			this.animation.lastFrame = now;
 		},
 		MouseDown:function(e){
+			let node = e.target.firstChild.innerHTML;
+			node = this.nodes[node];
+
+			let svg = e.target.parentNode.parentNode;
+
 			function mousemove(m){
-				e.target.setAttribute('cx',m.layerX);
-				e.target.setAttribute('cy',m.layerY);
+				node.velocity.x = 0;
+				node.velocity.y = 0;
+				node.pos.x = m.layerX;
+				node.pos.y = m.layerY;
 			}
 			function remover(m){
-				m.target.removeEventListener('mousemove',mousemove);
-				m.target.removeEventListener('mouseup',remover);
+				svg.removeEventListener('mousemove',mousemove);
+				window.removeEventListener('mouseup',remover);
 			}
-			e.target.addEventListener('mousemove',mousemove);
-			e.target.addEventListener('mouseup',remover);
+
+			svg.addEventListener('mousemove',mousemove);
+			window.addEventListener('mouseup',remover);
 		},
 	}
 });
