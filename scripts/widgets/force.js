@@ -74,9 +74,10 @@ Vue.component('forcedirected', {
 									initPos = initPos.hashCode();
 									initPos = utils.UniformDistribution(initPos);
 									initPos = initPos();
+									initPos = Math.round(initPos * this.opts.width);
 
 									initPos = {
-										y: Math.floor(initPos * this.opts.width),
+										y: initPos,
 										x: (initPos%2) ? -1 : this.opts.width+1,
 									};
 
@@ -132,23 +133,22 @@ Vue.component('forcedirected', {
 		UpdateFrame:function(){
 			const now = Date.now();
 
-			//let DELAY = 20;
 			let DELTAT = 0.01;
-			let SEGLEN = this.opts.radius*2;
-			let SPRINGK = 30;
+			let SEGLEN = this.opts.radius*3;
+			let SPRINGK = 10;
 			let MASS = 1;
 			let GRAVITY = 50;
 			let RESISTANCE = 10;
 			let STOPVEL = 0.1;
 			let STOPACC = 0.1;
 			let BOUNCE = 0.75;
-			const springForce = function(dotA, dotB, strength){
+			const RubberBandForce = function(dotA, dotB, strength, seglen){
 				let dx = (dotB.x - dotA.x);
 				let dy = (dotB.y - dotA.y);
 				let len = Math.sqrt(dx*dx + dy*dy);
 				let spring = {x:0,y:0};
-				if (len > SEGLEN) {
-					len = len - SEGLEN;
+				if (len > seglen) {
+					len = len - seglen;
 					let force = SPRINGK * len * strength;
 					let ratioBase = Math.abs(dx) + Math.abs(dy);
 					spring.x = (dx / ratioBase) * force;
@@ -156,26 +156,50 @@ Vue.component('forcedirected', {
 				}
 				return spring;
 			};
-			const gravityForce = function(dotA, dotB, strength){
+			const SpringForce = function(dotA, dotB, strength, seglen){
 				let dx = (dotB.x - dotA.x);
 				let dy = (dotB.y - dotA.y);
 				let len = Math.sqrt(dx*dx + dy*dy);
-				let gravity = {x:0,y:0};
-				if(len !== 0){
-					let force = GRAVITY * strength;
-					let ratioBase = Math.abs(dx) + Math.abs(dy);
-					gravity.x = (dx / ratioBase) * force;
-					gravity.y = (dy / ratioBase) * force;
+				let spring = {x:0,y:0};
+
+				len = len - seglen;
+				let force = SPRINGK * len * strength;
+				let ratioBase = Math.abs(dx) + Math.abs(dy);
+				spring.x = (dx / ratioBase) * force + 0.000001;
+				spring.y = (dy / ratioBase) * force + 0.000001;
+
+				return spring;
+			};
+			const gravityForce = function(dotA, dotB, strength, seglen){
+				let dx = (dotB.x - dotA.x);
+				let dy = (dotB.y - dotA.y);
+				//let len = Math.sqrt(dx*dx + dy*dy);
+				let ratioBase = Math.abs(dx) + Math.abs(dy);
+				let gravity = {x:GRAVITY,y:GRAVITY};
+				if(ratioBase === 0){
+					ratioBase = 0.001;
 				}
+				let force = GRAVITY * strength;
+				gravity.x = (1 - dx / ratioBase) * force;
+				gravity.y = (1 - dy / ratioBase) * force;
 				return gravity;
 			};
 
 			Object.values(this.links).forEach(link=>{
-				let spring = springForce(link.points[0].pos,link.points[1].pos,link.value);
-				let gravity = gravityForce(link.points[0].pos,link.points[1].pos,-1);
-
-				spring.x += gravity.x;
-				spring.y += gravity.y;
+				let spring = SpringForce(
+					link.points[0].pos,
+					link.points[1].pos,
+					link.value+0.01,
+					100*(1-link.value)
+				);
+				let gravity = SpringForce(
+					link.points[0].pos,
+					link.points[1].pos,
+					-0.01,
+					500
+				);
+				//spring.x += gravity.x;
+				//spring.y += gravity.y;
 
 				spring.x /= 2;
 				spring.y /= 2;
@@ -257,10 +281,6 @@ Vue.component('forcedirected', {
 					// if any of them aren't stopped, we should not stop
 					shouldStop = false;
 				}
-
-				// round and apply the final values
-				//node.pos.x = Math.round(node.pos.x);
-				//node.pos.y = Math.round(node.pos.y);
 
 			});
 

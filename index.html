@@ -67,7 +67,7 @@
     <line
         v-for='link in links'
         :stroke='opts.lineColour'
-        :stroke-width='Math.round(opts.radius*link.value)'
+        :stroke-width='Math.floor((opts.radius+1)*link.value)'
         :opacity='link.value'
         :x1='link.points[0].pos.x'
         :y1='link.points[0].pos.y'
