@@ -125,7 +125,7 @@ class DeepDiff {
 						.forEach(function(handler){
 							setTimeout(handler,20,e);
 						});
-					if(e.seq % 10 === 0){
+					if(e.seq % 1000 === 0){
 						self.db.compact();
 					}
 				});

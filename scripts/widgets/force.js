@@ -54,8 +54,12 @@ Vue.component('forcedirected', {
 	computed: {
 	},
 	watch:{
-		results:function(newval,oldval){
-			this.ReSync();
+		results:{
+			deep:true,
+			handler:function(newval,oldval){
+				this.start();
+				this.ReSync();
+			}
 		}
 	},
 	methods:{
@@ -73,7 +77,7 @@ Vue.component('forcedirected', {
 			clearInterval(this.animation.timer);
 			this.animation.timer = null;
 		},
-		ReSync:function(){
+		ReSync:_.throttle(function(){
 			let results = Object.entries(this.results);
 			Object.keys(this.links).forEach(name=>{
 				if(!(name in this.results)){
@@ -136,7 +140,7 @@ Vue.component('forcedirected', {
 				}
 			});
 			this.start();
-		},
+		},600),
 		UpdateFrame:function(){
 			const now = Date.now();
 
@@ -200,10 +204,7 @@ Vue.component('forcedirected', {
 			Object.values(this.links).forEach(link=>{
 				// TODO: this is hacky... it should be picked up naturally on change
 				let r = this.results[link.key];
-				link.value = r.percentMatched;
-				if(r.complete !== r.totalTokens){
-					link.value = 0;
-				}
+				link.value = (r.complete === r.totalTokens) ? r.percentMatched : 0;
 
 				// Calculate the forces
 				let spring = SpringForce(
