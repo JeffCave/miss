@@ -54,8 +54,12 @@ Vue.component('forcedirected', {
 	computed: {
 	},
 	watch:{
-		results:function(newval,oldval){
-			this.ReSync();
+		results:{
+			deep:true,
+			handler:function(newval,oldval){
+				this.start();
+				this.ReSync();
+			}
 		}
 	},
 	methods:{
@@ -73,7 +77,7 @@ Vue.component('forcedirected', {
 			clearInterval(this.animation.timer);
 			this.animation.timer = null;
 		},
-		ReSync:function(){
+		ReSync:_.throttle(function(){
 			let results = Object.entries(this.results);
 			Object.keys(this.links).forEach(name=>{
 				if(!(name in this.results)){
@@ -99,19 +103,25 @@ Vue.component('forcedirected', {
 										x: (initPos%2) ? -1 : this.opts.width+1,
 									};
 
+									initPos = {
+										x:145 + Math.round(5*Math.random()),
+										y:145 + Math.round(5*Math.random()),
+									}
+
 									let node = {
 										key: d.name,
 										pos:initPos,
 										velocity:{x: 0, y: 0},
 										force:{x: 0, y: 0},
 										links:{},
-										group:0
+										group:0,
+										complete:0
 									};
 									Vue.set(this.nodes,d.name,node);
 								}
 								return this.nodes[d.name];
 							}),
-						value : val.percentMatched,
+						value : 0,
 						key : key
 					};
 					link.points.forEach(node=>{
@@ -119,7 +129,6 @@ Vue.component('forcedirected', {
 					});
 					Vue.set(this.links,key,link);
 				}
-				link.value = val.percentMatched;
 			});
 			// search the nodes for items that there is no longer a link for
 			Object.keys(this.nodes).forEach(node=>{
@@ -131,7 +140,7 @@ Vue.component('forcedirected', {
 				}
 			});
 			this.start();
-		},
+		},1000),
 		UpdateFrame:function(){
 			const now = Date.now();
 
@@ -167,6 +176,11 @@ Vue.component('forcedirected', {
 				len = len - seglen;
 				let force = SPRINGK * len * strength;
 				let ratioBase = Math.abs(dx) + Math.abs(dy);
+				if(ratioBase === 0){
+					dx = 1;
+					dy = 1;
+					ratioBase = 2;
+				}
 				spring.x = (dx / ratioBase) * force + 0.000001;
 				spring.y = (dy / ratioBase) * force + 0.000001;
 
@@ -190,17 +204,15 @@ Vue.component('forcedirected', {
 			Object.values(this.links).forEach(link=>{
 				// TODO: this is hacky... it should be picked up naturally on change
 				let r = this.results[link.key];
+				link.complete = r.totalTokens === 0 ? 1 : r.complete / r.totalTokens;
 				link.value = r.percentMatched;
-				if(r.complete !== r.totalTokens){
-					link.value = 0;
-				}
 
 				// Calculate the forces
 				let spring = SpringForce(
 					link.points[0].pos,
 					link.points[1].pos,
-					link.value+0.01,
-					100*(1-link.value)
+					0.1 + 0.9*link.value,
+					100*(1-link.value)+this.opts.radius*3
 				);
 				//let gravity = SpringForce(
 				//	link.points[0].pos,

@@ -66,7 +66,7 @@
    <g class='links'>
     <line
         v-for='link in links'
-        :stroke='opts.lineColour'
+        :stroke='link.complete===1?opts.lineColour:"orange"'
         :stroke-width='Math.floor((opts.radius+1)*link.value)'
         :opacity='link.value'
         :x1='link.points[0].pos.x'
