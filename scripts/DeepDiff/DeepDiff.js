@@ -33,8 +33,15 @@ class DeepDiff {
 			data:{
 				results:{},
 				submissions:{},
-				archives:[]
-			}
+				archives:[],
+			},
+			methods:{
+				isSignificantResult:(result)=>{
+					let significant = this.significantSimilarity;
+					significant = (significant <= result.percentMatched);
+					return significant;
+				}
+			},
 		});
 		this.Results.then(results=>{
 				this.report.results = results.reduce((a,d)=>{
@@ -126,6 +133,7 @@ class DeepDiff {
 
 
 		this.addEventListener('results',async (e)=>{
+			this._significantSimilarity = null;
 			if(e.deleted){
 				let id = e.id.split('.');
 				id.shift();
@@ -406,6 +414,51 @@ class DeepDiff {
 		utils.checkArgument(!isNaN(newNumThreads), "Attempted to set number of threads to " + newNumThreads + " - must be a number!");
 		utils.checkArgument(newNumThreads > 0, "Attempted to set number of threads to " + newNumThreads + " - must be positive integer!");
 		this.numThreads = newNumThreads;
+	}
+
+	/**
+	 * Returns the percent similarity that appears signficant
+	 *
+	 * "Significant" is a relative term, and by "relative" I mean relative to
+	 * the rest of the assignments. What we need to watch for is a big change
+	 * in differences.
+	 */
+	get significantSimilarity(){
+		if(this._significantSimilarity){
+			return this._significantSimilarity;
+		}
+		let last = null;
+		let diffs = Object.values(this.report.results)
+			.filter(r=>{
+				return r.complete === r.totalTokens;
+			})
+			.sort((a,b)=>{
+				return a.percentMatched - b.percentMatched;
+			})
+			.map((r)=>{
+				if(last === null){
+					last = r;
+				}
+				let rtn = {
+					diff : r.percentMatched - last.percentMatched,
+					pct : r.percentMatched
+				};
+				last = r;
+				return rtn;
+			})
+			.filter(r=>{ return r; })
+			;
+		let max = diffs.reduce((a,d)=>{
+				if(a.diff < d.diff){
+					return d;
+				}
+				return a;
+			},diffs[0]);
+		if(max.diff < 0.1){
+			max.pct = 2;
+		}
+		this._significantSimilarity = max.pct;
+		return this._significantSimilarity;
 	}
 
 

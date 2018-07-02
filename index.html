@@ -55,11 +55,39 @@
  <template type='text/x-template' id='tornadoresult-template'>
    <table>
     <tbody>
-     <tr v-for='(result,key) in ordered' :class="{complete:isComplete(result)}" :key="result.name">
+     <tr v-for='(result,key) in ordered' :class="{complete:isComplete(result),significant:isComplete(result) && report.isSignificantResult(result)}" :key="result.name">
       <td v-for='submission in result.submissions'><meter min='0' max='1' :value='submission.percentMatched' :title='formatTitle(submission.percentMatched)'></meter><span :title='formatTitle(submission.percentMatched)'>{{submission.name}}</span></td>
      </tr>
     </tbody>
    </table>
+ </template>
+ <template type='text/x-template' id='forcedirected-template'>
+  <svg>
+   <g class='links'>
+    <line
+        v-for='link in links'
+        :stroke='opts.lineColour'
+        :stroke-width='Math.floor((opts.radius+1)*link.value)'
+        :opacity='link.value'
+        :x1='link.points[0].pos.x'
+        :y1='link.points[0].pos.y'
+        :x2='link.points[1].pos.x'
+        :y2='link.points[1].pos.y'
+        />
+   </g>
+   <g class='nodes'>
+    <circle
+        v-for='node in nodes'
+        :cx='node.pos.x'
+        :cy='node.pos.y'
+        :r='opts.radius'
+        :fill='opts.nodeColour[node.group]'
+        @mousedown='MouseDown'
+        >
+     <title>{{node.key}}</title>
+    </circle>
+   </g>
+  </svg>
  </template>
 
 
@@ -122,8 +150,7 @@
    <h1>Reports</h1>
    <details data-type='force' open>
     <summary>Force</summary>
-    <svg width="300" height="300"></svg>
-    <ul class='result' style="padding:0;height:300px;width:300px;list-style-type:none;position:relative;display:none;"></ul>
+    <forcedirected :width='300' :height="300" :results='report.results'></forcedirected>
    </details>
    <details data-type='lst' open>
     <summary>Listing</summary>

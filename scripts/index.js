@@ -21,12 +21,13 @@ import {Submission} from './DeepDiff/submission/Submission.js';
 import './DeepDiff/visualizations/similaritymatrix/output/MatrixToCSVPrinter.js';
 import './DeepDiff/visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
 
-import {d3ForceDirected} from './widgets/force.js';
 import * as Panels from './widgets/panel.js';
 import './widgets/treeview.js';
 import './widgets/submissions.js';
 import './widgets/filedrop.js';
 import './widgets/ResultsTable.js';
+import './widgets/force.js';
+
 
 
 /**
@@ -191,12 +192,6 @@ class indexPage {
 		}
 	}
 
-	renderListForce(results,htmlContainers){
-		//let container = htmlContainers.force.querySelector('ul.result');
-		//let dimensions = window.getComputedStyle(container);
-		d3ForceDirected(results);
-	}
-
 	renderResults(){
 		if(this.renderResultsThrottle){
 			return;
@@ -241,7 +236,6 @@ class indexPage {
 			let htmlContainers = this.Containers;
 
 			this.renderMatrixes(report,htmlContainers);
-			this.renderListForce(report,htmlContainers);
 		},300);
 	}
 
