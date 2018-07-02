@@ -99,6 +99,11 @@ Vue.component('forcedirected', {
 										x: (initPos%2) ? -1 : this.opts.width+1,
 									};
 
+									initPos = {
+										x:145 + Math.round(5*Math.random()),
+										y:145 + Math.round(5*Math.random()),
+									}
+
 									let node = {
 										key: d.name,
 										pos:initPos,
@@ -167,6 +172,11 @@ Vue.component('forcedirected', {
 				len = len - seglen;
 				let force = SPRINGK * len * strength;
 				let ratioBase = Math.abs(dx) + Math.abs(dy);
+				if(ratioBase === 0){
+					dx = 1;
+					dy = 1;
+					ratioBase = 2;
+				}
 				spring.x = (dx / ratioBase) * force + 0.000001;
 				spring.y = (dy / ratioBase) * force + 0.000001;
 
@@ -199,8 +209,8 @@ Vue.component('forcedirected', {
 				let spring = SpringForce(
 					link.points[0].pos,
 					link.points[1].pos,
-					link.value+0.01,
-					100*(1-link.value)
+					link.value+0.1,
+					100*(1-link.value)+this.opts.radius*3
 				);
 				//let gravity = SpringForce(
 				//	link.points[0].pos,
