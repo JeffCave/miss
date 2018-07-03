@@ -13,8 +13,6 @@ import 'https://unpkg.com/vue-material';
 
 
 import {DeepDiff} from './DeepDiff/DeepDiff.js';
-import {SimilarityMatrix} from './DeepDiff/visualizations/similaritymatrix/SimilarityMatrix.js';
-import {MatrixPrinterRegistry} from './DeepDiff/visualizations/similaritymatrix/output/MatrixPrinterRegistry.js';
 import {Submission} from './DeepDiff/submission/Submission.js';
 
 
@@ -26,6 +24,7 @@ import './widgets/treeview.js';
 import './widgets/submissions.js';
 import './widgets/filedrop.js';
 import './widgets/ResultsTable.js';
+import './widgets/ResultsMatrix.js';
 import './widgets/force.js';
 
 
@@ -106,23 +105,6 @@ class indexPage {
 			self.runner.addSubmissions(submission);
 		});
 
-		this.runner.addEventListener('results',()=>{
-			this.renderResults();
-		});
-	}
-
-	get Containers(){
-		if(!('_containers' in this)){
-			this._containers = Array.from(document.querySelectorAll('#results > details'))
-				.reduce(function(a,d){
-					if(d.dataset.type){
-						a[d.dataset.type] = d;
-					}
-					return a;
-				},{})
-				;
-		}
-		return this._containers;
 	}
 
 	async attachSubmissions(blob){
@@ -172,74 +154,6 @@ class indexPage {
 
 
 
-	async renderMatrixes(results,htmlContainers){
-		let deduplicatedStrategies = Array.from(new Set(['html','csv']));
-		if(deduplicatedStrategies.length === 0) {
-			throw new Error("Error: did not obtain a valid output strategy!");
-		}
-
-		let resultsMatrix = await SimilarityMatrix.generateMatrix(results);
-
-		// Output using all output printers
-		for(let i = 0; i < deduplicatedStrategies.length; i++){
-			let name = deduplicatedStrategies[i];
-			if(name in htmlContainers){
-				console.log("Generating " + name + " output");
-				let output = MatrixPrinterRegistry.processors[name];
-				output = await output(resultsMatrix);
-				htmlContainers[name].querySelector('.result').innerHTML = output;
-			}
-		}
-	}
-
-	renderResults(){
-		if(this.renderResultsThrottle){
-			return;
-		}
-		this.renderResultsThrottle = setTimeout(async ()=>{
-			this.renderResultsThrottle = null;
-			let report = {
-				"results" : await this.runner.Results,
-				"submissions": [],
-				"archives":this.runner.archiveSubmissions
-			};
-			if(report.results){
-				//report.submissions = await this.runner.Submissions;
-				report.submissions = report.results.reduce((a,d)=>{
-					d.submissions.forEach((s)=>{
-						s.name = s.name || s.submission;
-						a[s.name] = s;
-					});
-					return a;
-				},{});
-				report.submissions = Object.values(report.submissions);
-
-				// go lookup all of the items in the hide list
-				let hides = report.submissions
-					.filter((d)=>{
-						return d.visible === false;
-					})
-					.map((d)=>{
-						return d.name;
-					})
-					;
-				// filter out any results that are in the hide list
-				report.results = report.results.filter((d)=>{
-					let match = hides.some(s=>{
-						let match = d.submissions[0].name === s || d.submissions[1].name === s;
-						return match;
-					});
-					return !match;
-				});
-			}
-
-			let htmlContainers = this.Containers;
-
-			this.renderMatrixes(report,htmlContainers);
-		},300);
-	}
-
-
 	/**
 	 * Parse CLI arguments and run DeepDiff from them.
 	 *
@@ -270,6 +184,5 @@ window.addEventListener('load',async function(){
 
 
 	let checker = new indexPage();
-	checker.renderResults();
 });
 

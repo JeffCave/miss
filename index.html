@@ -89,6 +89,22 @@
    </g>
   </svg>
  </template>
+ <template type='text/x-template' id='resultmatrix-template'>
+  <table>
+   <thead>
+    <tr>
+     <th>&nbsp;</th>
+     <th v-for='submission in orderedSubmissions'><span>{{submission.name}}</span></th>
+    </tr>
+   </thead>
+   <tbody>
+    <tr v-for='(row,i) in matrix'>
+     <th>{{row.name}}</th>
+     <td v-for='(col,j) in row' :style='getStyle(col,i,j)' :title="formatTitle(col.percentMatched)">&nbsp;</td>
+    </tr>
+   </tbody>
+  </table>
+ </template>
 
 
  <link rel='stylesheet' href='index.css' />
@@ -158,7 +174,7 @@
    </details>
    <details data-type='html' open>
     <summary>HTML</summary>
-    <div class='result'></div>
+    <resultmatrix :report='report'></resultmatrix>
    </details>
    <details data-type='csv'>
     <summary>CSV</summary>
