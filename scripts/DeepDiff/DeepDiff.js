@@ -43,11 +43,18 @@ class DeepDiff {
 				}
 			},
 		});
-		this.Results.then(results=>{
-				this.report.results = results.reduce((a,d)=>{
+		this.Submissions.then(submission=>{
+				this.report.submissions = submission.reduce((a,d)=>{
 					a[d.name] = d;
 					return a;
 				},{});
+			}).then(()=>{
+				this.Results.then(results=>{
+						this.report.results = results.reduce((a,d)=>{
+							a[d.name] = d;
+							return a;
+						},{});
+					});
 			});
 		this._events = {
 			'submissions':{},
@@ -468,7 +475,7 @@ class DeepDiff {
 	 * @return Current version of DeepDiff
 	 */
 	static get Version(){
-		return "0.1.0";
+		return "0.2.0";
 	}
 
 	async Compare(pair, force = false){

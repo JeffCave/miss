@@ -6,11 +6,11 @@
 	--notice-fail-off:mistyrose;
 	--notice-fail-low:lightsalmon;
 	--notice-fail-high:darkred;
-	/*
-	--notice-warn-off:mistyrose;
-	--notice-warn-low:lightsalmon;
-	--notice-warn-high:darkred;
-	*/
+
+	--notice-warn-off:gold;
+	--notice-warn-low:orange;
+	--notice-warn-high:orangered;
+
 	/*
 	--notice-pass-off:mistyrose;
 	--notice-pass-low:lightsalmon;
@@ -175,7 +175,11 @@ input[type=range]::-ms-track {
 }
 
 
-#results > details[data-type='html'] thead th, #results > details[data-type='html'] thead th > span {
+#results > details[data-type='html'] table {
+	background-color: var(--notice-info-off);
+}
+#results > details[data-type='html'] th, #results > details[data-type='html'] th > span {
+	background-color: transparent;
 	writing-mode: vertical-rl;
 }
 #results > details[data-type='html'] tbody {
