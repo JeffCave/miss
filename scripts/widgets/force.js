@@ -4,6 +4,7 @@ import * as utils from '../DeepDiff/util/misc.js';
 
 /*
 global Vue
+global _
 */
 
 
@@ -32,6 +33,21 @@ Vue.component('forcedirected', {
 					speed : 60,
 					lastFrame : 0,
 					timer : null
+				};
+			}
+		},
+		physics: {
+			type: Object,
+			default:function(){
+				return {
+					DELTAT: 0.01,
+					SEGLEN: this.opts.radius*3,
+					SPRINGK: 10,
+					MASS: 1,
+					GRAVITY: 50,
+					INERTIA: 10,
+					STOPVEL: 0.1,
+					BOUNCE: 0.75
 				};
 			}
 		},
@@ -106,7 +122,7 @@ Vue.component('forcedirected', {
 									initPos = {
 										x:145 + Math.round(5*Math.random()),
 										y:145 + Math.round(5*Math.random()),
-									}
+									};
 
 									let node = {
 										key: d.name,
@@ -144,15 +160,7 @@ Vue.component('forcedirected', {
 		UpdateFrame:function(){
 			const now = Date.now();
 
-			let DELTAT = 0.01;
-			let SEGLEN = this.opts.radius*3;
-			let SPRINGK = 10;
-			let MASS = 1;
-			let GRAVITY = 50;
-			let RESISTANCE = 10;
-			let STOPVEL = 0.1;
-			let STOPACC = 0.1;
-			let BOUNCE = 0.75;
+			/*
 			const RubberBandForce = function(dotA, dotB, strength, seglen){
 				let dx = (dotB.x - dotA.x);
 				let dy = (dotB.y - dotA.y);
@@ -165,25 +173,6 @@ Vue.component('forcedirected', {
 					spring.x = (dx / ratioBase) * force;
 					spring.y = (dy / ratioBase) * force;
 				}
-				return spring;
-			};
-			const SpringForce = function(dotA, dotB, strength, seglen){
-				let dx = (dotB.x - dotA.x);
-				let dy = (dotB.y - dotA.y);
-				let len = Math.sqrt(dx*dx + dy*dy);
-				let spring = {x:0,y:0};
-
-				len = len - seglen;
-				let force = SPRINGK * len * strength;
-				let ratioBase = Math.abs(dx) + Math.abs(dy);
-				if(ratioBase === 0){
-					dx = 1;
-					dy = 1;
-					ratioBase = 2;
-				}
-				spring.x = (dx / ratioBase) * force + 0.000001;
-				spring.y = (dy / ratioBase) * force + 0.000001;
-
 				return spring;
 			};
 			const gravityForce = function(dotA, dotB, strength, seglen){
@@ -199,6 +188,26 @@ Vue.component('forcedirected', {
 				gravity.x = (1 - dx / ratioBase) * force;
 				gravity.y = (1 - dy / ratioBase) * force;
 				return gravity;
+			};
+			*/
+			const SpringForce = (dotA, dotB, strength, seglen)=>{
+				let dx = (dotB.x - dotA.x);
+				let dy = (dotB.y - dotA.y);
+				let len = Math.sqrt(dx*dx + dy*dy);
+				let spring = {x:0,y:0};
+
+				len = len - seglen;
+				let force = this.physics.SPRINGK * len * strength;
+				let ratioBase = Math.abs(dx) + Math.abs(dy);
+				if(ratioBase === 0){
+					dx = 1;
+					dy = 1;
+					ratioBase = 2;
+				}
+				spring.x = (dx / ratioBase) * force + 0.000001;
+				spring.y = (dy / ratioBase) * force + 0.000001;
+
+				return spring;
 			};
 
 			Object.values(this.links).forEach(link=>{
@@ -241,16 +250,16 @@ Vue.component('forcedirected', {
 			Object.values(this.nodes).forEach(node=>{
 				// Now we can start applying physics
 				let resist = {
-					x : -1 * RESISTANCE * node.velocity.x,
-					y : -1 * RESISTANCE * node.velocity.y,
+					x : -1 * this.physics.INERTIA * node.velocity.x,
+					y : -1 * this.physics.INERTIA * node.velocity.y,
 				};
 
 				let accel = {
 					x : node.force.x + resist.x,
 					y : node.force.y + resist.y,
 				};
-				accel.x *= DELTAT;
-				accel.y *= DELTAT;
+				accel.x *= this.physics.DELTAT;
+				accel.y *= this.physics.DELTAT;
 				// apply the acceleration to the velocity
 				node.velocity.x += accel.x;
 				node.velocity.y += accel.y;
@@ -266,26 +275,26 @@ Vue.component('forcedirected', {
 				if(node.pos.x < 0){
 					let boundary = 0;
 					let overflow = (boundary - node.pos.x);
-					node.pos.x = boundary + overflow * BOUNCE;
-					node.velocity.x = -1 * node.velocity.x * BOUNCE;
+					node.pos.x = boundary + overflow * this.physics.BOUNCE;
+					node.velocity.x = -1 * node.velocity.x * this.physics.BOUNCE;
 				}
 				else if(node.pos.x > this.opts.width){
 					let boundary = this.opts.width;
 					let overflow = (boundary - node.pos.x);
-					node.pos.x = boundary + overflow * BOUNCE;
-					node.velocity.x = -1 * node.velocity.x * BOUNCE;
+					node.pos.x = boundary + overflow * this.physics.BOUNCE;
+					node.velocity.x = -1 * node.velocity.x * this.physics.BOUNCE;
 				}
 				if(node.pos.y < 0){
 					let boundary = 0;
 					let overflow = (boundary - node.pos.y);
-					node.pos.y = boundary + overflow * BOUNCE;
-					node.velocity.y = -1 * node.velocity.y * BOUNCE;
+					node.pos.y = boundary + overflow * this.physics.BOUNCE;
+					node.velocity.y = -1 * node.velocity.y * this.physics.BOUNCE;
 				}
 				else if(node.pos.y > this.opts.height){
 					let boundary = this.opts.height;
 					let overflow = (boundary - node.pos.y);
-					node.pos.y = boundary + overflow * BOUNCE;
-					node.velocity.y = -1 * node.velocity.y * BOUNCE;
+					node.pos.y = boundary + overflow * this.physics.BOUNCE;
+					node.velocity.y = -1 * node.velocity.y * this.physics.BOUNCE;
 				}
 
 				// check the item has settled down
@@ -293,20 +302,18 @@ Vue.component('forcedirected', {
 				// check our stop constants to see if the movement is too small to
 				// really consider
 				let isStopped =
-					Math.abs(node.velocity.x) < STOPVEL &&
-					Math.abs(node.velocity.y) < STOPVEL &&
-					Math.abs(accel.x) < STOPACC &&
-					Math.abs(accel.y) < STOPACC
+					Math.abs(node.velocity.x) < this.physics.STOPVEL &&
+					Math.abs(node.velocity.y) < this.physics.STOPVEL
 					;
 				if (isStopped) {
 					node.velocity.x = 0;
 					node.velocity.y = 0;
 				}
 				else{
-					// if any of them aren't stopped, we should not stop
+					// if this node is still moving, we will need to calculate
+					// another frame
 					shouldStop = false;
 				}
-
 			});
 
 			if(shouldStop){

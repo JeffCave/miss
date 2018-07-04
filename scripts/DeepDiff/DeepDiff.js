@@ -521,7 +521,7 @@ class DeepDiff {
 		console.log("Performing comparison on " + pair.name );
 		let result = await algo(pair,async (comparer)=>{
 			comparer = comparer.data;
-			let result = this.report.results[comparer.data.name];
+			let result = this.report.results[comparer.name];
 			if(!result) return;
 			//result.complete = (comparer.totalSize - comparer.remaining) -1;
 			//result.totalTokens = comparer.totalSize;

@@ -7,18 +7,11 @@ global performance
 import {AlgorithmRegistry} from '../../algorithm/AlgorithmRegistry.js';
 import * as AlgorithmResults from '../../algorithm/AlgorithmResults.js';
 import {checkNotNull} from '../../util/misc.js';
+import {SmithWaterman} from '../../algorithm/smithwaterman/SmithWatermanAlgorithm.js';
 
 (function(){
 
 const largeCompare = (1024**3)*4;
-
-let WorkerUrl = window.location.pathname.split('/');
-WorkerUrl.pop();
-WorkerUrl = WorkerUrl.concat('/scripts/DeepDiff/algorithm/smithwaterman/SmithWatermanMemfriendly.js'.split('/'));
-WorkerUrl = WorkerUrl.filter((u)=>{return u;});
-WorkerUrl.unshift(window.location.origin);
-WorkerUrl = WorkerUrl.join('/');
-
 const threads = {};
 
 
@@ -37,7 +30,7 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=
 	if(req.action === 'stop'){
 		if(req.name in threads){
 			let thread = threads[req.name];
-			thread.postMessage(JSON.clone({ action:'stop', name:req.name }));
+			thread.stop();
 		}
 		return null;
 	}
@@ -81,28 +74,25 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=
 
 	// Alright, easy cases taken care of. Generate an instance to perform the actual algorithm
 	let endLists = await new Promise((resolve,reject)=>{
-		let thread = new Worker(WorkerUrl);
+		let thread = new SmithWaterman(req.name,aTokens, bTokens);
 		threads[req.name] = thread;
 		thread.onmessage = function(msg){
 			let handler = progHandler;
-			switch(msg.data.type){
+			switch(msg.type){
 				case 'progress':
 					handler = progHandler;
 					break;
 				default:
 					handler = resolve;
-					thread.terminate();
+					thread.onmessage = null;
+					thread.stop();
 					thread = null;
 					delete threads[req.name];
 					break;
 			}
 			handler(msg);
 		};
-		thread.postMessage(JSON.clone({
-			action:'start',
-			name:req.name,
-			submissions:[aTokens, bTokens]
-		}));
+		thread.start();
 	});
 
 
@@ -111,11 +101,11 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=
 	let perf = performance.getEntriesByName('smithwaterman.'+req.name);
 	notes.duration = JSON.stringify(perf.pop());
 
-	if(endLists.data.type === 'stopped'){
+	if(endLists.type === 'stopped'){
 		return null;
 	}
 
-	let results = await AlgorithmResults.Create(a, b, endLists.data.data[0], endLists.data.data[1], notes);
+	let results = await AlgorithmResults.Create(a, b, endLists.data[0], endLists.data[1], notes);
 	results.complete = results.totalTokens;
 
 	return results;

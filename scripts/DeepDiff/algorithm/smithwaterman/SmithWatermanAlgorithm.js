@@ -1,619 +1,473 @@
-/*
- * CDDL HEADER START
- *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * See LICENSE.txt included in this distribution for the specific
- * language governing permissions and limitations under the License.
- *
- * CDDL HEADER END
- *
- * Copyright (c) 2014-2015 Nicholas DeMarinis, Matthew Heon, and Dolan Murvihill
- */
 'use strict';
-export {
-	SmithWatermanAlgorithm
+
+export{
+	SmithWaterman
 };
 
-import {TokenList} from '../../token/TokenList.js';
-import {ArraySubset} from '../../algorithm/smithwaterman/ArraySubset.js';
-import {Coordinate} from '../../util/Coordinate.js';
-import {checkNotNull,checkArgument} from '../../util/misc.js';
+import * as utils from '../../util/misc.js';
 
-/**
- * Actual implementation of the Smith-Waterman algorithm.
- */
-export default class SmithWatermanAlgorithm {
-	static get threshold(){
-		return 5;
-	}
 
-	get MAXCOMPARE(){
-		// 4GB?
-		return (1024**3)*4;
-	}
-	get threshold(){
-		return SmithWatermanAlgorithm.threshold;
-	}
+const scores = {
+	// an exact positional match (diagonal in SmithWaterman terms). This is
+	// the highest possible match.
+	match:+1,
+	// a exact mismatch. If the pattern continues, this character is a change.
+	// An example of a mismatch would be "dune", and "dude": there is an
+	// obvious match, but there is one character that has been completely
+	// changed. This is the lowest possible match.
+	mismatch: -1,
+	// A partial mismatch. Generally, the insertion (or removal) of a
+	// character. Depending on the context, this may be just as bad as a
+	// "mismatch" or somewhere between "mismatch" and "match".
+	skippable: -1,
+	// The point to the terminus is to measure when the chain is broken.
+	// A chain may grow in score, getting larger and larger, until
+	// matches stop being made. At this point, the score will start dropping.
+	// Once it drops by the points specified by the terminator, we can assume
+	// it has dropped off.
+	terminus: 5,
+	// the number of lexemes that need to match for a chain to be considered
+	// of significant length.
+	significant: 5,
+};
 
-	static get swConstant(){
-		return 1;
-	}
 
-	get swConstant(){
-		return SmithWatermanAlgorithm.swConstant;
-	}
+class SmithWaterman{
 
-	/**
-	 * Prepare for a Smith-Waterman alignment.
-	 *
-	 * @param a First token list to align
-	 * @param b Second token list to align
-	 */
-	constructor(a, b, completed) {
-		checkNotNull(a);
-		checkNotNull(b);
-		checkArgument(a.length > 0, "Cowardly refusing to perform alignment with empty token list A");
-		checkArgument(b.length > 0, "Cowardly refusing to perform alignment with empty token list B");
+	constructor(name, a, b){
 
-		this.xList = a;
-		this.yList = b;
-		this.completed = completed;
-
-		this.wholeArray = ArraySubset.from(1, 1, this.xList.length + 1, this.yList.length + 1);
-		this.wholeArrayBounds = ArraySubset.from(1, 1, this.xList.length, this.yList.length);
-
-		// Create an appropriately sized 2-D array
-		let totalspace = this.wholeArray.getMax().getX() * this.wholeArray.getMax().getY();
-		if(totalspace > this.MAXCOMPARE){
-			totalspace /= 1024**3;
-			console.warn("Total allocation of space looks scary ("+totalspace+"GB). Not even attempting.");
-			this.massive = true;
-			return;
+		if(!a && !b && name.name){
+			a = name.submissions[0];
+			b = name.submissions[1];
+			name = name.name;
 		}
-		this.s = {};
-		//for(let i = 0; i<this.wholeArray.getMax().getX(); i++){
-		//	let a = [];
-		//	for(let j = 0; j<this.wholeArray.getMax().getY(); j++){
-		//		a.push(0);
-		//	}
-		//	this.s.push(a);
-		//}
-		//this.m = JSON.clone(this.s.slice(0));
-		this.m = {};
+		this.matrix = [];
+		this.partial = new Map();
+		this.finishedChains = [];
 
-		this.candidates = {};
+		this.name = name;
+		this.submissions = [a,b];
+
+		this.remaining = this.submissions[0].length * this.submissions[1].length;
+		this.totalSize = this.remaining;
+		this.tokenMatch = 0;
+		this.resetShareMarkers();
+
+		this.handlers = {
+			progress:[],
+			complete:[]
+		};
+
+		this.pause();
+
+		// initialize the calculations. Creates the state for the first
+		// cell to be calculated
+		this.addToCell(0,0,'nw',0,[],Number.MIN_SAFE_INTEGER);
 	}
 
-
-	/**
-	 * Compute a Smith-Waterman alignment through exhaustive (but more reliable) process.
-	 *
-	 * TODO tests for this (already tested through SmithWaterman)
-	 *
-	 * @return Pair of TokenList representing optimal alignments
-	 * @throws leternalAlgorithmError Thrown if leternal error causes violation of preconditions
-	 */
-	computeSmithWatermanAlignmentExhaustive(){
-		if(this.massive){
-			return [new TokenList('mixed',[]),new TokenList('mixed',[])];
-		}
-		// Keep computing while we have results over threshold
-		for(let localCandidates = this.computeArraySubset(this.wholeArray);	Object.keys(localCandidates).length > 0; localCandidates = this.computeArraySubset(this.wholeArray)) {
-
-			// Get the largest key
-			let largestKey = Object.keys(localCandidates)
-				.reduce((a,d)=>{return Math.max(a,d)},Number.MIN_SAFE_INTEGER)
-				;
-
-			// Get matching coordinates
-			let largestCoords = localCandidates[largestKey];
-
-			if(largestCoords == null || largestCoords.size === 0) {
-				throw new Error("Error: largest key " + largestKey + " maps to null or empty candidate set!");
-			}
-
-			// Arbitrarily break ties by getting first element of list
-			// (which is done stupidly in Sets)
-			let chosenCoord = largestCoords.values().next().value;
-
-			// Get match coordinates
-			let matchCoords = this.getMatchCoordinates(chosenCoord);
-
-			// Set match invalid
-			this.setMatchesInvalid(matchCoords);
-		}
-
-		return [this.xList, this.yList];
-	}
-
-	/**
-	 * Compute a Smith-Waterman alignment.
-	 *
-	 * TODO tests for this
-	 *
-	 * @return Pair of Token Lists representing optimal detected alignments
-	 * @throws internalAlgorithmError Thrown if internal error causes violation of preconditions
-	 */
-	computeSmithWatermanAlignment(){
-		// Make sure our candidates list is initially empty
-		this.candidates.clear();
-
-		// Start by computing the entire array, and adding the results to candidates
-		this.mergeIntoCandidates(this.computeArraySubset(this.wholeArray));
-
-		// Go through all candidates
-		let keys = Object.keys(this.candidates);
-		while(keys.length > 0) {
-			// Need to identify the largest key (largest value in the S-W array)
-			let largestKey = keys.sort((a,b)=>{return parseInt(a,10)-parseInt(b,10);}).pop();
-
-			// Get coordinate(s) with largest value in S-W array
-			let largestCoords = this.candidates[largestKey];
-
-			if(largestCoords === null || largestCoords.length === 0) {
-				throw new Error("Null or empty mapping from largest coordinates!");
-			}
-
-			// Arbitrarily break ties, if they exist
-			let currMax = largestCoords[0];
-
-			// Check to verify that this match is over the threshold
-			// This should never happen, so log if it does
-			// TODO investigate why this is happening
-			if(this.s[Coordinate.from(currMax.getX(),currMax.getY())] || 0  < this.threshold) {
-				console.trace("Potential algorithm error: identified candidate pointing to 0 at " + currMax);
-				largestCoords.remove(currMax);
-				if(largestCoords.isEmpty()) {
-					this.candidates.remove(largestKey);
-				}
-				else {
-					this.candidates[largestKey] = largestCoords;
-				}
-				continue;
-			}
-
-			// Get match coordinates
-			let coords = this.getMatchCoordinates(currMax);
-
-			// Get match origin
-			let currOrigin = this.getFirstMatchCoordinate(coords);
-
-			if(currMax === currOrigin) {
-				throw new Error("Maximum and Origin point to same point - " + currMax + " and " + currOrigin + ". Size of match coordinates set is " + coords.size());
-			}
-
-			// Filter postdominated results
-			this.candidates = this.filterPostdominated(currOrigin, currMax);
-
-			// Set match invalid
-			this.setMatchesInvalid(coords);
-
-			// Zero the match
-			this.zeroMatch(currOrigin, currMax);
-
-			// Generate array subsets we need to recompute
-			let subsetsToCompute = this.generateSubsets(currOrigin, currMax);
-
-			// Recompute given array subsets
-			subsetsToCompute.forEach(function(subset){
-				this.mergeIntoCandidates(this.computeArraySubset(subset));
+	start(){
+		if(this.isPaused){
+			utils.defer(()=>{
+				this.calcBuffer();
 			});
 		}
-
-		return Coordinate.from(this.xList, this.yList);
+		this.isPaused = false;
 	}
 
-	/**
-	 * Generate subsets of the Smith-Waterman arrays that require recomputation.
-	 *
-	 * TODO unit tests for this once optimizations are added
-	 *
-	 * @param origin Origin of match requiring recomputation
-	 * @param max Max of match requiring recomputation
-	 * @return Set of array subsets requiring recomputation
-	 */
-	generateSubsets(origin, max) {
-		checkNotNull(origin);
-		checkNotNull(max);
-		checkArgument(this.wholeArray.contains(origin), "Origin of requested area out of bounds: " + origin + " not within " + this.wholeArray);
-		checkArgument(this.wholeArray.contains(max), "Max of requested area out of bounds: " + max + " not within " + this.wholeArray);
-
-		let toRecompute = [];
-
-		// There are potentially 4 zones we need to care about
-
-		// First: above and to the left
-		// Check if it exists
-		if(origin.getX() > 1 && origin.getY() > 1) {
-			toRecompute.push(ArraySubset.of(1, 1, origin.getX(), origin.getY()));
-		}
-
-		// Second: Above and to the right
-		// Check if it exists
-		if(max.getX() < (this.wholeArray.getMax().getX() - 1) && origin.getY() > 1) {
-			toRecompute.push(ArraySubset.of(max.getX(), 1, this.wholeArray.getMax().getX(), origin.getY()));
-		}
-
-		// Third: Below and to the left
-		// Check if it exists
-		if(origin.getX() > 1 && max.getY() < (this.wholeArray.getMax().getY() - 1)) {
-			toRecompute.push(ArraySubset.of(1, max.getY(), origin.getX(), this.wholeArray.getMax().getY() - 1));
-		}
-
-		// Fourth: Below and to the right
-		// Check if it exists
-		if(max.getX() < (this.wholeArray.getMax().getX() - 1) && max.getY() < (this.wholeArray.getMax().getY() - 1)) {
-			toRecompute.push(ArraySubset.of(max.getX(), max.getY(), this.wholeArray.getMax().getX() - 1,this.wholeArray.getMax().getY() - 1));
-		}
-
-		// If none of the subsets were added, we matched the entire array
-		// Nothing to do here, just return
-		if(toRecompute.isEmpty()) {
-			return toRecompute;
-		}
-
-		// Now, if we DIDN'T match the entire array
-		// We're going to want to narrow down these subsets
-		// We can do this by removing invalid areas
-		// TODO this optimization
-
-		return toRecompute;
+	pause(){
+		this.isPaused = true;
 	}
 
-	/**
-	 * Zero out the portion of S and M arrays that was matched.
-	 *
-	 * @param origin Origin of the match
-	 * @param max Endpoint of the match
-	 */
-	zeroMatch(origin, max) {
-		checkNotNull(origin);
-		checkNotNull(max);
-		checkArgument(this.wholeArrayBounds.contains(origin), "Origin of requested area out of bounds: " + origin
-			+ " not within " + this.wholeArray);
-		checkArgument(this.wholeArrayBounds.contains(max), "Max of requested area out of bounds: " + max
-			+ " not within " + this.wholeArray);
-
-		//let xLower = origin.getX();
-		//let xUpper = max.getX();
-		//
-		// Zero out the X match
-		//for(let x = xLower; x <= xUpper; x++) {
-		//	for(let y = 1; y < this.s[0].length; y++) {
-		//		this.s[x][y] = 0;
-		//		this.m[x][y] = 0;
-		//	}
-		//}
-		//
-		//let yLower = origin.getY();
-		//let yUpper = max.getY();
-		//
-		// Zero out the Y match
-		//for(let x = 1; x < this.s.length; x++) {
-		//	for(let y = yLower; y <= yUpper; y++) {
-		//		this.s[x][y] = 0;
-		//		this.m[x][y] = 0;
-		//	}
-		//}
+	terminate(){
+		this.stop();
 	}
 
-	/**
-	 * Filter postdominated results of a match.
-	 *
-	 * @param max Endpoint of match
-	 * @return Filtered version of candidate results set, with all results postdominated by match removed
-	 */
-	filterPostdominated(origin, max) {
-		checkNotNull(origin);
-		checkNotNull(max);
-		checkArgument(this.wholeArray.contains(origin), "Origin of requested area out of bounds: " + origin + " not within " + this.wholeArray);
-		checkArgument(this.wholeArray.contains(max), "Max of requested area out of bounds: " + max + " not within " + this.wholeArray);
-
-		if(this.candidates.length === 0) {
-			return this.candidates;
+	stop(){
+		this.pause();
+		this.ResolveCandidates();
+		let entries = this.submissions;
+		let msg = {type:'stopped',data:entries};
+		if(this.remaining === 0){
+			msg.type = 'complete';
 		}
-
-		let filteredResults = new Map();
-
-		// X match invalidation
-		let xInval = ArraySubset.of(origin.getX(), 0, max.getX(), this.wholeArray.getMax().getY());
-		let yInval = ArraySubset.of(0, origin.getY(), this.wholeArray.getMax().getX(), max.getY());
-
-		// Loop through all candidates and see if they need to be filtered
-		this.candidates.keys().forEach(function(key){
-			let allCandidates = this.candidates.get(key);
-
-			let newSet = [];
-
-			allCandidates.forEach(function(coord){
-				// Unclear how this candidate got added, but it's no longer valid
-				// This shouldn't happen, so log it as well
-				// TODO investigate why this is happening
-				if(this.s[Coordinate.from(coord.getX(),coord.getY())]||0 < this.threshold) {
-					console.trace("Potential algorithm error - filtered match lower than threshold at " + coord);
-					return;
-				}
-
-                // Identify the origin of the result
-                let originOfCandidate = this.getFirstMatchCoordinate(this.getMatchCoordinates(coord));
-
-                // If the origin is NOT the same as the given origin, it's a candidate
-                if(!originOfCandidate.equals(origin)) {
-                    // Also need to check if the origin and max are not within the rectangles identified
-                    if(xInval.contains(coord)
-                            || yInval.contains(coord)
-                            || xInval.contains(max)
-                            || yInval.contains(max)) {
-                        newSet.push(coord);
-                    }
-                }
-            });
-
-            if(!newSet.isEmpty()) {
-                // We didn't filter everything
-                // Add the filtered set to our filtered results
-                filteredResults.put(key, newSet);
-            }
-        });
-
-        return filteredResults;
-    }
-
-	/**
-	 * Compute a subset of the array.
-	 *
-	 * @param toCompute Subset to recompute. Can be entire array, if desired.
-	 * @return Map containing all candidate results identified while computing
-	 */
-	computeArraySubset(toCompute) {
-		checkNotNull(toCompute);
-		checkArgument(this.wholeArray.contains(toCompute.getOrigin()), "Origin of subset out of bounds: " + toCompute.getOrigin() + " not within " + this.wholeArray);
-		checkArgument(this.wholeArray.contains(toCompute.getMax()), "Maximum of subset out of bounds: " + toCompute.getMax() + " not within " + this.wholeArray);
-
-		let newCandidates = {};
-
-		for(let x = toCompute.getOrigin().getX(); x < toCompute.getMax().getX(); x++) {
-			let xToken = this.xList[x - 1];
-
-			for(let y = toCompute.getOrigin().getY(); y < toCompute.getMax().getY(); y++) {
-				let prevX = x - 1;
-				let prevY = y - 1;
-
-				let newS;
-				let newM;
-
-				// Token Match - increment S table
-				let yToken = this.yList[prevY];
-				if(yToken.valid && xToken.valid && xToken.lexeme === yToken.lexeme && xToken.type === yToken.type) {
-					let sPred = this.s[Coordinate.from(prevX,prevY)];
-					if(!sPred){
-						sPred = 0;
-					}
-					let mPred = this.m[Coordinate.from(prevX,prevY)];
-					if(!mPred){
-						mPred = 0;
-					}
-
-					newS = sPred + this.swConstant;
-
-					// Predecessors table is the largest of the S table or M table predecessors
-					if(sPred > mPred) {
-						newM = sPred;
-					}
-					else {
-						newM = mPred;
-					}
-				}
-				else {
-					// Tokens did not match
-					// Get the max of S table predecessors and decrement
-					let a = this.s[Coordinate.from(prevX,prevY)] || 0;
-					let b = this.s[Coordinate.from(prevX,y)] || 0;
-					let c = this.s[Coordinate.from(x,prevY)] || 0;
-
-					let max = Math.max(a, b, c);
-					if(!max){
-						max = 0;
-					}
-					newS = max - this.swConstant;
-					if(newS < 0) {
-						newS = 0;
-					}
-
-					// If S is 0, zero out the predecessor table entry
-					if(newS == 0) {
-						newM = 0;
-					}
-					else {
-						let aM = this.m[Coordinate.from(prevX,prevY)];
-						let bM = this.m[Coordinate.from(prevX,y)];
-						let cM = this.m[Coordinate.from(x,prevY)];
-
-						// Get largest predecessor in M table
-						let maxM = Math.max(aM, bM, cM);
-
-						// If S nonzero, predecessor table entry is largest of the predecessors in the S and M tables
-						newM = Math.max(max, maxM);
-					}
-				}
-
-				// Check threshold
-				if(newM - newS >= this.threshold) {
-					newM = 0;
-					newS = 0;
-				}
-
-				// Set S and M table entries
-				if(newS) this.s[Coordinate.from(x,y)] = newS;
-				if(newM) this.m[Coordinate.from(x,y)] = newM;
-
-				// Check if our result is significant
-				if(newS >= this.threshold && newS > newM) {
-					// It's significant, add it to our results
-					if(!(newS in newCandidates)) {
-						newCandidates[newS] = [];
-					}
-					let valuesForKey = newCandidates[newS];
-					valuesForKey.push(Coordinate.from(x, y));
-				}
-			}
-		}
-
-		return newCandidates;
+		this.postMessage(msg);
 	}
 
-	/**
-	 * Get the closest coordinate to the origin from a given set.
-	 *
-	 * @param coordinates Coordinates to search within
-	 * @return Closest coordinate to origin --- (0,0)
-	 */
-	getFirstMatchCoordinate(coordinates) {
-		checkNotNull(coordinates);
-
-		if(coordinates.length === 1) {
-			return coordinates[0];
+	postMessage(msg){
+		if(this.isPosting){
+			return;
 		}
-
-		this.candidate = coordinates[0];
-
-		// Search for a set of coordinates closer to the origin
-		coordinates.forEach((coord)=>{
-			if(coord.getX() <= this.candidate.getX() && coord.getY() <= this.candidate.getY()) {
-				this.candidate = coord;
-			}
-		});
-
-		return this.candidate;
+		this.isPosting = true;
+		if(this.onmessage){
+			this.onmessage(msg);
+		}
+		this.isPosting = false;
 	}
 
-	/**
-	 * Set matched tokens invalid.
-	 *
-	 * @param coordinates Set of matched coordinates in the S array
-	 */
-	setMatchesInvalid(coordinates) {
-		checkNotNull(coordinates);
 
-		if(coordinates.size === 0) {
+
+	CoordToIndex(x,y){
+		return y * this.submissions[0].length + x;
+	}
+
+	IndexToCoord(i){
+		let len =this.submissions[0].length;
+		let x = i/len;
+		let y = i%len;
+		return [x,y];
+	}
+
+	async addToCell(x,y,orig,score,chain,highwater){
+		// bounds checking
+		if(x < 0 || y < 0){
+			return false;
+		}
+		if(x >= this.submissions[0].length || y >= this.submissions[1].length){
+			return false;
+		}
+		// lookup the data at that location
+		let index = this.CoordToIndex(x,y);
+		let cell = this.partial.get(index);
+		if(!cell){
+			// create it if necessary
+			cell = {id:[x,y]};
+			this.partial.set(index,cell);
+		}
+
+		// have we already processed this value?
+		if(orig in cell){
+			return false;
+		}
+
+		// initialize values that exist at the begining of the world
+		if(x === 0){
+			cell.w = {score:0,chain:[],highscore:Number.MIN_SAFE_INTEGER};
+			cell.nw = {score:0,chain:[],highscore:Number.MIN_SAFE_INTEGER};
+		}
+		if(y === 0){
+			cell.n = {score:0,chain:[],highscore:Number.MIN_SAFE_INTEGER};
+			cell.nw = {score:0,chain:[],highscore:Number.MIN_SAFE_INTEGER};
+		}
+
+		// set the values
+		cell[orig] = {
+			score: score,
+			chain: chain,
+			highscore:highwater,
+		};
+
+		// have we calcuated up the three pre-requisites sufficiently to
+		// solve the problem?
+		if('n' in cell && 'w' in cell && 'nw' in cell){
+			// take it out of the pre-processing queue, and add it to the
+			// processing queue
+			this.partial.delete(index);
+			this.matrix.push(cell);
+		}
+
+		// if the pre-processing queue is empty, do the actual calcuations
+		if(this.partial.size === 0){
+			this.calcBuffer();
+		}
+		return cell;
+	}
+
+	calcBuffer(){
+		if(this.calcBufferInstance){
 			return;
 		}
 
-		// Iterate through all match coordinates and set them invalid
-		let the = this;
-		coordinates.forEach(function(coordinate){
-			coordinate = Coordinate.from(coordinate);
-			let x = coordinate.getX() - 1;
-			let y = coordinate.getY() - 1;
-			the.xList[x].valid = false;
-			the.yList[y].valid = false;
+		this.calcBufferInstance = utils.defer(()=>{
+			this.calcBufferInstance = null;
+
+			// this thing is supposed to be a multi-threaded thing. We may need
+			// a way to stop it
+			if(this.isPaused){
+				return;
+			}
+
+			// Process as many as we can for 100 milliseconds. Then stop and let
+			// other things get some processing in
+			let cutOff = Date.now()+500;
+			let bufferConsumed = 0;
+			while(bufferConsumed < this.matrix.length && Date.now() < cutOff){
+				// Just process 100 items... no matter what
+				for(let i=0; i<100 && bufferConsumed < this.matrix.length > 0; i++){
+					//console.log(this.matrix[bufferConsumed].id[0]+this.matrix[bufferConsumed].id[1] +':'+this.matrix[bufferConsumed].id+'('+this.matrix.length+')');
+					this.calcChain(this.matrix[bufferConsumed]);
+					bufferConsumed++;
+				}
+			}
+			this.matrix = this.matrix.slice(bufferConsumed);
+			//console.log('=====');
+
+			// Periodically report it up
+			let msg = {type:'progress', data:this.toJSON()};
+			this.postMessage(msg);
+
+			// schedule the next processing cycle
+			if(this.matrix.length > 0){
+				this.calcBuffer();
+			}
+			else{
+				// we are finished processing, but may not quite be finished
+				// all the clean up. To be honest, I think I'm implementing
+				// this due to a memory of and bug that has since been fixed.
+				//
+				// Since I'm implementing it:
+				//
+				// Create a function that watches for the current cycle to be
+				// finished. Once the cycle is finished, then do a full stop.
+				const stopper = ()=>{
+					if(this.calcBufferInstance){
+						utils.defer(stopper);
+					}
+					else{
+						this.stop();
+					}
+				};
+				stopper();
+			}
+
 		});
 	}
 
-	/**
-	 * Retrieve a set of the coordinates that make up a match.
-	 *
-	 * @param matchCoord Coordinate of the end of the match. Must be within the S array.
-	 * @return Set of all coordinates that form the match
-	 */
-	getMatchCoordinates(matchCoord) {
-		checkNotNull(matchCoord);
-		checkArgument(this.wholeArray.contains(matchCoord), "Requested match coordinate is out of bounds: " + matchCoord + " not within " + this.wholeArray);
-		checkArgument(this.s[Coordinate.from(matchCoord.getX(),matchCoord.getY())], "Requested match coordinate " + matchCoord + " points to 0 in S array!");
+	calcChain(chain){
+		let x = chain.id[0];
+		let y = chain.id[1];
 
-		let matchCoordinates = [];
 
-		let x = matchCoord.getX();
-		let y = matchCoord.getY();
+		/****** LOOKUP SCORE FOR CURRENT PATH ******/
+		let score = Math.max(chain.n.score, chain.w.score, chain.nw.score);
 
-		let largestPredecessor = 1;
-		while(largestPredecessor > 0) {
-			// Only add the current coordinate if the tokens at the given point match
-			let yToken = this.xList[x - 1];
-			let xToken = this.yList[y - 1];
-			if(yToken.valid && xToken.valid && xToken.lexeme === yToken.lexeme && xToken.type === yToken.type) {
-				matchCoordinates.push(Coordinate.from(x, y));
+		// create the record of the chain of matches. In general we favour
+		// 'nw', so in the event of a tie it is chosen. North and West are
+		// arbitrary.
+		let highscore = null;
+		let history = null;
+		let path = null;
+		switch(score){
+			case chain.nw.score:
+				history = chain.nw.chain;
+				history.unshift([x-1,y-1,score]);
+				highscore = chain.nw.highscore;
+				path = 'nw';
+				break;
+			case chain.n.score:
+				history = chain.n.chain;
+				history.unshift([x,y-1,score]);
+				highscore = chain.n.highscore;
+				path = 'n';
+				break;
+			case chain.w.score:
+				history = chain.w.chain;
+				history.unshift([x-1,y,score]);
+				highscore = chain.w.highscore;
+				path = 'w';
+				break;
+		}
+		if(history[0][2] === 0){
+			history = [];
+			highscore = 0;
+		}
 
-				// If they match, the predecessor is always the upper-left diagonal
-				x = x - 1;
-				y = y - 1;
 
-				largestPredecessor = this.s[Coordinate.from(x,y)] || 0;
+
+		/***** CALCULATE CURRENT SCORE ******/
+		//console.log("updating: " + key);
+		let axis1 = this.submissions[1][y];
+		let axis0 = this.submissions[0][x];
+		// add the match or mismatch score
+		let localScore = 0;
+		if(axis0.lexeme === axis1.lexeme){
+			localScore = scores.match;
+			// if it is not "NW" match, it is a skipped character
+			if(path.length === 1){
+				localScore += scores.skippable;
 			}
-			else{
-				// Get predecessors
-				let a = this.s[Coordinate.from(x - 1,y - 1)] || 0;
-				let b = this.s[Coordinate.from(x - 1,y)] || 0;
-				let c = this.s[Coordinate.from(x,y - 1)] || 0;
+		}
+		else{
+			localScore = scores.mismatch;
+		}
+		score += localScore;
+		if(score < 0){
+			score = 0;
+		}
+		highscore = Math.max(score, highscore || 0);
 
-				largestPredecessor = Math.max(a, b, c);
 
-				// Figure out which predecessor is the largest, and move to its coordinates
-				if(a === largestPredecessor) {
-					x = x - 1;
-					y = y - 1;
-				}
-				else if(b === largestPredecessor) {
-					x = x - 1;
-				}
-				else if(c === largestPredecessor) {
-					y = y - 1;
-				}
-				else {
-					throw new Error("Unreachable code!");
-				}
+
+		/****** PUSH SCORE FORWARD ********/
+		// if we are running off the edge of the world, end the chain
+		if(x+1 >= this.submissions[0].length || y+1 >= this.submissions[1].length){
+			history.unshift([x,y,score]);
+			score = Number.MIN_SAFE_INTEGER;
+		}
+		//console.debug("scoring: " + JSON.stringify(chain.id) + ' (' + score + ') ' + this.remaining + ' of '+this.totalSize+'('+(100.0*this.remaining/this.totalSize).toFixed(0)+'%) ');
+		if(highscore - score >= scores.terminus){
+			// rewind our chain to the highwater mark
+			while(history.length > 0 && highscore > history[0][2]){
+				history.shift();
+			}
+			// check to ensure that the chain is of significant length to be kept
+			if(history.length >= scores.significant){
+				this.finishedChains.push({
+					score:highscore,
+					history:history
+				});
+				score = 0;
+				history = [];
 			}
 		}
 
-		return matchCoordinates;
+		this.addToCell( x+1 , y+1 , 'nw', score , history.slice(0) , highscore );
+		this.addToCell( x+1 , y   , 'w' , score , history.slice(0) , highscore );
+		this.addToCell( x   , y+1 , 'n' , score , history.slice(0) , highscore );
+
+		// the "remaining" value is a sentinal, so make sure you do it very
+		// last (ensuring the work is actually complete)
+		this.remaining--;
+		if(score > 0){
+			this.tokenMatch++;
+			this.submissions[0][x].shared = true;
+			this.submissions[1][y].shared = true;
+		}
 	}
 
-	/**
-	 * Get the coordinate with the largest value in the S matrix from a given set to check.
-	 *
-	 * @param toTest Set of coordinates to check within
-	 * @return Coordinate from toTest which maps to the largest value in the S matrix. Ties broken arbitrarily.
-	 */
-	getMaxOfCoordinates(toTest) {
-		checkNotNull(toTest);
-		checkArgument(!toTest.isEmpty(), "Cannot get the maximum of an empty set of coordinates!");
+	ResolveCandidates(){
+		let resolved = [];
+		this.tokenMatch = 0;
+		this.resetShareMarkers();
 
-		let candidate = toTest[0];
-		let value = this.s[Coordinate.from(candidate.getX(),candidate.getY())];
+		// sort the chains to get the best scoring ones first
+		this.finishedChains.sort((a,b)=>{return b.score-a.score;});
+		while(this.finishedChains.length > 0){
+			let chain = this.finishedChains.shift();
 
-		toTest.forEach(function(newCandidate) {
-			let newValue = this.s[Coordinate.from(newCandidate.getX(),newCandidate.getY())];
-
-			if(newValue > value) {
-				candidate = newCandidate;
-				value = newValue;
+			// walk the chain checking for coordinates we have already assigned
+			// to a previous chain
+			let i = 0;
+			let truncated = false;
+			for(i = 0; i< chain.history.length; i++){
+				let coords = chain.history[i];
+				let x = coords[0];
+				let y = coords[1];
+				// if we have already followed a chain, stop processing
+				if(this.submissions[0][x].shared && this.submissions[1][y].shared){
+					truncated = true;
+					break;
+				}
+				// this element belongs to this chain, indicate that future
+				// chains should not use it
+				this.submissions[0][x].shared = true;
+				this.submissions[1][y].shared = true;
 			}
+
+			if(!truncated){
+				// add it to the finished list
+				resolved.push(chain);
+				this.tokenMatch += chain.history.length;
+			}
+			else{
+				let truncatedScore = chain.history[i][2];
+				// we made changes to the list, so we will need to reconsider
+				// what we are going to do with it. Start by actually
+				// truncating the chain
+				chain.history = chain.history.slice(0,i);
+				// the chain's values have possibly changed, so it will need
+				// to be recalcualted
+				for(i = chain.history.length-1; i>=0; i--){
+					if(chain.history[i][2] < truncatedScore){
+						truncatedScore = chain.history[i][2];
+					}
+					chain.history[i][2] -= truncatedScore;
+				}
+				// having subtracted a value from the historical chain score,
+				// there is a reasonable chance we have changed the length of
+				// the chain.
+				// TODO: This actually seems a faulty assumption to me.
+				// That that chain is invalid is true, but that means another
+				// chain may have been valid instead. Do we need to go back and
+				// re-evaluate the entire grid? Disallowing previous matches?
+				//
+				// Hmm.. advantage having the whole thing calculated: all you
+				// need to do is calculate each chain in order, and having all
+				// the matrix values allows you to calculate the chain based
+				// on ignoring results you have already handled. In the works
+				// of Michael Caines: "Programming is hard.~"
+				//
+				// That's annoying... proceeding with faulty assumption
+				truncated = false;
+				chain.score = 0;
+				for(i = 0; i < chain.history.length; i++){
+					if(chain.history[i][2] === 0){
+						truncated = true;
+						break;
+					}
+					chain.score = Math.max(chain.score, chain.history[i][2]);
+				}
+				if(truncated){
+					chain.history = chain.history.slice(0,i);
+				}
+
+				// put it back in processing queue (at the end because it is
+				// now going to be almost worthless?)
+				if(chain.history.length >= scores.significant){
+					this.finishedChains.push(chain);
+				}
+
+				// we may have changed the scoring due to this
+				this.finishedChains.sort((a,b)=>{
+					let score = b.score-a.score;
+					if(score === 0){
+						score = b.history.length-a.history.length;
+					}
+					return score;
+				});
+			}
+		}
+
+
+		// we removed a bunch of chains, but may have marked lexemes as shared.
+		// they aren't anymore, so re-run the entire "shared" markers
+		this.resetShareMarkers();
+		resolved.forEach((chain)=>{
+			chain.history.forEach((coord)=>{
+				let x = coord[0];
+				let y = coord[1];
+				this.submissions[0][x].shared = true;
+				this.submissions[1][y].shared = true;
+			});
 		});
 
-		return candidate;
+		return resolved;
 	}
 
-	/**
-	* Merge given map leto the Candidates list.
-	*
-	* @param merge Map to merge leto candidates
-	*/
-	mergeIntoCandidates(merge) {
-		checkNotNull(merge);
-
-		Object.entries(merge).forEach((entry)=>{
-			let key = entry[0];
-			let contentsToMerge = entry[1];
-			if(!(key in this.candidates)) {
-				this.candidates[key] = contentsToMerge;
-			}
-			else {
-				let contentsMergeInto = this.candidates[key];
-				contentsMergeInto.addAll(contentsToMerge);
-			}
+	resetShareMarkers(){
+		this.submissions.forEach((sequence)=>{
+			sequence.forEach((lexeme)=>{
+				delete lexeme.shared;
+			});
 		});
 	}
+
+	toJSON(){
+		let json = {
+			name: this.name,
+			totalSize: this.totalSize,
+			remaining: this.remaining,
+			tokenMatch: this.tokenMatch,
+			submissions: [
+					{
+						totalTokens:this.submissions[0].length
+					},
+					{
+						totalTokens:this.submissions[1].length
+					}
+				]
+		};
+		return json;
+	}
+
 }
+
