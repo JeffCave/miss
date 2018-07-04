@@ -89,8 +89,11 @@
    </g>
   </svg>
  </template>
+ <template type='text/x-template' id='resultmatrixcell-template'>
+  <span :style='style' :title='title'>&#9646;</span>
+ </template>
  <template type='text/x-template' id='resultmatrix-template'>
-  <table>
+  <table style='table-layout:fixed;'>
    <thead>
     <tr>
      <th>&nbsp;</th>
@@ -98,9 +101,11 @@
     </tr>
    </thead>
    <tbody>
-    <tr v-for='(row,i) in matrix'>
+    <tr v-for='(row,i) in orderedSubmissions' :key='row.name'>
      <th>{{row.name}}</th>
-     <td v-for='(col,j) in row' :style='getStyle(col,i,j)' :title="formatTitle(col.percentMatched)">&nbsp;</td>
+     <td v-for='(col,j) in orderedSubmissions' :key='col.name' style='margin:0;padding:0;background-color:transparent;position:relative;overflow:hidden;width:1em;height:1em;'>
+      <resultmatrixcell :result-submission='getResultSubmission(row,col)' :parent='getResult(row,col)' :is-same='i===j'></resultmatrixcell>
+     </td>
     </tr>
    </tbody>
   </table>
