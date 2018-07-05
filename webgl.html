@@ -16,42 +16,33 @@
  </style>
 </head>
 <body>
+<a href='https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Using_textures_in_WebGL'>MDN Tutorial</a>
 <canvas id="c"></canvas>
 
 <script id="2d-vertex-shader" type="notjs">
 
-	// an attribute will receive data from a buffer
-	//attribute vec4 a_position;
-	attribute vec2 a_position;
-	uniform vec2 u_resolution;
+	attribute vec4 aVertexPosition;
+	attribute vec2 aTextureCoord;
 
-	// all shaders have a main function
-	void main() {
-		// convert the position from pixels to a ratio
-		vec2 ratio = a_position / u_resolution;
+	uniform mat4 uModelViewMatrix;
+	uniform mat4 uProjectionMatrix;
 
-		// convert to ratio of -1 to +1
-		vec2 scale = ratio * 2.0;
-		vec2 clipSpace = scale - 1.0;
-		clipSpace = clipSpace * vec2(1,-1);
+	varying highp vec2 vTextureCoord;
 
-		gl_Position = vec4(clipSpace, 0, 1);
+	void main(void) {
+		gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+		vTextureCoord = aTextureCoord;
 	}
 
 </script>
 <script id="2d-fragment-shader" type="notjs">
+	varying highp vec2 vTextureCoord;
 
-	// fragment shaders don't have a default precision so we need
-	// to pick one. mediump is a good default
-	precision mediump float;
-	uniform vec4 u_color;
+	uniform sampler2D uSampler;
 
-	void main() {
-		// gl_FragColor is a special variable a fragment shader
-		// is responsible for setting
-		gl_FragColor = u_color; // return redish-purple
+	void main(void) {
+		gl_FragColor = texture2D(uSampler, vTextureCoord);
 	}
-
 </script>
 
 
@@ -80,8 +71,8 @@
 		// Check if it compiled
 		var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
 		if (!success) {
-		// Something went wrong during compilation; get the error
-		throw "could not compile shader:" + gl.getShaderInfoLog(shader);
+			// Something went wrong during compilation; get the error
+			throw "could not compile shader:" + gl.getShaderInfoLog(shader);
 		}
 
 		return shader;
@@ -230,22 +221,50 @@
 		gl.useProgram(program);
 
 
+		const programInfo = {
+			program: program,
+			attribLocations: {
+				vertexPosition: gl.getAttribLocation(program, 'aVertexPosition'),
+				textureCoord: gl.getAttribLocation(program, 'aTextureCoord'),
+			},
+			uniformLocations: {
+				projectionMatrix: gl.getUniformLocation(program, 'uProjectionMatrix'),
+				modelViewMatrix: gl.getUniformLocation(program, 'uModelViewMatrix'),
+				uSampler: gl.getUniformLocation(program, 'uSampler'),
+			},
+		};
+
+
 		// look up where the vertex data needs to go.
-		var positionAttributeLocation = gl.getAttribLocation(program, "a_position");
+		var positionAttributeLocation = programInfo.attribLocations.vertexPosition;
 		// Create a buffer and put three 2d clip space points in it
 		var positionBuffer = gl.createBuffer();
 		// Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
 		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
 
-		var resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
-		var colourUniformLocation = gl.getUniformLocation(program, "u_color");
+		gl.vertexAttribPointer(programInfo.attribLocations.textureCoord, 2, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(programInfo.attribLocations.textureCoord);
 
-		let image = new Uint8Array(10000*4);
+		gl.activeTexture(gl.TEXTURE0);
+		let textures = [gl.createTexture()];
+		textures.forEach((texture,i)=>{
+			gl.bindTexture(gl.TEXTURE_2D, texture);
+			gl.uniform1i(programInfo.uniformLocations.uSampler, i);
+		});
+
+		let image = new Uint8Array((4*100)**2);
 		image.fill(0);
 		for(let i = 0; i<image.length; i++){
-			image[i] = Math.random();
+			//image[i] = Math.random()*256;
+			image[i] = (i%2) ? 255 : 0;
 		}
+		// gl.NEAREST is also allowed, instead of gl.LINEAR, as neither mipmap.
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		// Prevents s-coordinate wrapping (repeating).
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		// Prevents t-coordinate wrapping (repeating).
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
 		// code above this line is initialization code.
 		// code below this line is rendering code.
@@ -257,14 +276,12 @@
 
 		let render = ()=>{
 			// Turn on the attribute
-			gl.enableVertexAttribArray(positionAttributeLocation);
-			gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
-			gl.uniform4f(colourUniformLocation, 0, 1, 0, 1);
 
 			setRectangle(gl, 0, 0, gl.canvas.width, gl.canvas.height);
 
 			// Bind the position buffer.
 			gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+
 
 			// Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
 			var size = 2;          // 2 components per iteration
@@ -273,6 +290,8 @@
 			var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
 			var offset = 0;        // start at the beginning of the buffer
 			gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset);
+
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 10000, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, image, 0);
 
 			// draw
 			var primitiveType = gl.TRIANGLES;
@@ -287,9 +306,8 @@
 					clearInterval(loop);
 					loop = null;
 				}
-				render();
 				//void gl.texImage2D(target, level, internalformat, width, height, border, format, type, ArrayBufferView srcData, srcOffset);
-				//gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 10000, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, image, 0);
+				render();
 			},20);
 
 	}
