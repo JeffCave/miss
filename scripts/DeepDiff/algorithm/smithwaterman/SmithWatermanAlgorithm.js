@@ -1,5 +1,6 @@
 'use strict';
 
+
 export{
 	SmithWaterman
 };
@@ -471,3 +472,12 @@ class SmithWaterman{
 
 }
 
+/**
+ * Can you distinguish between Shit and Shinola?
+ *
+ * https://www.neatorama.com/2014/02/11/Spectroscopic-Discrimination-of-Shit-from-Shinola/
+ *
+ * Apparently, it is actually very difficult to distinguish between the two
+ * using only the human eye, though a spectromitor can easily distinguish
+ * between the two.
+ */
