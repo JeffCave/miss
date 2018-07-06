@@ -58,9 +58,9 @@ function main() {
 		program: shaderProgram,
 		attribLocations: {
 			vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
+			textureCoord: gl.getAttribLocation(shaderProgram, 'aTextureCoord'),
 		},
 		uniformLocations: {
-			textureCoord: gl.getAttribLocation(shaderProgram, 'aTextureCoord'),
 			uSampler: gl.getUniformLocation(shaderProgram, 'uSampler'),
 		},
 		dimensions:{
@@ -105,8 +105,25 @@ function initBuffers(gl) {
 	// JavaScript array, then use it to fill the current buffer.
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
+
+
+	const textureCoordBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer);
+
+	const textureCoordinates = [
+		 1.0,  1.0,
+		-1.0,  1.0,
+		 1.0, -1.0,
+		-1.0, -1.0,
+	];
+
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates), gl.STATIC_DRAW);
+
+
+
 	return {
 		position: positionBuffer,
+		texture: textureCoordBuffer,
 	};
 }
 
@@ -138,7 +155,23 @@ function drawScene(gl, programInfo, buffers, texture) {
 		);
 		gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
 	}
-
+	{
+		const num = 2; // every coordinate composed of 2 values
+		const type = gl.FLOAT; // the data in the buffer is 32 bit float
+		const normalize = false; // don't normalize
+		const stride = 0; // how many bytes to get from one set to the next
+		const offset = 0; // how many bytes inside the buffer to start from
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffers.texture);
+		gl.vertexAttribPointer(
+			programInfo.attribLocations.textureCoord,
+			num,
+			type,
+			normalize,
+			stride,
+			offset
+		);
+		gl.enableVertexAttribArray(programInfo.attribLocations.textureCoord);
+	}
 	// Tell WebGL to use our program when drawing
 	gl.useProgram(programInfo.program);
 
@@ -221,21 +254,12 @@ function loadTexture(gl) {
 		const srcFormat = gl.RGBA;
 		const srcType = gl.UNSIGNED_BYTE;
 		const pixel = new Uint8Array(4*width);
-		for(let i=0; i<pixel.length; i++){
-			pixel[i] = (i%4 >= 2) ? 255 : 0;
-			// set the opacity
-			if(i%4===0){
-				pixel[i] = 255-Math.ceil((i/pixel.length)*255);
-			}
+		for(let i=0; i<pixel.length;){
+			pixel[i++] = 255-Math.ceil((i/pixel.length)*255);
+			pixel[i++] = Math.ceil((i/pixel.length)*255);
+			pixel[i++] = Math.ceil((i/pixel.length)*255+127)%256;
+			pixel[i++] = 255;
 		}
-		pixel[0] = 0;
-		pixel[1] = 255;
-		pixel[2] = 255;
-		pixel[3] = 255;
-		pixel[4] = 0;
-		pixel[5] = 255;
-		pixel[6] = 0;
-		pixel[7] = 255;
 
 		gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel, 0);
 	}
