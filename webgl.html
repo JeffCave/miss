@@ -254,11 +254,11 @@ function loadTexture(gl) {
 		const srcFormat = gl.RGBA;
 		const srcType = gl.UNSIGNED_BYTE;
 		const pixel = new Uint8Array(4*width);
-		for(let i=0; i<pixel.length;){
-			pixel[i++] = 255-Math.ceil((i/pixel.length)*255);
-			pixel[i++] = Math.ceil((i/pixel.length)*255);
-			pixel[i++] = Math.ceil((i/pixel.length)*255+127)%256;
-			pixel[i++] = 255;
+		pixel[0] = 0;
+		pixel[1] = 1;
+		for(let i=2; i<pixel.length; i++){
+			pixel[i] = (pixel[i-1] + pixel[i-2]) % 256;
+			console.log(pixel[i]);
 		}
 
 		gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel, 0);
