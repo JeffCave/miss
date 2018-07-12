@@ -204,6 +204,9 @@ Vue.component('forcedirected', {
 			Object.values(this.links).forEach(link=>{
 				// TODO: this is hacky... it should be picked up naturally on change
 				let r = this.results[link.key];
+				if(!r){
+					return;
+				}
 				link.complete = r.totalTokens === 0 ? 1 : r.complete / r.totalTokens;
 				link.value = r.percentMatched;
 

@@ -39,7 +39,7 @@ Vue.component('resultmatrixcell', {
 				//width:'20px',
 				//height:'20px',
 				top:"-0.5em",
-				left:'-0.5em',
+				left:'-0.25em',
 				color: 'var(--notice-info-high)',
 				padding:0,
 				margin:0,
@@ -53,6 +53,7 @@ Vue.component('resultmatrixcell', {
 			if(!this.isComplete && !this.isSame){
 				style.color = 'var(--notice-warn-high)';
 			}
+			style.backgroundColor = style.color;
 			return style;
 		},
 		isComplete:function(){
