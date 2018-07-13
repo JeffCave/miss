@@ -30,13 +30,14 @@ const LexemeMap = [];
  *
  */
 LexemeMap.getLexemeForToken = function(token) {
-	if(token in LexemeMap) {
-		let val = LexemeMap[token];
+	let key = ['~',token].join('');
+	if(key in LexemeMap) {
+		let val = LexemeMap[key];
 		return val;
 	}
 
 	let index = LexemeMap.length;
-	LexemeMap[token] = index;
+	LexemeMap[key] = index;
 	LexemeMap.push(token);
 
 	return index;
@@ -44,9 +45,13 @@ LexemeMap.getLexemeForToken = function(token) {
 
 
 /**
- * Throws RuntimeException if lexeme does not map to any key.
+ *
  */
 LexemeMap.getTokenForLexeme = function(lexeme) {
+	console.warn("DEPRECATED: use 'getTextForLexeme' instead of 'getTokenForLexeme'");
+	return LexemeMap.getTextForLexeme(lexeme);
+};
+LexemeMap.getTextForLexeme = function(lexeme) {
 	let token = LexemeMap[lexeme] || null;
 	return token;
 };
