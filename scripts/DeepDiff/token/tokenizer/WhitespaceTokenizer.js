@@ -25,10 +25,20 @@ TokenizerRegistry.processors[TOKENTYPE] = {
 			.filter((str) => {
 				return str !== "";
 			})
-			.map((str) => {
-				return LexemeMap.CreateToken(str, TOKENTYPE);
+			.map((str,i) => {
+				return LexemeMap.CreateToken(str.trim(), TOKENTYPE, true, [0,0]);
 			})
 			;
+
+		let pos = 0;
+		tokens.forEach((token,i)=>{
+			token.range = [];
+			let text = LexemeMap.getTextForLexeme(token.lexeme);
+			pos = string.indexOf(text, pos);
+			token.range.push(pos);
+			pos += text.length-1;
+			token.range.push(pos);
+		});
 
 		let toReturn = new TokenList(TOKENTYPE,tokens);
 		return toReturn;

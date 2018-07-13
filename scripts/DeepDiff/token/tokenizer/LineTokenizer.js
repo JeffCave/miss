@@ -32,8 +32,18 @@ TokenizerRegistry.processors[TOKENTYPE] = {
 				return token;
 			})
 			;
-		let toReturn = new TokenList(TOKENTYPE,tokens);
-		return toReturn;
+
+		let pos = 0;
+		tokens.forEach((token,i)=>{
+			token.range = [];
+			let text = LexemeMap.getTextForLexeme(token.lexeme);
+			pos = content.indexOf(text, pos);
+			token.range.push(pos);
+			pos += text.length-1;
+			token.range.push(pos);
+		});
+
+		return tokens;
 	}
 };
 
