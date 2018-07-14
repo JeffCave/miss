@@ -19,6 +19,10 @@
 	--notice-pending-off:white;
 	--notice-pending-low:lightgray;
 	--notice-pending-high:darkgray;
+
+	--data-pallette-0: steelblue;
+	--data-pallette-1: darkred;
+	--data-pallette-2: orangered;
 }
 
 * {

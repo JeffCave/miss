@@ -114,6 +114,27 @@
    </tbody>
   </table>
  </template>
+ <template type='text/x-template' id='diffview-template'>
+  <div>
+   <ul>
+    <li>Group 1</li>
+    <li>Group 2</li>
+    <li>Group 3</li>
+    <li>Group 4</li>
+   </ul>
+
+   <input list="submissions-asdf" v-model='left' />
+   <datalist id="submissions-asdf">
+    <option v-for='sub in report.submissions' :value="sub.name" />
+   </datalist>
+   <pre style='display:inline-block;width:50%;border:1px solid magenta;'>{{textLeft}}</pre>
+   <input list="submissions-fdsa" v-model='right' />
+   <datalist id="submissions-fdsa">
+    <option v-for='sub in report.submissions' :value="sub.name" />
+   </datalist>
+   <pre style='display:inline-block;width:50%;border:1px solid green;'>{{textRight}}</pre>
+  </div>
+ </template>
 
 
  <link rel='stylesheet' href='index.css' />
@@ -195,6 +216,11 @@
     <summary>HTML</summary>
     <resultmatrix :report='report'></resultmatrix>
    </details>
+  </section>
+  <section id='compare'>
+   <i>compare</i>
+   <h1>Comparison</h1>
+   <diffview :report='report'></diffview>
   </section>
 
  </main>

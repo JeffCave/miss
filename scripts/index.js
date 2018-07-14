@@ -17,6 +17,7 @@ import {Submission} from './DeepDiff/submission/Submission.js';
 
 
 import * as Panels from './widgets/panel.js';
+import './widgets/diffview.js';
 import './widgets/treeview.js';
 import './widgets/submissions.js';
 import './widgets/filedrop.js';
@@ -37,6 +38,7 @@ class indexPage {
 		this.files = [];
 		let self = this;
 
+		Panels.initialize();
 
 		Array.from(document.querySelectorAll('form[is="deepdiff-opts"]')).forEach(opts=>{
 			opts.ddInstance = this.runner;
@@ -71,7 +73,12 @@ class indexPage {
 				report:this.runner.report
 			},
 		});
-		Panels.initialize();
+		this.displayDiff = new Vue({
+			el:'#compare',
+			data: {
+				report:this.runner.report
+			},
+		});
 
 		let adder = document.querySelector('#submissionMaker');
 		adder.addEventListener('dragover',function(event){
