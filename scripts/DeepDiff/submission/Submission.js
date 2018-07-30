@@ -77,16 +77,7 @@ export default class Submission {
 				let name = file[0];
 				let content = file[1];
 				let ext = name.split('.').pop();
-				let handler = ContentHandlers.handlers.filter(function(d){
-					let match = d.ext.some(function(e){
-							let match = ext === e;
-							return match;
-						});
-					return match;
-				}).shift();
-				if(!handler){
-					handler = ContentHandlers.defaultHandler;
-				}
+				let handler = ContentHandlers.lookupHandlerByExt(ext);
 				if(!agg[handler.type]){
 					agg[handler.type] = {files:{}};
 				}
@@ -132,13 +123,13 @@ export default class Submission {
 			Object.entries(this.typedContent).forEach(function(d){
 				let handler = ContentHandlers.handlers[d[0]];
 				let type = handler.tokenizer;
+				let tokenizer = type;
 				let preprocessors = handler.preprocessors.map(function(p){
 						let proc = PreprocessorRegistry.processors[p];
 						return proc;
 					})
 					;
 				preprocessors.unshift(self.Common);
-				let tokenizer = TokenizerRegistry.processors[type];
 				let content = d[1];
 				content = Object.values(content.files);
 				tokenlists[type] = Promise.all(content)

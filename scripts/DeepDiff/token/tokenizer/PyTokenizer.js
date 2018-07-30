@@ -21,7 +21,7 @@ let TOKENTYPE = 'python';
  */
 TokenizerRegistry.processors[TOKENTYPE] = {
 	tokentype: TOKENTYPE,
-	split: function(string) {
+	split: function(string, name=''){
 		utils.checkNotNull(string);
 
 		// https://github.com/differentmatt/filbert
@@ -37,7 +37,7 @@ TokenizerRegistry.processors[TOKENTYPE] = {
 			if(token.value === ''){
 				continue;
 			}
-			token = LexemeMap.CreateToken(token.value, TOKENTYPE, true, [token.start,token.end]);
+			token = LexemeMap.CreateToken(token.value, TOKENTYPE, true, [token.start,token.end,name]);
 
 			if(token.lexeme !== 0){
 				tokens.push(token);

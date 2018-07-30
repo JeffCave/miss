@@ -17,12 +17,12 @@ let TOKENTYPE = 'character';
 TokenizerRegistry.processors[TOKENTYPE] = {
 	seperator: '',
 	tokentype: TOKENTYPE,
-	split: function(content) {
+	split: function(content, name='') {
 		checkNotNull(content);
 
 		let tokens = content.split('')
 			.map((character,pos) => {
-				return LexemeMap.CreateToken(character, TOKENTYPE,true,[pos,pos]);
+				return LexemeMap.CreateToken(character, TOKENTYPE,true,[pos,pos,name]);
 			});
 
 		let toReturn = new TokenList(TOKENTYPE,tokens);

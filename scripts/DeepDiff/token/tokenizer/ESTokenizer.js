@@ -20,13 +20,14 @@ let TOKENTYPE = 'ecmascript';
  */
 TokenizerRegistry.processors[TOKENTYPE] = {
 	tokentype: TOKENTYPE,
-	split: function(string) {
+	split: function(string, name='') {
 		utils.checkNotNull(string);
 
 		//https://esprima.readthedocs.io/en/latest/lexical-analysis.html
 		let tokens = esprima
 			.tokenize(string,{ range: true })
 			.map((t)=>{
+				t.range.push(name);
 				let token = LexemeMap.CreateToken(t.value,TOKENTYPE,true,t.range);
 				return token;
 			})

@@ -12,37 +12,47 @@ export const ContentHandlers = {
 		{
 			'type' : 'c',
 			'ext' : ['c','h','cpp','hpp'],
-			'tokenizer' : TokenizerRegistry.processors.line.tokentype,
+			'tokenizer' : TokenizerRegistry.processors.line,
 			'preprocessors': ['lowercase','deduplicate']
 		},
 		{
 			'type' : 'dna',
 			'ext' : ['fasta','dna'],
-			'tokenizer' : TokenizerRegistry.processors.character.tokentype,
+			'tokenizer' : TokenizerRegistry.processors.character,
 			'preprocessors': ['lowercase','deduplicate']
 		},
 		{
 			'type' : 'js',
 			'mime' : 'text/javascript',
 			'ext' : ['js'],
-			'tokenizer' : TokenizerRegistry.processors.ecmascript.tokentype,
+			'tokenizer' : TokenizerRegistry.processors.ecmascript,
 			'preprocessors': []
 		},
 		{
 			'type' : 'python',
 			'mime' : 'text/python',
 			'ext' : ['py'],
-			'tokenizer' : TokenizerRegistry.processors.python.tokentype,
+			'tokenizer' : TokenizerRegistry.processors.python,
 			'preprocessors': []
 		},
 		{
 			'type' : 'text',
 			'mime' : 'text/*',
 			'ext' : ['txt'],
-			'tokenizer' : TokenizerRegistry.processors.whitespace.tokentype,
+			'tokenizer' : TokenizerRegistry.processors.whitespace,
 			'preprocessors': ['lowercase','deduplicate']
 		}
-	]
+	],
+	lookupHandlerByExt: function(ext){
+		let handler = ContentHandlers.handlers.filter(function(h){
+				let isMatch = h.ext.some(function(e){ return (ext === e); });
+				return isMatch;
+			}).shift();
+		if(!handler){
+			handler = ContentHandlers.defaultHandler;
+		}
+		return handler;
+	}
 };
 
 ContentHandlers.defaultHandler = ContentHandlers.handlers.filter(function(d){return d.type === ContentHandlers.defaultHandler;})[0];
