@@ -123,16 +123,20 @@
     <li>Group 4</li>
    </ul>
 
-   <input list="submissions-asdf" v-model='left' />
-   <datalist id="submissions-asdf">
-    <option v-for='sub in report.submissions' :value="sub.name" />
-   </datalist>
-   <pre style='display:inline-block;width:50%;border:1px solid magenta;'>{{textLeft}}</pre>
-   <input list="submissions-fdsa" v-model='right' />
-   <datalist id="submissions-fdsa">
-    <option v-for='sub in report.submissions' :value="sub.name" />
-   </datalist>
-   <pre style='display:inline-block;width:50%;border:1px solid green;'>{{textRight}}</pre>
+   <section style='display:inline-block;width:48%;border:1px solid magenta;overflow:scroll;vertical-align: text-top;'>
+    <input style='max-width:100%;' list="submissions-asdf" v-model='left' />
+    <datalist id="submissions-asdf">
+     <option v-for='sub in report.submissions' :value="sub.name" />
+    </datalist>
+    <pre style='height:20em;'><span v-html="textLeft"></span></pre>
+   </section>
+   <section style='display:inline-block;width:48%;border:1px solid green;overflow:scroll;vertical-align: text-top;'>
+    <input style='max-width:100%;' list="submissions-fdsa" v-model='right' />
+    <datalist id="submissions-fdsa">
+     <option v-for='sub in report.submissions' :value="sub.name" />
+    </datalist>
+    <pre style='height:20em;'><span v-html="textRight"></span></pre>
+   </section>
   </div>
  </template>
 
@@ -165,6 +169,7 @@
      </dd>
     <dt><a href='./tests/smallcompares.zip'>Small Compares</a></dt>
      <dd>
+      <p>
       Two files with a very small comparison dataset. Suitable for debugging,
       and manually tracing of the algorithm.
       <ol>
@@ -172,6 +177,14 @@
        <li><pre>  P E L I C A N</pre></li>
       </ol>
       From a bioinformatics class slides I <a href="http://slideplayer.com/slide/5142106/16/images/21/Smith-Waterman-Algorithm.jpg">found online</a>
+      </p>
+      <p>
+       A better dataset would be one that matches multiple times.
+       <ol>
+        <li><pre><a href="https://www.youtube.com/watch?v=iCclS78a7P0">H <span style='background-color:lightblue;'>E L L O</span> J <span style='background-color:lightblue;'>E L L O</span></a></pre></li>
+        <li><pre>B <span style='background-color:lightblue;'>E L L O</span> W , B <span style='background-color:lightblue;'>E L O</span> W</pre></li>
+       </ol>
+      </p>
      </dd>
     <dt><a href='./tests/bigcompares.zip'>Big Compares</a></dt>
      <dd>
