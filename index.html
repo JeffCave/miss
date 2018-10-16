@@ -123,14 +123,14 @@
     <li>Group 4</li>
    </ul>
 
-   <section style='display:inline-block;width:48%;border:1px solid magenta;overflow:scroll;vertical-align: text-top;'>
+   <section style='display:inline-block;width:48%;border:1px solid darkgrey;overflow:scroll;vertical-align: text-top;'>
     <input style='max-width:100%;' list="submissions-asdf" v-model='left' />
     <datalist id="submissions-asdf">
      <option v-for='sub in report.submissions' :value="sub.name" />
     </datalist>
     <pre style='height:20em;'><span v-html="textLeft"></span></pre>
    </section>
-   <section style='display:inline-block;width:48%;border:1px solid green;overflow:scroll;vertical-align: text-top;'>
+   <section style='display:inline-block;width:48%;border:1px solid darkgrey;overflow:scroll;vertical-align: text-top;'>
     <input style='max-width:100%;' list="submissions-fdsa" v-model='right' />
     <datalist id="submissions-fdsa">
      <option v-for='sub in report.submissions' :value="sub.name" />

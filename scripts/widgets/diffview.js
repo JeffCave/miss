@@ -57,6 +57,27 @@ Vue.component('diffview', {
 				})
 				.join('')
 				;
+			if(this.left && this.right){
+				let result = [this.left, this.right].sort().join('.');
+				result = this.report.results[result];
+				let tokens = result.submissions.filter((s)=>{ return s.name === submissionName; });
+				let range = [null,null];
+				tokens[0].finalList.slice(0).reverse().forEach((l)=>{
+					if(range[0]-1 === l.range[1]){
+						range[0] = l.range[0];
+					}
+					else{
+						if(range[0] && range[1]){
+							text = text.slice(0, range[1]) + '</span>' + text.slice(range[1]);
+							text = text.slice(0, range[0]) + "<span style='background-color:green;'>" + text.slice(range[0]);
+						}
+						range[0] = l.range[0];
+						range[1] = l.range[1];
+					}
+				});
+
+			}
+
 			return text;
 		}
 	}
