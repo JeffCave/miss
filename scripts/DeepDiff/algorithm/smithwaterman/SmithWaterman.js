@@ -7,7 +7,7 @@ global performance
 import {AlgorithmRegistry} from '../../algorithm/AlgorithmRegistry.js';
 import * as AlgorithmResults from '../../algorithm/AlgorithmResults.js';
 import {checkNotNull} from '../../util/misc.js';
-import {SmithWaterman} from '../../algorithm/smithwaterman/SmithWatermanAlgorithm.js';
+import {SmithWaterman} from '../../algorithm/smithwaterman/SmithWatermanGPU.js';
 
 (function(){
 
