@@ -62,9 +62,52 @@ class SmithWaterman{
 
 		this.pause();
 
-		// initialize the calculations. Creates the state for the first
-		// cell to be calculated
-		this.addToCell(0,0,'nw',0,[],Number.MIN_SAFE_INTEGER);
+		// initialize the calculations.
+		let inputs = {
+			x:[ 0 ,  1,  2,  3,  4,  5,  6], //X
+			y:[ 6 ,  5,  4,  3,  2,  1,  0], //Y
+			a:['p','e','l','i','c','a','n'].map(a=>{return a.charCodeAt(0)}), //@X
+			b:['a','c','e','l','e','o','c'].map(a=>{return a.charCodeAt(0)}), //@Y
+			score:[  0,  0,  1,  1,  0,  0,  0], //Score
+			dir:[  0,  0,  0,  0,  0,  0,  0], //Dir
+			total:[  0,  1,  2,  0,  0,  0,  0], //Total
+			n:[  0,  1,  2,  0,  0,  0,  0], //2 (N)
+			e:[  0,  0,  1,  2,  0,  0,  0], //1 (E)
+			nw:[  0,  0,  0,  0,  0,  1,  0], //0 (NW)
+		};
+		this.gpu = new GPU();
+		let opts = {
+			output:{
+				x:100, //Math.min(a.length,b.length),
+			},
+			constants:{
+				size:0
+			}
+		};
+		opts.constants.size = opts.output.x;
+		this.gCalc = this.gpu.createKernel(function(/*n,e,nw*/) {
+			const rtn = [0.08,2];
+/*
+			let tX = this.thread.x % this.constants.size;
+			let hi = Math.max(n[tX],e[tX]);
+			hi = Math.max(hi,nw[tX]);
+
+			let dir = 0;
+			if(hi === n[tX]){
+				dir = 2;
+			}
+			if(hi === e[tX]){
+				dir = 1;
+			}
+			if(hi === nw[tX]){
+				dir = 0;
+			}
+*/
+			return rtn;
+		}).setOutput([100]);
+		let v = this.gCalc(/*inputs.n,inputs.e,inputs.nw*/);
+
+		this.start();
 	}
 
 	start(){
@@ -87,6 +130,7 @@ class SmithWaterman{
 	stop(){
 		this.pause();
 		this.ResolveCandidates();
+		this.gpu.destroy();
 		let entries = this.submissions;
 		let msg = {type:'stopped',data:entries};
 		if(this.remaining === 0){
@@ -113,125 +157,15 @@ class SmithWaterman{
 	}
 
 	IndexToCoord(i){
-		let len =this.submissions[0].length;
+		let len = this.submissions[0].length;
 		let x = i/len;
 		let y = i%len;
 		return [x,y];
 	}
 
-	async addToCell(x,y,orig,score,chain,highwater){
-		// bounds checking
-		if(x < 0 || y < 0){
-			return false;
-		}
-		if(x >= this.submissions[0].length || y >= this.submissions[1].length){
-			return false;
-		}
-		// lookup the data at that location
-		let index = this.CoordToIndex(x,y);
-		let cell = this.partial.get(index);
-		if(!cell){
-			// create it if necessary
-			cell = {id:[x,y]};
-			this.partial.set(index,cell);
-		}
+	calc(){
+		let buffer = Uint8Array(1);
 
-		// have we already processed this value?
-		if(orig in cell){
-			return false;
-		}
-
-		// initialize values that exist at the begining of the world
-		if(x === 0){
-			cell.w = {score:0,chain:[],highscore:Number.MIN_SAFE_INTEGER};
-			cell.nw = {score:0,chain:[],highscore:Number.MIN_SAFE_INTEGER};
-		}
-		if(y === 0){
-			cell.n = {score:0,chain:[],highscore:Number.MIN_SAFE_INTEGER};
-			cell.nw = {score:0,chain:[],highscore:Number.MIN_SAFE_INTEGER};
-		}
-
-		// set the values
-		cell[orig] = {
-			score: score,
-			chain: chain,
-			highscore:highwater,
-		};
-
-		// have we calcuated up the three pre-requisites sufficiently to
-		// solve the problem?
-		if('n' in cell && 'w' in cell && 'nw' in cell){
-			// take it out of the pre-processing queue, and add it to the
-			// processing queue
-			this.partial.delete(index);
-			this.matrix.push(cell);
-		}
-
-		// if the pre-processing queue is empty, do the actual calcuations
-		if(this.partial.size === 0){
-			this.calcBuffer();
-		}
-		return cell;
-	}
-
-	calcBuffer(){
-		if(this.calcBufferInstance){
-			return;
-		}
-
-		this.calcBufferInstance = utils.defer(()=>{
-			this.calcBufferInstance = null;
-
-			// this thing is supposed to be a multi-threaded thing. We may need
-			// a way to stop it
-			if(this.isPaused){
-				return;
-			}
-
-			// Process as many as we can for 100 milliseconds. Then stop and let
-			// other things get some processing in
-			let cutOff = Date.now()+500;
-			let bufferConsumed = 0;
-			while(bufferConsumed < this.matrix.length && Date.now() < cutOff){
-				// Just process 100 items... no matter what
-				for(let i=0; i<100 && bufferConsumed < this.matrix.length > 0; i++){
-					//console.log(this.matrix[bufferConsumed].id[0]+this.matrix[bufferConsumed].id[1] +':'+this.matrix[bufferConsumed].id+'('+this.matrix.length+')');
-					this.calcChain(this.matrix[bufferConsumed]);
-					bufferConsumed++;
-				}
-			}
-			this.matrix = this.matrix.slice(bufferConsumed);
-			//console.log('=====');
-
-			// Periodically report it up
-			let msg = {type:'progress', data:this.toJSON()};
-			this.postMessage(msg);
-
-			// schedule the next processing cycle
-			if(this.matrix.length > 0){
-				this.calcBuffer();
-			}
-			else{
-				// we are finished processing, but may not quite be finished
-				// all the clean up. To be honest, I think I'm implementing
-				// this due to a memory of and bug that has since been fixed.
-				//
-				// Since I'm implementing it:
-				//
-				// Create a function that watches for the current cycle to be
-				// finished. Once the cycle is finished, then do a full stop.
-				const stopper = ()=>{
-					if(this.calcBufferInstance){
-						utils.defer(stopper);
-					}
-					else{
-						this.stop();
-					}
-				};
-				stopper();
-			}
-
-		});
 	}
 
 	calcChain(chain){
