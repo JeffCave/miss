@@ -5,7 +5,7 @@
    <title>WebGL Demo</title>
    <style>
 	canvas{
-		border:1em solid black;
+		border:1em solid #888888;
 	}
    </style>
   </head>
@@ -15,34 +15,58 @@
   <script>
 class CompareRecord{
 	constructor(init=new Uint8Array([0,0,0,0, 0,0,0,0, 0,0,0,0])){
-		this._values = new Uint8Array(init);
+		this._values = init;
 
 		this.LEX_A = 0;
 		this.LEX_A1 = 1;
 		this.LEX_B = 2;
 		this.LEX_B1 = 3;
+
 		this.SCORE = 4;
 		this.DIR   = 5;
 		this.TOTAL = 6;
+		this.EMPTY1 = 7;
+
 		this.NORTH     = 8;
 		this.EAST      = 9;
 		this.NORTHEAST = 10;
-
-		this.Width = {
-			PerPixel: 4,
-			Pixels: 3,
-		};
-		this.Width.Bytes = this.Width.PerPixel * this.Width.Pixels;
+		this.EMPTY2 = 11;
 
 	}
+
+	static get Width(){
+		return {
+			PerPixel: 4,
+			Pixels:   3,
+			Bytes:   12,
+		};
+	}
+
+	get Width(){
+		return CompareRecord.Width;
+	}
+
+	copy(values){
+		if(values instanceof CompareRecord){
+			values = values.values;
+		}
+		values.forEach((d,i)=>{
+			this.values[i] = d;
+		});
+	}
+
+
 	get values(){
 		return this._values;
 	}
 	set values(vals){
 		this._values = vals;
+		this._values[this.EMPTY1] = 255;
+		this._values[this.EMPTY2] = 255;
 	}
 	get lexA(){
-		let a = this.values[this.LEX_A] + (this.values[this.LEX_A+1]*256);
+		let a = this.values[this.LEX_A];
+		a += (this.values[this.LEX_A+1]*256);
 		return a;
 	}
 	set lexA(val){
@@ -79,6 +103,7 @@ class CompareRecord{
 }
 
 
+
 main();
 
 /**
@@ -90,13 +115,13 @@ function main() {
 
 	let submissions = [
 			'PELLICAN'  .split('').map(c=>{return c.charCodeAt(0);}),
-			'COELACANTH'.split('').map(c=>{return c.charCodeAt(0);}).reverse(),
+			'COELACANTH'.split('').map(c=>{return c.charCodeAt(0);}),
 		];
 
 	// initialize the calculations.
 	let inputs = {
-		a:submissions[0].slice(0,7), //@X
-		b:submissions[1].slice(0,7), //@Y
+		    a:submissions[0].slice(0,7), //@X
+		    b:submissions[1].slice(0,7), //@Y
 		    x:[  0,  1,  2,  3,  4,  5,  6], //X
 		    y:[  0,  1,  2,  3,  4,  5,  6], //Y
 		score:[  0,  0,  1,  1,  0,  0,  0], //Score
@@ -106,8 +131,8 @@ function main() {
 		    e:[  0,  0,  1,  2,  0,  0,  0], //1 (E)
 		   nw:[  0,  0,  0,  0,  0,  1,  0], //0 (NW)
 	};
-	canvas.height=500;
-	canvas.width = 3;
+	canvas.height= 7;
+	canvas.width = CompareRecord.Width.Pixels;
 
 
 
@@ -181,7 +206,18 @@ function main() {
 		},
 		dimensions:{
 			height: canvas.height,
-			width:  canvas.width
+			width:  canvas.width,
+		},
+		content:{
+			records: 0,
+			inbound:{
+				a:inputs.a.reverse(),
+				b:inputs.b.reverse(),
+			},
+			current:{
+				a:[],
+				b:[]
+			}
 		}
 	};
 
@@ -201,40 +237,11 @@ function main() {
 		rec.e = inputs.e[x%inputs.e.length];
 		rec.nw = inputs.nw[x%inputs.nw.length];
 	}
-	for(let i=0; i<data.length;i+=4){
-		data[i+0] = 255-Math.ceil((i/data.length)*255);
-		data[i+1] = Math.ceil((i/data.length)*255);
-		data[i+2] = Math.ceil((i/data.length)*255+127)%256;
-		data[i+3] = Math.floor(i/4)%256;
-		data[i+3] = 255;
-	}
 	// Write the values ot the image
 	writeNumbers(programInfo,data);
 
 
-	let timer = setInterval(()=>{
-		// Read the current image
-		let values = readNumbers(programInfo);
-
-		// Cutesy rotation
-		// This is not meant to be efficient, but rather prove we are
-		// capable of reading and writing from the workspace
-		const wordSize = 4;
-		let swap = values.slice(0,wordSize);
-		let b;
-		for(b=wordSize; b<values.length; b++){
-			values[b-wordSize] = values[b];
-		}
-		b-=wordSize;
-		swap.forEach((d,i)=>{
-			values[b+i] = d;
-		});
-
-		// Write the values ot the image
-		writeNumbers(programInfo,values);
-
-		//clearInterval(timer);
-	},10);
+	setInterval(ProcessFrame,10,programInfo);
 
 
 }
@@ -270,7 +277,17 @@ function render(programInfo) {
 		]), gl.STATIC_DRAW);
 
 	// Create a texture.
-	programInfo.texture =initTexture(gl,programInfo);
+	programInfo.texture = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, programInfo.texture);
+	const pixel = new Uint8Array(programInfo.dimensions.width*programInfo.dimensions.height*4);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, programInfo.dimensions.width, programInfo.dimensions.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixel, 0);
+
+	// Not concerned with it being a power of 2
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
 
 	// lookup uniforms
 	var resolutionLocation = gl.getUniformLocation(program, "u_resolution");
@@ -385,58 +402,76 @@ function loadShader(gl, type, source) {
 }
 
 
-/**
- * Initialize a texture and load an image.
- * When the image finished loading copy it into the texture.
- */
-function initTexture(gl,programInfo) {
-	const texture = gl.createTexture();
-	gl.bindTexture(gl.TEXTURE_2D, texture);
-
-	const level = 0;
-	const internalFormat = gl.RGBA;
-	const width = 1;
-	const height = 1;
-	const border = 0;
-	const srcFormat = gl.RGBA;
-	const srcType = gl.UNSIGNED_BYTE;
-	const pixel = new Uint8Array([0,0,0,0]);
-
-	gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel, 0);
-
-	// Not concerned with it being a power of 2
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-	return texture;
-}
-
-function readNumbers(psGpu){
+function readNumbers(psGpu, dim={}){
 	let gl = psGpu.gl;
-	let pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
-	gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels, 0);
+
+	dim.x = dim.x || 0;
+	dim.y = dim.y || 0;
+	dim.width = dim.width || psGpu.gl.drawingBufferWidth;
+	dim.height = dim.height || psGpu.gl.drawingBufferHeight;
+	if(psGpu.gl.drawingBufferWidth < dim.width+dim.x){
+		dim.width = psGpu.gl.drawingBufferWidth - dim.x;
+	}
+	if(psGpu.gl.drawingBufferHeight < dim.height+dim.y){
+		dim.height = psGpu.gl.drawingBufferHeight - dim.y;
+	}
+
+	let pixels = new Uint8Array(dim.width * dim.height * 4);
+	gl.readPixels(dim.x, dim.y, dim.width, dim.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels, 0);
 	return pixels;
 }
 
-function writeNumbers(psGPU, pixels){
-	let gl = psGPU.gl;
-	const level = 0;
-	const internalFormat = gl.RGBA;
-	const width = psGPU.dimensions.width;
-	const height = psGPU.dimensions.height;
-	const border = 0;
-	const srcFormat = gl.RGBA;
-	const srcType = gl.UNSIGNED_BYTE;
+function writeNumbers(psGpu, pixels, dim={}){
+	let gl = psGpu.gl;
 
-	gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixels, 0);
+	dim.x = dim.x || 0;
+	dim.y = dim.y || 0;
+	dim.width = dim.width || psGpu.gl.drawingBufferWidth;
+	dim.height = dim.height || psGpu.gl.drawingBufferHeight;
+	if(psGpu.gl.drawingBufferWidth < dim.width+dim.x){
+		dim.width = psGpu.gl.drawingBufferWidth - dim.x;
+	}
+	if(psGpu.gl.drawingBufferHeight < dim.height+dim.y){
+		dim.height = psGpu.gl.drawingBufferHeight - dim.y;
+	}
 
+	//gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, dim.width, dim.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels, 0);
+	gl.texSubImage2D(gl.TEXTURE_2D, 0, dim.x, dim.y, dim.width, dim.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels , 0);
+	//              (target, level   ,     x,     y,     width,     height, format,              type, srcData, srcOffset);
 	gl.drawArrays(gl.TRIANGLES, 0, 6);
 }
 
 
+function ProcessFrame(programInfo){
+	programInfo.content.current.a.push(programInfo.content.inbound.a.pop());
+	programInfo.content.current.b.unshift(programInfo.content.inbound.b.pop());
+	programInfo.content.records++;
 
+
+
+	// Read the current image
+	let values = readNumbers(programInfo);
+
+	// Cutesy rotation
+	// This is not meant to be efficient, but rather prove we are
+	// capable of reading and writing from the workspace
+	let swap = new CompareRecord();
+	let reader = new CompareRecord();
+	let last = new CompareRecord();
+	swap.copy(new Uint8ClampedArray(values.buffer,0,swap.Width.Bytes));
+	last.values = new Uint8ClampedArray(values.buffer,0,swap.Width.Bytes);
+	for(let b=swap.Width.Bytes; b<values.length; b+=swap.Width.Bytes){
+		reader.values = new Uint8ClampedArray(values.buffer,b,swap.Width.Bytes);
+		last.copy(reader);
+		last.values =reader.values;
+	}
+	last.copy(swap);
+
+	// Write the values ot the image
+	writeNumbers(programInfo,values);
+
+	programInfo.gl.drawArrays(programInfo.gl.TRIANGLES, 0, 6);
+}
 
 
   </script>
