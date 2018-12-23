@@ -1,190 +1,444 @@
 <!doctype html>
 <html lang="en">
- <head>
-  <meta charset="utf-8">
-  <title>WebGL Demo</title>
-  <script src='https://cdnjs.cloudflare.com/ajax/libs/gpu.js/1.10.4/gpu.min.js'></script>
-  <style>
+  <head>
+   <meta charset="utf-8">
+   <title>WebGL Demo</title>
+   <style>
 	canvas{
-		border:2px solid black;
+		border:1em solid black;
 	}
-  </style>
- </head>
+   </style>
+  </head>
 
  <body>
-  <canvas></canvas>
+  <canvas height='1' width='1'></canvas>
   <script>
-	class CompareRecord{
-		constructor(init=new Uint8Array([0,0,0,0, 0,0,0,0, 0,0,0,0])){
-			this._values = new Uint8Array(init);
+class CompareRecord{
+	constructor(init=new Uint8Array([0,0,0,0, 0,0,0,0, 0,0,0,0])){
+		this._values = new Uint8Array(init);
 
-			this.LEX_A = 0;
-			this.LEX_A1 = 1;
-			this.LEX_B = 2;
-			this.LEX_B1 = 3;
-			this.SCORE = 4;
-			this.DIR   = 5;
-			this.TOTAL = 6;
-			this.NORTH     = 8;
-			this.EAST      = 9;
-			this.NORTHEAST = 10;
+		this.LEX_A = 0;
+		this.LEX_A1 = 1;
+		this.LEX_B = 2;
+		this.LEX_B1 = 3;
+		this.SCORE = 4;
+		this.DIR   = 5;
+		this.TOTAL = 6;
+		this.NORTH     = 8;
+		this.EAST      = 9;
+		this.NORTHEAST = 10;
 
-			this.Width = 12; // bytes
+		this.Width = {
+			PerPixel: 4,
+			Pixels: 3,
+		};
+		this.Width.Bytes = this.Width.PerPixel * this.Width.Pixels;
 
-		}
-		get values(){
-			return this._values;
-		}
-		set values(vals){
-			this._values = vals;
-		}
-		get lexA(){
-			let a = this.values[this.LEX_A] + (this.values[this.LEX_A+1]*256);
-			return a;
-		}
-		set lexA(val){
-			this.values[this.LEX_A]  = Math.floor(val%256);
-			this.values[this.LEX_A+1] = Math.floor(val/256);
-		}
-
-		get lexB(){
-			let a = this.values[this.LEX_B] + (this.values[this.LEX_B+1]*256);
-			return a;
-		}
-		set lexB(val){
-			this.values[this.LEX_B]  = Math.floor(val%256);
-			this.values[this.LEX_B+1] = Math.floor(val/256);
-		}
-
-		get score(){return this.values[this.SCORE];}
-		set score(val){this.values[this.SCORE] = val;}
-
-		get dir(){return this.values[this.DIR];}
-		set dir(val){this.values[this.DIR] = val;}
-
-		get total(){return this.values[this.TOTAL];}
-		set total(val){this.values[this.TOTAL] = val;}
-
-		get north(){return this.values[this.NORTH];}
-		set north(val){this.values[this.NORTH] = val;}
-
-		get east(){return this.values[this.EAST];}
-		set east(val){this.values[this.EAST] = val;}
-
-		get northeast(){return this.values[this.NORTHEAST];}
-		set northeast(val){this.values[this.NORTHEAST] = val;}
+	}
+	get values(){
+		return this._values;
+	}
+	set values(vals){
+		this._values = vals;
+	}
+	get lexA(){
+		let a = this.values[this.LEX_A] + (this.values[this.LEX_A+1]*256);
+		return a;
+	}
+	set lexA(val){
+		this.values[this.LEX_A]  = Math.floor(val%256);
+		this.values[this.LEX_A+1] = Math.floor(val/256);
 	}
 
+	get lexB(){
+		let a = this.values[this.LEX_B] + (this.values[this.LEX_B+1]*256);
+		return a;
+	}
+	set lexB(val){
+		this.values[this.LEX_B]  = Math.floor(val%256);
+		this.values[this.LEX_B+1] = Math.floor(val/256);
+	}
 
-	window.addEventListener('load',()=>{
-		const canvas = document.querySelector('canvas');
-		//const canvas = new OffscreenCanvas(7, 1);
-		const gpu = new GPU({ canvas: canvas });
-		const gl = null;//canvas.getContext('webgl');
+	get score(){return this.values[this.SCORE];}
+	set score(val){this.values[this.SCORE] = val;}
 
-		let submissions = [
-				'PELLICAN'  .split('').map(c=>{return c.charCodeAt(0);}),
-				'COELACANTH'.split('').map(c=>{return c.charCodeAt(0);}).reverse(),
-			];
+	get dir(){return this.values[this.DIR];}
+	set dir(val){this.values[this.DIR] = val;}
 
-		// initialize the calculations.
-		let inputs = {
-			a:submissions[0].slice(0,7), //@X
-			b:submissions[1].slice(0,7), //@Y
-			    x:[  0,  1,  2,  3,  4,  5,  6], //X
-			    y:[  0,  1,  2,  3,  4,  5,  6], //Y
-			score:[  0,  0,  1,  1,  0,  0,  0], //Score
-			  dir:[  0,  0,  0,  0,  0,  0,  0], //Dir
-			total:[  0,  1,  2,  0,  0,  0,  0], //Total
-			    n:[  0,  1,  2,  0,  0,  0,  0], //2 (N)
-			    e:[  0,  0,  1,  2,  0,  0,  0], //1 (E)
-			   nw:[  0,  0,  0,  0,  0,  1,  0], //0 (NW)
-		};
-		canvas.width  = 3;
-		canvas.height = 7;
+	get total(){return this.values[this.TOTAL];}
+	set total(val){this.values[this.TOTAL] = val;}
+
+	get north(){return this.values[this.NORTH];}
+	set north(val){this.values[this.NORTH] = val;}
+
+	get east(){return this.values[this.EAST];}
+	set east(val){this.values[this.EAST] = val;}
+
+	get northeast(){return this.values[this.NORTHEAST];}
+	set northeast(val){this.values[this.NORTHEAST] = val;}
+}
 
 
-		/** direct **/
-		function gCalc() {
-			this.color(this.thread.x / this.output.x, this.thread.y / this.output.y, 1, 1);
+main();
+
+/**
+ * Start here
+ */
+function main() {
+	const canvas = document.querySelector('canvas');
+	const gl = canvas.getContext('webgl2', {preserveDrawingBuffer: true});
+
+	let submissions = [
+			'PELLICAN'  .split('').map(c=>{return c.charCodeAt(0);}),
+			'COELACANTH'.split('').map(c=>{return c.charCodeAt(0);}).reverse(),
+		];
+
+	// initialize the calculations.
+	let inputs = {
+		a:submissions[0].slice(0,7), //@X
+		b:submissions[1].slice(0,7), //@Y
+		    x:[  0,  1,  2,  3,  4,  5,  6], //X
+		    y:[  0,  1,  2,  3,  4,  5,  6], //Y
+		score:[  0,  0,  1,  1,  0,  0,  0], //Score
+		  dir:[  0,  0,  0,  0,  0,  0,  0], //Dir
+		total:[  0,  1,  2,  0,  0,  0,  0], //Total
+		    n:[  0,  1,  2,  0,  0,  0,  0], //2 (N)
+		    e:[  0,  0,  1,  2,  0,  0,  0], //1 (E)
+		   nw:[  0,  0,  0,  0,  0,  1,  0], //0 (NW)
+	};
+	canvas.height=500;
+	canvas.width = 3;
+
+
+
+	// If we don't have a GL context, give up now
+	if (!gl) {
+		console.error('Unable to initialize WebGL. Your browser or machine may not support it.');
+		return;
+	}
+
+	// Vertex shader program
+	const vsSource = (`
+		attribute vec2 a_position;
+		attribute vec2 a_texCoord;
+
+		uniform vec2 u_resolution;
+
+		varying vec2 v_texCoord;
+
+		void main() {
+			// convert the rectangle from pixels to 0.0 to 1.0
+			vec2 zeroToOne = a_position / u_resolution;
+
+			// convert from 0->1 to 0->2
+			vec2 zeroToTwo = zeroToOne * 2.0;
+
+			// convert from 0->2 to -1->+1 (clipspace)
+			vec2 clipSpace = zeroToTwo - 1.0;
+
+			gl_Position = vec4(clipSpace * vec2(1, 1), 0, 1);
+
+			// pass the texCoord to the fragment shader
+			// The GPU will interpolate this value between points.
+			v_texCoord = a_texCoord;
 		}
+	`);
 
-		const calc = gpu
-			.createKernel(gCalc)
-			.setGraphical(true)
-			//.setOutputToTexture(true)
-			.setOutput([canvas.width, canvas.height])
-			;
+	// Fragment shader program
+	const fsSource = (`
+		precision mediump float;
 
-		function setNumbersKernel(x,y,height,width,texture) {
-			if(this.thread.x < x || this.thread.x > x+width){
-				return;
-			}
-			if(this.thread.y < y || this.thread.y > y+height){
-				return;
-			}
-			const pixel = texture[this.thread.x-x][this.thread.y-y];
-			this.color(pixel[0],pixel[1],pixel[2],pixel[3]);
+		// our texture
+		uniform sampler2D u_image;
+
+		// the texCoords passed in from the vertex shader.
+		varying vec2 v_texCoord;
+
+		void main() {
+			gl_FragColor = texture2D(u_image, v_texCoord);
 		}
-		const setNumbers = gpu
-			.createKernel(setNumbersKernel)
-			.setOutput([canvas.width, canvas.height])
-			;
-/*
-		const setNumbers = (x,y,height,width,pixels)=>{
-			const level = 0;
-			const internalFormat = gl.RGBA;
-			const border = 0;
-			const srcFormat = gl.RGBA;
-			const srcType = gl.UNSIGNED_BYTE;
-			const texture = gl.createTexture();
-			gl.bindTexture(gl.TEXTURE_2D, texture);
-			gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixels);
+	`);
+
+	// Initialize a shader program; this is where all the lighting
+	// for the vertices and so forth is established.
+	const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
+
+	// Collect all the info needed to use the shader program.
+	// Look up which attribute our shader program is using
+	// for aVertexPosition and look up uniform locations.
+	const programInfo = {
+		gl:gl,
+		program: shaderProgram,
+		attribLocations: {
+			vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
+			textureCoord: gl.getAttribLocation(shaderProgram, 'aTextureCoord'),
+		},
+		uniformLocations: {
+			uSampler: gl.getUniformLocation(shaderProgram, 'uSampler'),
+		},
+		buffers:{
+			texture:null,
+		},
+		dimensions:{
+			height: canvas.height,
+			width:  canvas.width
 		}
-*/
-		function incrementCalcKernel(x,y,height,width,texture) {
-			if(this.thread.x < x || this.thread.x > x+width){
-				return;
-			}
-			if(this.thread.y < y || this.thread.y > y+height){
-				return;
-			}
-			const pixel = texture[this.thread.x-x][this.thread.y-y];
-			this.color(pixel[0],pixel[1],pixel[2],pixel[3]);
+	};
+
+	render(programInfo);
+
+	const data = readNumbers(programInfo);
+	let rec = new CompareRecord();
+	for(let x=0; x<canvas.height; x++){
+		let offset=x*rec.Width.Bytes;
+		rec.values = new Uint8ClampedArray(data.buffer,offset,rec.Width.Bytes);
+		rec.lexA = inputs.a[x%inputs.a.length];
+		rec.lexB = inputs.b[x%inputs.b.length];
+		rec.score = inputs.score[x%inputs.score.length];
+		rec.dir = inputs.dir[x%inputs.dir.length];
+		rec.total = inputs.total[x%inputs.total.length];
+		rec.n = inputs.n[x%inputs.n.length];
+		rec.e = inputs.e[x%inputs.e.length];
+		rec.nw = inputs.nw[x%inputs.nw.length];
+	}
+	for(let i=0; i<data.length;i+=4){
+		data[i+0] = 255-Math.ceil((i/data.length)*255);
+		data[i+1] = Math.ceil((i/data.length)*255);
+		data[i+2] = Math.ceil((i/data.length)*255+127)%256;
+		data[i+3] = Math.floor(i/4)%256;
+		data[i+3] = 255;
+	}
+	// Write the values ot the image
+	writeNumbers(programInfo,data);
+
+
+	let timer = setInterval(()=>{
+		// Read the current image
+		let values = readNumbers(programInfo);
+
+		// Cutesy rotation
+		// This is not meant to be efficient, but rather prove we are
+		// capable of reading and writing from the workspace
+		const wordSize = 4;
+		let swap = values.slice(0,wordSize);
+		let b;
+		for(b=wordSize; b<values.length; b++){
+			values[b-wordSize] = values[b];
 		}
-		const incrementCalc = gpu
-			.createKernel(incrementCalcKernel)
-			.setOutput([canvas.width, canvas.height])
-			;
+		b-=wordSize;
+		swap.forEach((d,i)=>{
+			values[b+i] = d;
+		});
+
+		// Write the values ot the image
+		writeNumbers(programInfo,values);
+
+		//clearInterval(timer);
+	},10);
 
 
-		function getNumbers(gpu){
-			const gl = gpu.getCanvas().getContext('webgl');
-			let pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
-			gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-			return pixels;
-		}
+}
 
 
-		/* Actually do stuff */
-		calc();
-		let buff = getNumbers(gpu);
-		let rec = new CompareRecord();
-		for(let x=0; x<canvas.height; x++){
-			rec.values = new Uint8ClampedArray(buff.buffer,x*rec.Width,12);
-			rec.lexA = inputs.a[x];
-			rec.lexB = inputs.b[x];
-			rec.score = inputs.score[x];
-			rec.dir = inputs.dir[x];
-			rec.total = inputs.total[x];
-			rec.n = inputs.n[x];
-			rec.e = inputs.e[x];
-			rec.nw = inputs.nw[x];
-		}
-		setNumbers(0,0,canvas.height,canvas.width,buff);
-		buff = getNumbers();
+function render(programInfo) {
+	let gl = programInfo.gl;
+	// setup GLSL program
+	var program = programInfo.program;
 
-	});
+	// look up where the vertex data needs to go.
+	var positionLocation = gl.getAttribLocation(program, "a_position");
+	var texcoordLocation = gl.getAttribLocation(program, "a_texCoord");
+
+	// Create a buffer to put three 2d clip space points in
+	var positionBuffer = gl.createBuffer();
+
+	// Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
+	gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+	// Set a rectangle the same size as the image.
+	setRectangle(gl, 0, 0, programInfo.dimensions.width, programInfo.dimensions.height);
+
+	// provide texture coordinates for the rectangle.
+	var texcoordBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+			0.0,  0.0,
+			1.0,  0.0,
+			0.0,  1.0,
+			0.0,  1.0,
+			1.0,  0.0,
+			1.0,  1.0,
+		]), gl.STATIC_DRAW);
+
+	// Create a texture.
+	programInfo.texture =initTexture(gl,programInfo);
+
+	// lookup uniforms
+	var resolutionLocation = gl.getUniformLocation(program, "u_resolution");
+
+	// Tell WebGL how to convert from clip space to pixels
+	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+	// Clear the canvas
+	gl.clearColor(0, 0, 0, 0);
+	gl.clear(gl.COLOR_BUFFER_BIT);
+
+	// Tell it to use our program (pair of shaders)
+	gl.useProgram(program);
+
+	// Turn on the position attribute
+	gl.enableVertexAttribArray(positionLocation);
+
+	// Bind the position buffer.
+	gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+
+	// Tell the position attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+	var size = 2;          // 2 components per iteration
+	var type = gl.FLOAT;   // the data is 32bit floats
+	var normalize = false; // don't normalize the data
+	var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
+	var offset = 0;        // start at the beginning of the buffer
+	gl.vertexAttribPointer(positionLocation, size, type, normalize, stride, offset);
+
+	// Turn on the teccord attribute
+	gl.enableVertexAttribArray(texcoordLocation);
+
+	// Bind the position buffer.
+	gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
+
+	// Tell the position attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+	var size = 2;          // 2 components per iteration
+	var type = gl.FLOAT;   // the data is 32bit floats
+	var normalize = false; // don't normalize the data
+	var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
+	var offset = 0;        // start at the beginning of the buffer
+	gl.vertexAttribPointer(texcoordLocation, size, type, normalize, stride, offset);
+
+	// set the resolution
+	gl.uniform2f(resolutionLocation, gl.canvas.width, gl.canvas.height);
+
+	// Draw the rectangle.
+	var primitiveType = gl.TRIANGLES;
+	var offset = 0;
+	var count = 6;
+	gl.drawArrays(primitiveType, offset, count);
+}
+
+
+function setRectangle(gl, x, y, width, height) {
+	var x1 = x;
+	var x2 = x + width;
+	var y1 = y;
+	var y2 = y + height;
+
+	// NOTE: gl.bufferData(gl.ARRAY_BUFFER, ...) will affect
+	// whatever buffer is bound to the `ARRAY_BUFFER` bind point
+	// but so far we only have one buffer. If we had more than one
+	// buffer we'd want to bind that buffer to `ARRAY_BUFFER` first.
+
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+		x1, y1,
+		x2, y1,
+		x1, y2,
+		x1, y2,
+		x2, y1,
+		x2, y2])
+		, gl.STATIC_DRAW);
+}
+
+
+/**
+ * Initialize a shader program, so WebGL knows how to draw our data
+ */
+function initShaderProgram(gl, vsSource, fsSource) {
+	const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
+	const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
+
+	// Create the shader program
+	const shaderProgram = gl.createProgram();
+	gl.attachShader(shaderProgram, vertexShader);
+	gl.attachShader(shaderProgram, fragmentShader);
+	gl.linkProgram(shaderProgram);
+
+	// If creating the shader program failed
+	if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+		console.error('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram));
+		return null;
+	}
+
+	return shaderProgram;
+}
+
+/**
+ * creates a shader of the given type, uploads the source and
+ * compiles it.
+ */
+function loadShader(gl, type, source) {
+	const shader = gl.createShader(type);
+	gl.shaderSource(shader, source);
+	gl.compileShader(shader);
+	if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+		console.error('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
+		gl.deleteShader(shader);
+		return null;
+	}
+	return shader;
+}
+
+
+/**
+ * Initialize a texture and load an image.
+ * When the image finished loading copy it into the texture.
+ */
+function initTexture(gl,programInfo) {
+	const texture = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, texture);
+
+	const level = 0;
+	const internalFormat = gl.RGBA;
+	const width = 1;
+	const height = 1;
+	const border = 0;
+	const srcFormat = gl.RGBA;
+	const srcType = gl.UNSIGNED_BYTE;
+	const pixel = new Uint8Array([0,0,0,0]);
+
+	gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel, 0);
+
+	// Not concerned with it being a power of 2
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+	return texture;
+}
+
+function readNumbers(psGpu){
+	let gl = psGpu.gl;
+	let pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
+	gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels, 0);
+	return pixels;
+}
+
+function writeNumbers(psGPU, pixels){
+	let gl = psGPU.gl;
+	const level = 0;
+	const internalFormat = gl.RGBA;
+	const width = psGPU.dimensions.width;
+	const height = psGPU.dimensions.height;
+	const border = 0;
+	const srcFormat = gl.RGBA;
+	const srcType = gl.UNSIGNED_BYTE;
+
+	gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixels, 0);
+
+	gl.drawArrays(gl.TRIANGLES, 0, 6);
+}
+
+
+
+
+
   </script>
  </body>
 
