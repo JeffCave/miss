@@ -13,94 +13,60 @@
  <body>
   <canvas height='1' width='1'></canvas>
   <script>
-class CompareRecord{
-	constructor(init=new Uint8Array([0,0,0,0, 0,0,0,0, 0,0,0,0])){
-		this._values = init;
-
-		this.LEX_A = 0;
-		this.LEX_A1 = 1;
-		this.LEX_B = 2;
-		this.LEX_B1 = 3;
-
-		this.SCORE = 4;
-		this.DIR   = 5;
-		this.TOTAL = 6;
-		this.EMPTY1 = 7;
-
-		this.NORTH     = 8;
-		this.EAST      = 9;
-		this.NORTHEAST = 10;
-		this.EMPTY2 = 11;
-
+class pixel{
+	constructor(pixels=[0,0,0,0], offset = 0){
+		this.offset = offset;
+		this.pixels = pixels;
 	}
 
-	static get Width(){
-		return {
-			PerPixel: 4,
-			Pixels:   3,
-			Bytes:   12,
-		};
-	}
+	get r(){ return this.getValue(0); }
+	get g(){ return this.getValue(1); }
+	get b(){ return this.getValue(2); }
+	get a(){ return this.getValue(3); }
 
-	get Width(){
-		return CompareRecord.Width;
-	}
+	set r(vals){ this.setValue(0,vals); }
+	set g(vals){ this.setValue(1,vals); }
+	set b(vals){ this.setValue(2,vals); }
+	set a(vals){ this.setValue(3,vals); }
 
-	copy(values){
-		if(values instanceof CompareRecord){
-			values = values.values;
+	setValue(offset,vals){
+		if(vals < 0){
+			vals = 0;
 		}
-		values.forEach((d,i)=>{
-			this.values[i] = d;
-		});
+		if(vals > 255){
+			vals = 255;
+		}
+		this.pixels[this.offset+offset] = vals;
 	}
 
-
-	get values(){
-		return this._values;
-	}
-	set values(vals){
-		this._values = vals;
-		this._values[this.EMPTY1] = 255;
-		this._values[this.EMPTY2] = 255;
-	}
-	get lexA(){
-		let a = this.values[this.LEX_A];
-		a += (this.values[this.LEX_A+1]*256);
-		return a;
-	}
-	set lexA(val){
-		this.values[this.LEX_A]  = Math.floor(val%256);
-		this.values[this.LEX_A+1] = Math.floor(val/256);
+	getValue(offset){
+		let value = this.offset+offset;
+		value = this.pixels[value];
+		value = pixel.NZ(value);
+		return value;
 	}
 
-	get lexB(){
-		let a = this.values[this.LEX_B] + (this.values[this.LEX_B+1]*256);
-		return a;
+	read(arr,offset){
+		this.r = arr[offset+0];
+		this.g = arr[offset+1];
+		this.b = arr[offset+2];
+		this.c = arr[offset+3];
+		return offset+4;
 	}
-	set lexB(val){
-		this.values[this.LEX_B]  = Math.floor(val%256);
-		this.values[this.LEX_B+1] = Math.floor(val/256);
+
+	write(arr,offset){
+		arr[offset+0] = this.r;
+		arr[offset+1] = this.g;
+		arr[offset+2] = this.b;
+		arr[offset+3] = this.a;
+		return offset+4;
 	}
 
-	get score(){return this.values[this.SCORE];}
-	set score(val){this.values[this.SCORE] = val;}
-
-	get dir(){return this.values[this.DIR];}
-	set dir(val){this.values[this.DIR] = val;}
-
-	get total(){return this.values[this.TOTAL];}
-	set total(val){this.values[this.TOTAL] = val;}
-
-	get north(){return this.values[this.NORTH];}
-	set north(val){this.values[this.NORTH] = val;}
-
-	get east(){return this.values[this.EAST];}
-	set east(val){this.values[this.EAST] = val;}
-
-	get northeast(){return this.values[this.NORTHEAST];}
-	set northeast(val){this.values[this.NORTHEAST] = val;}
+	static NZ(val){
+		return val ? val : 0;
+	}
 }
+
 
 
 
@@ -116,23 +82,13 @@ function main() {
 	let submissions = [
 			'PELLICAN'  .split('').map(c=>{return c.charCodeAt(0);}),
 			'COELACANTH'.split('').map(c=>{return c.charCodeAt(0);}),
-		];
+		]
+		.sort((a,b)=>{
+			return a.length - b.length;
+		});
 
-	// initialize the calculations.
-	let inputs = {
-		    a:submissions[0].slice(0,7), //@X
-		    b:submissions[1].slice(0,7), //@Y
-		    x:[  0,  1,  2,  3,  4,  5,  6], //X
-		    y:[  0,  1,  2,  3,  4,  5,  6], //Y
-		score:[  0,  0,  1,  1,  0,  0,  0], //Score
-		  dir:[  0,  0,  0,  0,  0,  0,  0], //Dir
-		total:[  0,  1,  2,  0,  0,  0,  0], //Total
-		    n:[  0,  1,  2,  0,  0,  0,  0], //2 (N)
-		    e:[  0,  0,  1,  2,  0,  0,  0], //1 (E)
-		   nw:[  0,  0,  0,  0,  0,  1,  0], //0 (NW)
-	};
-	canvas.height= 7;
-	canvas.width = CompareRecord.Width.Pixels;
+	canvas.width = submissions[0].length;
+	canvas.height= submissions[1].length;
 
 
 
@@ -209,39 +165,41 @@ function main() {
 			width:  canvas.width,
 		},
 		content:{
-			records: 0,
+			MAX_RECORDS:canvas.height-1,
+			total_cycles: submissions[0].length+submissions[1].length-1,
+			total_area: submissions[0].length*submissions[1].length,
+			rec: 0,
+			cycle:0,
 			inbound:{
-				a:inputs.a.reverse(),
-				b:inputs.b.reverse(),
+				a:submissions[0],
+				b:submissions[1],
 			},
-			current:{
-				a:[],
-				b:[]
-			}
 		}
 	};
 
 	render(programInfo);
 
+	// This could be done awesomely in a single pass as a GPU program
 	const data = readNumbers(programInfo);
-	let rec = new CompareRecord();
-	for(let x=0; x<canvas.height; x++){
-		let offset=x*rec.Width.Bytes;
-		rec.values = new Uint8ClampedArray(data.buffer,offset,rec.Width.Bytes);
-		rec.lexA = inputs.a[x%inputs.a.length];
-		rec.lexB = inputs.b[x%inputs.b.length];
-		rec.score = inputs.score[x%inputs.score.length];
-		rec.dir = inputs.dir[x%inputs.dir.length];
-		rec.total = inputs.total[x%inputs.total.length];
-		rec.n = inputs.n[x%inputs.n.length];
-		rec.e = inputs.e[x%inputs.e.length];
-		rec.nw = inputs.nw[x%inputs.nw.length];
+	let x = 0;
+	let y = 0;
+	for(let pos=0; pos < data.length; pos+=4){
+		data[pos+0] = programInfo.content.inbound.a[x];
+		data[pos+1] = programInfo.content.inbound.b[y];
+		data[pos+2] = 0;
+		data[pos+3] = 255;
+		x = (x+1)%programInfo.dimensions.width;
+		if(x === 0){
+			y = (y+1)%programInfo.dimensions.height;
+		}
 	}
 	// Write the values ot the image
 	writeNumbers(programInfo,data);
+	flush(programInfo);
 
 
-	setInterval(ProcessFrame,10,programInfo);
+	programInfo.content.timer = setInterval(ProcessFrame,16,programInfo);
+	ProcessFrame(programInfo);
 
 
 }
@@ -334,10 +292,11 @@ function render(programInfo) {
 	gl.uniform2f(resolutionLocation, gl.canvas.width, gl.canvas.height);
 
 	// Draw the rectangle.
-	var primitiveType = gl.TRIANGLES;
-	var offset = 0;
-	var count = 6;
-	gl.drawArrays(primitiveType, offset, count);
+	flush(programInfo);
+}
+
+function flush(programInfo){
+	programInfo.gl.drawArrays(programInfo.gl.TRIANGLES, 0, 6);
 }
 
 
@@ -435,42 +394,85 @@ function writeNumbers(psGpu, pixels, dim={}){
 		dim.height = psGpu.gl.drawingBufferHeight - dim.y;
 	}
 
-	//gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, dim.width, dim.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels, 0);
 	gl.texSubImage2D(gl.TEXTURE_2D, 0, dim.x, dim.y, dim.width, dim.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels , 0);
-	//              (target, level   ,     x,     y,     width,     height, format,              type, srcData, srcOffset);
-	gl.drawArrays(gl.TRIANGLES, 0, 6);
 }
 
-
 function ProcessFrame(programInfo){
-	programInfo.content.current.a.push(programInfo.content.inbound.a.pop());
-	programInfo.content.current.b.unshift(programInfo.content.inbound.b.pop());
-	programInfo.content.records++;
 
+	// *** start: Everything here should be in a shader
+	//let values = readNumbers(programInfo, 0, 0, 1, 1);
+	const MATCH = 2;
+	const SKIP = -1;
+	const MISMATCH = -1;
 
+	let vals = readNumbers(programInfo);
+	let pWidth = 4;
+	for(let y=programInfo.content.cycle,x=0; y>=0; y--,x++){
+		// Out of bounds values.
+		// self-handeld by OpenGL
+		if(y >= programInfo.dimensions.height){
+			x += y - programInfo.dimensions.height + 1;
+			y = programInfo.dimensions.height - 1;
+		}
 
-	// Read the current image
-	let values = readNumbers(programInfo);
+		let coordHere = programInfo.dimensions.width*(y-0)+(x-0);
+		let coordNW   = programInfo.dimensions.width*(y-1)+(x-1);
+		let coordW    = programInfo.dimensions.width*(y-0)+(x-1);
+		let coordN    = programInfo.dimensions.width*(y-1)+(x-0);
 
-	// Cutesy rotation
-	// This is not meant to be efficient, but rather prove we are
-	// capable of reading and writing from the workspace
-	let swap = new CompareRecord();
-	let reader = new CompareRecord();
-	let last = new CompareRecord();
-	swap.copy(new Uint8ClampedArray(values.buffer,0,swap.Width.Bytes));
-	last.values = new Uint8ClampedArray(values.buffer,0,swap.Width.Bytes);
-	for(let b=swap.Width.Bytes; b<values.length; b+=swap.Width.Bytes){
-		reader.values = new Uint8ClampedArray(values.buffer,b,swap.Width.Bytes);
-		last.copy(reader);
-		last.values =reader.values;
+		// Out of bounds values.
+		// this is handled on GPU
+		if(x <= 0 || x >= programInfo.dimensions.width){
+			coordNW = -1;
+			coordW = -1;
+		}
+		if(y <= 0 || y >= programInfo.dimensions.height){
+			coordNW = -1;
+			coordN = -1;
+		}
+
+		let here = new pixel(vals, coordHere * pWidth);
+		let nw   = new pixel(vals, coordNW   * pWidth);
+		let w    = new pixel(vals, coordW    * pWidth);
+		let n    = new pixel(vals, coordN    * pWidth);
+
+		// Find the max score from the chain
+		here.b = Math.max(w.a, n.a);
+		here.b = Math.max(here.b, nw.a);
+		// add up our new score
+		here.a  = here.b;
+		here.a += (here.r === here.g) ? MATCH : MISMATCH;
+		// Figure out what the directionality of the score was
+		if(nw.a === here.b){
+			here.b = 0;
+		}
+		else if(w.a === here.b){
+			here.b = 1;
+		}
+		else{
+			here.b = 2;
+		}
+
+		// apply the skip penaly if it was anything but NW
+		here.a += SKIP * (here.b===0) ? 0 : 1;
+
+		programInfo.content.rec++;
+		writeNumbers(programInfo, vals);
+		flush(programInfo);
 	}
-	last.copy(swap);
+	writeNumbers(programInfo, vals);
+	// *** end: Everything here should be in a shader
+	flush(programInfo);
 
-	// Write the values ot the image
-	writeNumbers(programInfo,values);
+	programInfo.content.cycle++;
+	if(programInfo.content.cycle >= programInfo.content.total_cycles){
+		clearInterval(programInfo.content.timer);
+		setTimeout(ResolveChains,0,programInfo);
+	}
+}
 
-	programInfo.gl.drawArrays(programInfo.gl.TRIANGLES, 0, 6);
+function ResolveChains(programInfo){
+	console.warn("Not yet implemented!");
 }
 
 
