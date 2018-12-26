@@ -4,14 +4,22 @@
    <meta charset="utf-8">
    <title>WebGL Demo</title>
    <style>
+	body{
+		font-family:monospace;
+	}
 	canvas{
 		border:1em solid #888888;
+	}
+	table{
+		text-align:right;
 	}
    </style>
   </head>
 
  <body>
   <canvas height='1' width='1'></canvas>
+  <table><tbody></tbody></table>
+  <pre></pre>
   <script>
 class pixel{
 	constructor(pixels=[0,0,0,0], offset = 0){
@@ -80,9 +88,18 @@ function main() {
 	const gl = canvas.getContext('webgl2', {preserveDrawingBuffer: true});
 
 	let submissions = [
-			'PELLICAN'  .split('').map(c=>{return c.charCodeAt(0);}),
-			'COELACANTH'.split('').map(c=>{return c.charCodeAt(0);}),
+			//'PELLICAN',
+			//'COELACANTH',
+			'In maxime voluptates veniam sed eum aut soluta. Commodi modi aliquam reprehenderit quia eveniet nemo non modi. Quaerat doloribus ut id est corrupti. Facilis et consequatur',
+			'Repudiandae quam ratione neque minus. Consectetur soluta dicta est quidem accusamus cumque. Et fugiat quia consequatur aut. Deleniti alias itaque incidunt ad in omnis. Dolores hic vitae rerum ad possimus rem repellat. Voluptatem in similique labore reiciendis.',
 		]
+		.map(d=>{
+			return d
+				.toLowerCase()
+				.split('')
+				.map(c=>{return c.charCodeAt(0);})
+				;
+		})
 		.sort((a,b)=>{
 			return a.length - b.length;
 		});
@@ -197,11 +214,17 @@ function main() {
 	writeNumbers(programInfo,data);
 	flush(programInfo);
 
-
-	programInfo.content.timer = setInterval(ProcessFrame,16,programInfo);
-	ProcessFrame(programInfo);
-
-
+	let start = Date.now();
+	for(programInfo.content.cycle=0; programInfo.content.cycle < programInfo.content.total_cycles; programInfo.content.cycle++){
+		ProcessFrame(programInfo);
+	}
+	let end = Date.now();
+	console.log('Process Time: ' + (end-start));
+	drawGrid(programInfo, readNumbers(programInfo));
+	start = Date.now();
+	ResolveChains(programInfo);
+	end = Date.now();
+	console.log('Resolve Time: ' + (end-start));
 }
 
 
@@ -407,7 +430,7 @@ function ProcessFrame(programInfo){
 
 	let vals = readNumbers(programInfo);
 	let pWidth = 4;
-	for(let y=programInfo.content.cycle,x=0; y>=0; y--,x++){
+	for(let y=programInfo.content.cycle,x=0; y>=0 && x<programInfo.dimensions.width; y--,x++){
 		// Out of bounds values.
 		// self-handeld by OpenGL
 		if(y >= programInfo.dimensions.height){
@@ -436,6 +459,9 @@ function ProcessFrame(programInfo){
 		let w    = new pixel(vals, coordW    * pWidth);
 		let n    = new pixel(vals, coordN    * pWidth);
 
+		here.a = 0;
+		//drawGrid(programInfo,vals);
+
 		// Find the max score from the chain
 		here.b = Math.max(w.a, n.a);
 		here.b = Math.max(here.b, nw.a);
@@ -444,38 +470,123 @@ function ProcessFrame(programInfo){
 		here.a += (here.r === here.g) ? MATCH : MISMATCH;
 		// Figure out what the directionality of the score was
 		if(nw.a === here.b){
-			here.b = 0;
+			here.b = 3;
 		}
 		else if(w.a === here.b){
-			here.b = 1;
+			here.b = 2;
 		}
 		else{
-			here.b = 2;
+			here.b = 1;
 		}
 
 		// apply the skip penaly if it was anything but NW
-		here.a += SKIP * (here.b===0) ? 0 : 1;
+		here.a += SKIP * ((here.b===3) ? 0 : 1);
 
 		programInfo.content.rec++;
 		writeNumbers(programInfo, vals);
 		flush(programInfo);
+		//drawGrid(programInfo,vals);
 	}
 	writeNumbers(programInfo, vals);
 	// *** end: Everything here should be in a shader
 	flush(programInfo);
 
-	programInfo.content.cycle++;
-	if(programInfo.content.cycle >= programInfo.content.total_cycles){
-		clearInterval(programInfo.content.timer);
-		setTimeout(ResolveChains,0,programInfo);
-	}
 }
 
 function ResolveChains(programInfo){
-	console.warn("Not yet implemented!");
+	const MIN_SIGNIFICANT = 3;
+	const MAX_CHAINS = 10;
+	const modDir = [
+			[0,0], // don't move
+			[0,1],
+			[1,0],
+			[1,1]
+		];
+
+	let values = readNumbers(programInfo);
+	//drawGrid(programInfo, values);
+	let index = new Map();
+	for(let i=programInfo.content.total_area-1; i>=0; i-=1){
+		let pix = new pixel(values,i*4);
+		if(pix.a === 0) continue;
+
+		let d = {
+			i: i,
+			score: pix.a,
+			chain:[]
+		};
+
+		d.prev = i;
+		d.prev -= modDir[pix.b][0] * 1;
+		d.prev -= modDir[pix.b][1] * (programInfo.dimensions.width);
+		index.set(d.i, d);
+	}
+	let chains = [];
+	while(index.size > 0){
+		let root = Array.from(index.values())
+			.sort((a,b)=>{
+				let ord = b.score - a.score;
+				if(ord === 0){
+					ord = a.i - b.i;
+				}
+				return ord;
+			})
+			.shift()
+			;
+
+		for(let item = root; item; item = index.get(item.prev)){
+			root.chain.push(item);
+			index.delete(item.i);
+		}
+		let finItem = root.chain[root.chain.length-1];
+		root.score -= finItem.score-2;
+		if(root && root.score >= MIN_SIGNIFICANT){
+			chains.push(root);
+		}
+	}
+	chains = chains
+		.sort((a,b)=>{
+			let ord = b.score - a.score;
+			if(ord === 0){
+				ord = a.i - b.i;
+			}
+			return ord;
+		})
+		.slice(0,Math.min(MAX_CHAINS,chains.length))
+		;
+	//document.querySelector('pre').innerText = JSON.stringify(chains,null,4);
+	console.log(chains);
 }
 
 
+function drawGrid(programInfo, values){
+	let table = document.querySelector("table");
+	table = table.tBodies[0];
+	table.innerHTML = '';
+	let tr = table.insertRow(-1);
+	let th = document.createElement('th');
+	th.innerHTML = '&nbsp;';
+	tr.append(th);
+	programInfo.content.inbound.a.forEach((d,i)=>{
+		let th = document.createElement('th');
+		th.innerHTML = String.fromCharCode(d).toUpperCase() + '<sub>'+i+'</sub>';
+		tr.append(th);
+	});
+	for(let y=0,i=0; y<programInfo.dimensions.height ; y++){
+		tr = table.insertRow(-1);
+		let th = document.createElement('th');
+		th.innerHTML = String.fromCharCode(programInfo.content.inbound.b[y]).toUpperCase() + '<sub>'+y+'</sub>';
+		tr.append(th);
+		for(let x=0; x<programInfo.dimensions.width ; x++,i++){
+			let pix = new pixel(values,i*4);
+
+			let td = document.createElement('td');
+			td.innerHTML = ('&nbsp;&nbsp;' + pix.a);
+			td.innerText = td.innerText.substr(td.innerText.length-3,3);
+			tr.append(td);
+		}
+	}
+}
   </script>
  </body>
 
