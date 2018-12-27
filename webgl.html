@@ -36,12 +36,15 @@
 	td > i:nth-of-type(2):after{
 		content:"\A";
 	}
+	table > caption{
+		text-align:left;
+	}
    </style>
   </head>
 
  <body>
   <canvas height='1' width='1'></canvas>
-  <table><tbody></tbody></table>
+  <table></table>
   <pre></pre>
   <script>
 class pixel{
@@ -138,6 +141,7 @@ function main() {
 			return a.length - b.length;
 		});
 
+	canvas.style.display = 'none';
 	canvas.width = submissions[0].length;
 	canvas.height= submissions[1].length;
 
@@ -279,6 +283,7 @@ function main() {
 	render(programInfo);
 
 	// This could be done awesomely in a single pass as a GPU program
+	window.performance.mark('init.start');
 	const data = readNumbers(programInfo);
 	let x = 0;
 	let y = 0;
@@ -294,19 +299,28 @@ function main() {
 	}
 	// Write the values ot the image
 	writeNumbers(programInfo,data);
-	flush(programInfo);
+	run(programInfo);
+	window.performance.mark('init.end');
+	window.performance.measure('init','init.start','init.end');
 
-	let start = Date.now();
+	drawGrid(programInfo);
+
+	window.performance.mark('frames.start');
 	for(programInfo.content.cycle=0; programInfo.content.cycle < programInfo.content.total_cycles; programInfo.content.cycle++){
 		programInfo.content.ProcessFrame(programInfo);
 	}
-	let end = Date.now();
-	console.log('Process Time: ' + (end-start));
-	drawGrid(programInfo, readNumbers(programInfo));
-	start = Date.now();
+	window.performance.mark('frames.end');
+	window.performance.measure('frames','frames.start','frames.end');
+
+	drawGrid(programInfo);
+
+	window.performance.mark('chains.start');
 	ResolveChains(programInfo);
-	end = Date.now();
-	console.log('Resolve Time: ' + (end-start));
+	window.performance.mark('chains.end');
+	window.performance.measure('chains','chains.start','chains.end');
+
+	drawGrid(programInfo);
+
 }
 
 
@@ -340,20 +354,32 @@ function render(programInfo) {
 		]), gl.STATIC_DRAW);
 
 	// Create a texture.
-	programInfo.texture = gl.createTexture();
-	gl.bindTexture(gl.TEXTURE_2D, programInfo.texture);
-	const pixel = new Uint8Array(programInfo.dimensions.width*programInfo.dimensions.height*4);
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, programInfo.dimensions.width, programInfo.dimensions.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixel, 0);
+	const pixel = new Uint8Array(gl.drawingBufferWidth*gl.drawingBufferHeight*4);
+	programInfo.textures = [0,1].map(d=>{
+			let texture = gl.createTexture();
+			gl.bindTexture(gl.TEXTURE_2D, texture);
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixel, 0);
 
-	// Not concerned with it being a power of 2
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+			// Not concerned with it being a power of 2
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+			let frameBuffer = gl.createFramebuffer();
+			gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
+		    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+
+			return {
+				id: d,
+				texture: texture,
+				framebuffer: frameBuffer,
+			};
+		});
 
 
 	// Tell WebGL how to convert from clip space to pixels
-	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+	gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 
 	// Clear the canvas
 	gl.clearColor(0, 0, 0, 0);
@@ -392,7 +418,7 @@ function render(programInfo) {
 
 	// lookup uniforms
 	let resolutionLocation = gl.getUniformLocation(program, "u_resolution");
-	gl.uniform2f(resolutionLocation, gl.canvas.width, gl.canvas.height);
+	gl.uniform2f(resolutionLocation, gl.drawingBufferWidth, gl.drawingBufferHeight);
 	/*
 	const MATCH = 2;
 	const SKIP = -1;
@@ -410,6 +436,12 @@ function render(programInfo) {
 }
 
 function flush(programInfo){
+	programInfo.gl.bindFramebuffer(programInfo.gl.FRAMEBUFFER, null);
+	run(programInfo);
+	programInfo.gl.bindFramebuffer(programInfo.gl.FRAMEBUFFER, programInfo.textures[0].framebuffer);
+}
+
+function run(programInfo){
 	programInfo.gl.drawArrays(programInfo.gl.TRIANGLES, 0, 6);
 }
 
@@ -492,6 +524,8 @@ function readNumbers(psGpu, dim={}){
 		dim.height = psGpu.gl.drawingBufferHeight - dim.y;
 	}
 
+	//flush(psGpu);
+
 	let pixels = new Uint8Array(dim.width * dim.height * 4);
 	gl.readPixels(dim.x, dim.y, dim.width, dim.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels, 0);
 	return pixels;
@@ -514,7 +548,7 @@ function writeNumbers(psGpu, pixels, dim={}){
 	gl.texSubImage2D(gl.TEXTURE_2D, 0, dim.x, dim.y, dim.width, dim.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels , 0);
 }
 
-
+/*
 function ProcessFrameCPU(programInfo){
 
 	// *** start: Everything here should be in a shader
@@ -587,16 +621,16 @@ function ProcessFrameCPU(programInfo){
 	flush(programInfo);
 
 }
-
+*/
 
 
 function ProcessFrameGPU(programInfo){
-	let vals = readNumbers(programInfo);
-	writeNumbers(programInfo, vals);
-	flush(programInfo);
-	programInfo.content.rec++;
+	let buffer = programInfo.textures.shift();
+	programInfo.textures.push(buffer);
 
-	//drawGrid(programInfo, vals);
+	programInfo.gl.bindFramebuffer(programInfo.gl.FRAMEBUFFER, buffer.framebuffer);
+	run(programInfo);
+	programInfo.gl.bindTexture(programInfo.gl.TEXTURE_2D, buffer.texture);
 }
 
 
@@ -675,6 +709,19 @@ function drawGrid(programInfo, values = null){
 	}
 
 	let table = document.querySelector("table");
+	table.innerHTML = "<caption></caption><tbody></tbody>";
+
+
+	let caption = table.querySelector('caption');
+	caption.innerHTML =
+		'Cycles......: ' + programInfo.content.cycle + '\n' +
+		'Timings (ms): <ul>' +
+		performance.getEntriesByType('measure').map(d=>{
+			return '<li>' + d.name + ': ' + d.duration + ';</li>';
+		}).join('') +
+		'</ul>'
+		;
+
 	table = table.tBodies[0];
 	table.innerHTML = '';
 	let tr = table.insertRow(-1);
@@ -709,6 +756,7 @@ function drawGrid(programInfo, values = null){
 			tr.append(td);
 		}
 	}
+
 }
   </script>
  </body>
