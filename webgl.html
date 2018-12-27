@@ -12,6 +12,29 @@
 	}
 	table{
 		text-align:right;
+		border-collapse: collapse;
+	}
+	table, th, td {
+		border: 1px solid lightgray;
+		white-space: pre;
+	}
+	td > i{
+		 font-style: normal;
+	}
+	td > i:nth-of-type(1){
+		color:red;
+	}
+	td > i:nth-of-type(2){
+		color:green;
+	}
+	td > i:nth-of-type(3){
+		color:blue;
+	}
+	td > i:nth-of-type(4){
+		color:black;
+	}
+	td > i:nth-of-type(2):after{
+		content:"\A";
 	}
    </style>
   </head>
@@ -58,7 +81,7 @@ class pixel{
 		this.r = arr[offset+0];
 		this.g = arr[offset+1];
 		this.b = arr[offset+2];
-		this.c = arr[offset+3];
+		this.a = arr[offset+3];
 		return offset+4;
 	}
 
@@ -68,6 +91,15 @@ class pixel{
 		arr[offset+2] = this.b;
 		arr[offset+3] = this.a;
 		return offset+4;
+	}
+
+	get values(){
+		return [
+				this.r,
+				this.g,
+				this.b,
+				this.a,
+			];
 	}
 
 	static NZ(val){
@@ -88,10 +120,12 @@ function main() {
 	const gl = canvas.getContext('webgl2', {preserveDrawingBuffer: true});
 
 	let submissions = [
-			//'PELLICAN',
-			//'COELACANTH',
-			'In maxime voluptates veniam sed eum aut soluta. Commodi modi aliquam reprehenderit quia eveniet nemo non modi. Quaerat doloribus ut id est corrupti. Facilis et consequatur',
-			'Repudiandae quam ratione neque minus. Consectetur soluta dicta est quidem accusamus cumque. Et fugiat quia consequatur aut. Deleniti alias itaque incidunt ad in omnis. Dolores hic vitae rerum ad possimus rem repellat. Voluptatem in similique labore reiciendis.',
+			// ~10 ms based on CPU
+			'PELLICAN',
+			'COELACANTH',
+			// 5.5 seconds based on CPU
+			//'In maxime voluptates veniam sed eum aut soluta. Commodi modi aliquam reprehenderit quia eveniet nemo non modi. Quaerat doloribus ut id est corrupti. Facilis et consequatur',
+			//'Repudiandae quam ratione neque minus. Consectetur soluta dicta est quidem accusamus cumque. Et fugiat quia consequatur aut. Deleniti alias itaque incidunt ad in omnis. Dolores hic vitae rerum ad possimus rem repellat. Voluptatem in similique labore reiciendis.',
 		]
 		.map(d=>{
 			return d
@@ -117,6 +151,8 @@ function main() {
 
 	// Vertex shader program
 	const vsSource = (`
+		precision mediump float;
+
 		attribute vec2 a_position;
 		attribute vec2 a_texCoord;
 
@@ -148,12 +184,56 @@ function main() {
 
 		// our texture
 		uniform sampler2D u_image;
-
 		// the texCoords passed in from the vertex shader.
 		varying vec2 v_texCoord;
 
+		// constants
+		uniform vec2 u_resolution;
+		uniform vec3 scores;
+
 		void main() {
-			gl_FragColor = texture2D(u_image, v_texCoord);
+
+			/*******************************/
+			// calculate the size of a pixel
+			vec2 pixSize = vec2(1.0, 1.0) / u_resolution;
+			vec4 pixNull = vec4(0.0,0.0,0.0,0.0);
+			// find our four critical points
+			vec4 here = texture2D(u_image, v_texCoord);
+			vec4 nw   = texture2D(u_image, v_texCoord + vec2(-pixSize.x,-pixSize.y));
+			vec4 w    = texture2D(u_image, v_texCoord + vec2(-pixSize.x,         0));
+			vec4 n    = texture2D(u_image, v_texCoord + vec2(         0,-pixSize.y));
+			// test for out of bounds values
+			if(v_texCoord.y <= pixSize.y){
+				nw = pixNull;
+				n = pixNull;
+			}
+			if(v_texCoord.x <= pixSize.x){
+				nw = pixNull;
+				w = pixNull;
+			}
+			// Find the max score from the chain
+			here.b = max(w.a, n.a);
+			here.b = max(here.b, nw.a);
+			// add up our new score
+			here.a  = here.b;
+			here.a += (here.r == here.g) ? scores.x : scores.y;
+
+			// Figure out what the directionality of the score was
+			if(nw.a == here.b){
+				here.b = 3.0/256.0;
+			}
+			else if(w.a == here.b){
+				here.b = 2.0/256.0;
+			}
+			else{
+				here.b = 1.0/256.0;
+			}
+
+			// apply the skip penalty if it was anything but NW
+			here.a += scores.z * (here.b==float(3) ? float(0) : float(1));
+			/*******************************/
+
+			gl_FragColor = here;
 		}
 	`);
 
@@ -191,6 +271,8 @@ function main() {
 				a:submissions[0],
 				b:submissions[1],
 			},
+			//ProcessFrame: ProcessFrameCPU
+			ProcessFrame: ProcessFrameGPU
 		}
 	};
 
@@ -204,7 +286,7 @@ function main() {
 		data[pos+0] = programInfo.content.inbound.a[x];
 		data[pos+1] = programInfo.content.inbound.b[y];
 		data[pos+2] = 0;
-		data[pos+3] = 255;
+		data[pos+3] = 0;
 		x = (x+1)%programInfo.dimensions.width;
 		if(x === 0){
 			y = (y+1)%programInfo.dimensions.height;
@@ -216,7 +298,7 @@ function main() {
 
 	let start = Date.now();
 	for(programInfo.content.cycle=0; programInfo.content.cycle < programInfo.content.total_cycles; programInfo.content.cycle++){
-		ProcessFrame(programInfo);
+		programInfo.content.ProcessFrame(programInfo);
 	}
 	let end = Date.now();
 	console.log('Process Time: ' + (end-start));
@@ -270,9 +352,6 @@ function render(programInfo) {
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
 
-	// lookup uniforms
-	var resolutionLocation = gl.getUniformLocation(program, "u_resolution");
-
 	// Tell WebGL how to convert from clip space to pixels
 	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
@@ -311,8 +390,20 @@ function render(programInfo) {
 	var offset = 0;        // start at the beginning of the buffer
 	gl.vertexAttribPointer(texcoordLocation, size, type, normalize, stride, offset);
 
-	// set the resolution
+	// lookup uniforms
+	let resolutionLocation = gl.getUniformLocation(program, "u_resolution");
 	gl.uniform2f(resolutionLocation, gl.canvas.width, gl.canvas.height);
+	/*
+	const MATCH = 2;
+	const SKIP = -1;
+	const MISMATCH = -1;
+	*/
+	let scores = gl.getUniformLocation(program, "scores");
+	let sValues = [2,-1,-1].map((d)=>{
+		return d/128.0;
+	});
+	gl.uniform3fv(scores, sValues);
+
 
 	// Draw the rectangle.
 	flush(programInfo);
@@ -357,6 +448,9 @@ function initShaderProgram(gl, vsSource, fsSource) {
 	gl.attachShader(shaderProgram, vertexShader);
 	gl.attachShader(shaderProgram, fragmentShader);
 	gl.linkProgram(shaderProgram);
+
+	gl.deleteShader(vertexShader);
+	gl.deleteShader(fragmentShader);
 
 	// If creating the shader program failed
 	if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
@@ -420,7 +514,8 @@ function writeNumbers(psGpu, pixels, dim={}){
 	gl.texSubImage2D(gl.TEXTURE_2D, 0, dim.x, dim.y, dim.width, dim.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels , 0);
 }
 
-function ProcessFrame(programInfo){
+
+function ProcessFrameCPU(programInfo){
 
 	// *** start: Everything here should be in a shader
 	//let values = readNumbers(programInfo, 0, 0, 1, 1);
@@ -459,7 +554,7 @@ function ProcessFrame(programInfo){
 		let w    = new pixel(vals, coordW    * pWidth);
 		let n    = new pixel(vals, coordN    * pWidth);
 
-		here.a = 0;
+		//here.a = 0;
 		//drawGrid(programInfo,vals);
 
 		// Find the max score from the chain
@@ -483,8 +578,8 @@ function ProcessFrame(programInfo){
 		here.a += SKIP * ((here.b===3) ? 0 : 1);
 
 		programInfo.content.rec++;
-		writeNumbers(programInfo, vals);
-		flush(programInfo);
+		//writeNumbers(programInfo, vals);
+		//flush(programInfo);
 		//drawGrid(programInfo,vals);
 	}
 	writeNumbers(programInfo, vals);
@@ -492,6 +587,19 @@ function ProcessFrame(programInfo){
 	flush(programInfo);
 
 }
+
+
+
+function ProcessFrameGPU(programInfo){
+	let vals = readNumbers(programInfo);
+	writeNumbers(programInfo, vals);
+	flush(programInfo);
+	programInfo.content.rec++;
+
+	//drawGrid(programInfo, vals);
+}
+
+
 
 function ResolveChains(programInfo){
 	const MIN_SIGNIFICANT = 3;
@@ -516,9 +624,10 @@ function ResolveChains(programInfo){
 			chain:[]
 		};
 
+		let md = modDir[pix.b%modDir.length];
 		d.prev = i;
-		d.prev -= modDir[pix.b][0] * 1;
-		d.prev -= modDir[pix.b][1] * (programInfo.dimensions.width);
+		d.prev -= md[0] * 1;
+		d.prev -= md[1] * (programInfo.dimensions.width);
 		index.set(d.i, d);
 	}
 	let chains = [];
@@ -559,7 +668,12 @@ function ResolveChains(programInfo){
 }
 
 
-function drawGrid(programInfo, values){
+function drawGrid(programInfo, values = null){
+
+	if(!values){
+		values = readNumbers(programInfo);
+	}
+
 	let table = document.querySelector("table");
 	table = table.tBodies[0];
 	table.innerHTML = '';
@@ -581,8 +695,17 @@ function drawGrid(programInfo, values){
 			let pix = new pixel(values,i*4);
 
 			let td = document.createElement('td');
-			td.innerHTML = ('&nbsp;&nbsp;' + pix.a);
-			td.innerText = td.innerText.substr(td.innerText.length-3,3);
+			td.innerHTML = pix.values
+				.map(d=>{
+					let str = d.toString().split('');
+					while(str.length < 3){
+						str.unshift(String.fromCharCode(160));
+					}
+					str = str.join('');
+					return '<i>' + str + '</i>';
+				})
+				.join(' ')
+				;
 			tr.append(td);
 		}
 	}
