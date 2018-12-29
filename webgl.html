@@ -110,7 +110,43 @@ class pixel{
 	}
 }
 
+class psGpu{
+	constructor(options={}){
+		let opts = psGpu.BaseOpts;
+		Object.entries(options).forEach((o)=>{
+			opts[o[0]] = o[1];
+		});
 
+		let canvas = document.createElement('canvas');
+		canvas.height = opts.height;
+		canvas.width = opts.width;
+
+		const gl = canvas.getContext('webgl2', {preserveDrawingBuffer: true});
+		// If we don't have a GL context, give up now
+		if (!gl) {
+			throw new Error('Unable to initialize WebGL. Your browser or machine may not support it.');
+		}
+
+
+		this._ = {
+			opts: opts,
+			canvas:canvas,
+			gl:gl,
+		};
+
+	}
+
+	get gl(){
+		return this._.gl;
+	}
+
+	static get BaseOpts(){
+		return {
+			height:1,
+			width:1,
+		};
+	}
+}
 
 
 main();
@@ -119,8 +155,6 @@ main();
  * Start here
  */
 function main() {
-	const canvas = document.querySelector('canvas');
-	const gl = canvas.getContext('webgl2', {preserveDrawingBuffer: true});
 
 	let submissions = [
 			// ~10 ms based on CPU
@@ -141,17 +175,8 @@ function main() {
 			return a.length - b.length;
 		});
 
-	canvas.style.display = 'none';
-	canvas.width = submissions[0].length;
-	canvas.height= submissions[1].length;
-
-
-
-	// If we don't have a GL context, give up now
-	if (!gl) {
-		console.error('Unable to initialize WebGL. Your browser or machine may not support it.');
-		return;
-	}
+	const gpu = new psGpu({width:submissions[0].length,height:submissions[1].length});
+	const gl = gpu.gl;
 
 	// Vertex shader program
 	const vsSource = (`
@@ -262,34 +287,33 @@ function main() {
 			texture:null,
 		},
 		dimensions:{
-			height: canvas.height,
-			width:  canvas.width,
+			height: gpu.gl.drawingBufferHeight,
+			width:  gpu.gl.drawingBufferWidth,
 		},
-		content:{
-			MAX_RECORDS:canvas.height-1,
-			total_cycles: submissions[0].length+submissions[1].length-1,
-			total_area: submissions[0].length*submissions[1].length,
-			rec: 0,
-			cycle:0,
-			inbound:{
-				a:submissions[0],
-				b:submissions[1],
-			},
-			//ProcessFrame: ProcessFrameCPU
-			ProcessFrame: ProcessFrameGPU
-		}
+		ProcessFrame: ProcessFrameGPU
 	};
 
+	let swVals = {
+		MAX_RECORDS:Math.max(submissions[0].length,submissions[1].length),
+		total_cycles: submissions[0].length+submissions[1].length-1,
+		total_area: submissions[0].length*submissions[1].length,
+		rec: 0,
+		cycle:0,
+		inbound:{
+			a:submissions[0],
+			b:submissions[1],
+		},
+	};
 	render(programInfo);
 
 	// This could be done awesomely in a single pass as a GPU program
 	window.performance.mark('init.start');
-	const data = readNumbers(programInfo);
+	const data = readNumbers(gpu);
 	let x = 0;
 	let y = 0;
 	for(let pos=0; pos < data.length; pos+=4){
-		data[pos+0] = programInfo.content.inbound.a[x];
-		data[pos+1] = programInfo.content.inbound.b[y];
+		data[pos+0] = swVals.inbound.a[x];
+		data[pos+1] = swVals.inbound.b[y];
 		data[pos+2] = 0;
 		data[pos+3] = 0;
 		x = (x+1)%programInfo.dimensions.width;
@@ -303,24 +327,24 @@ function main() {
 	window.performance.mark('init.end');
 	window.performance.measure('init','init.start','init.end');
 
-	drawGrid(programInfo);
+	drawGrid(programInfo,swVals);
 
 	window.performance.mark('frames.start');
-	for(programInfo.content.cycle=0; programInfo.content.cycle < programInfo.content.total_cycles; programInfo.content.cycle++){
-		programInfo.content.ProcessFrame(programInfo);
+	for(swVals.cycle=0; swVals.cycle < swVals.total_cycles; swVals.cycle++){
+		programInfo.ProcessFrame(programInfo);
 	}
 	window.performance.mark('frames.end');
 	window.performance.measure('frames','frames.start','frames.end');
 
-	drawGrid(programInfo);
+	drawGrid(programInfo,swVals);
 
 	window.performance.mark('chains.start');
-	ResolveChains(programInfo);
+	let chains = ResolveChains(swVals,readNumbers(programInfo),gpu.gl.drawingBufferWidth,gpu.gl.drawingBufferHeight);
 	window.performance.mark('chains.end');
 	window.performance.measure('chains','chains.start','chains.end');
 
-	drawGrid(programInfo);
-
+	drawGrid(programInfo,swVals);
+	drawChains(chains);
 }
 
 
@@ -548,82 +572,6 @@ function writeNumbers(psGpu, pixels, dim={}){
 	gl.texSubImage2D(gl.TEXTURE_2D, 0, dim.x, dim.y, dim.width, dim.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels , 0);
 }
 
-/*
-function ProcessFrameCPU(programInfo){
-
-	// *** start: Everything here should be in a shader
-	//let values = readNumbers(programInfo, 0, 0, 1, 1);
-	const MATCH = 2;
-	const SKIP = -1;
-	const MISMATCH = -1;
-
-	let vals = readNumbers(programInfo);
-	let pWidth = 4;
-	for(let y=programInfo.content.cycle,x=0; y>=0 && x<programInfo.dimensions.width; y--,x++){
-		// Out of bounds values.
-		// self-handeld by OpenGL
-		if(y >= programInfo.dimensions.height){
-			x += y - programInfo.dimensions.height + 1;
-			y = programInfo.dimensions.height - 1;
-		}
-
-		let coordHere = programInfo.dimensions.width*(y-0)+(x-0);
-		let coordNW   = programInfo.dimensions.width*(y-1)+(x-1);
-		let coordW    = programInfo.dimensions.width*(y-0)+(x-1);
-		let coordN    = programInfo.dimensions.width*(y-1)+(x-0);
-
-		// Out of bounds values.
-		// this is handled on GPU
-		if(x <= 0 || x >= programInfo.dimensions.width){
-			coordNW = -1;
-			coordW = -1;
-		}
-		if(y <= 0 || y >= programInfo.dimensions.height){
-			coordNW = -1;
-			coordN = -1;
-		}
-
-		let here = new pixel(vals, coordHere * pWidth);
-		let nw   = new pixel(vals, coordNW   * pWidth);
-		let w    = new pixel(vals, coordW    * pWidth);
-		let n    = new pixel(vals, coordN    * pWidth);
-
-		//here.a = 0;
-		//drawGrid(programInfo,vals);
-
-		// Find the max score from the chain
-		here.b = Math.max(w.a, n.a);
-		here.b = Math.max(here.b, nw.a);
-		// add up our new score
-		here.a  = here.b;
-		here.a += (here.r === here.g) ? MATCH : MISMATCH;
-		// Figure out what the directionality of the score was
-		if(nw.a === here.b){
-			here.b = 3;
-		}
-		else if(w.a === here.b){
-			here.b = 2;
-		}
-		else{
-			here.b = 1;
-		}
-
-		// apply the skip penaly if it was anything but NW
-		here.a += SKIP * ((here.b===3) ? 0 : 1);
-
-		programInfo.content.rec++;
-		//writeNumbers(programInfo, vals);
-		//flush(programInfo);
-		//drawGrid(programInfo,vals);
-	}
-	writeNumbers(programInfo, vals);
-	// *** end: Everything here should be in a shader
-	flush(programInfo);
-
-}
-*/
-
-
 function ProcessFrameGPU(programInfo){
 	let buffer = programInfo.textures.shift();
 	programInfo.textures.push(buffer);
@@ -635,7 +583,7 @@ function ProcessFrameGPU(programInfo){
 
 
 
-function ResolveChains(programInfo){
+function ResolveChains(swVals,values, width, height){
 	const MIN_SIGNIFICANT = 3;
 	const MAX_CHAINS = 10;
 	const modDir = [
@@ -645,10 +593,8 @@ function ResolveChains(programInfo){
 			[1,1]
 		];
 
-	let values = readNumbers(programInfo);
-	//drawGrid(programInfo, values);
 	let index = new Map();
-	for(let i=programInfo.content.total_area-1; i>=0; i-=1){
+	for(let i=swVals.total_area-1; i>=0; i-=1){
 		let pix = new pixel(values,i*4);
 		if(pix.a === 0) continue;
 
@@ -661,7 +607,7 @@ function ResolveChains(programInfo){
 		let md = modDir[pix.b%modDir.length];
 		d.prev = i;
 		d.prev -= md[0] * 1;
-		d.prev -= md[1] * (programInfo.dimensions.width);
+		d.prev -= md[1] * width;
 		index.set(d.i, d);
 	}
 	let chains = [];
@@ -697,26 +643,24 @@ function ResolveChains(programInfo){
 		})
 		.slice(0,Math.min(MAX_CHAINS,chains.length))
 		;
-	//document.querySelector('pre').innerText = JSON.stringify(chains,null,4);
-	console.log(chains);
+	return chains;
 }
 
 
-function drawGrid(programInfo, values = null){
+function drawGrid(programInfo, runMetrics){
 
-	if(!values){
-		values = readNumbers(programInfo);
-	}
+	let values = readNumbers(programInfo);
 
 	let table = document.querySelector("table");
 	table.innerHTML = "<caption></caption><tbody></tbody>";
 
 
 	let caption = table.querySelector('caption');
+	let times = performance.getEntriesByType('measure');
 	caption.innerHTML =
-		'Cycles......: ' + programInfo.content.cycle + '\n' +
-		'Timings (ms): <ul>' +
-		performance.getEntriesByType('measure').map(d=>{
+		'Cycles......: ' + runMetrics.cycle + '\n' +
+		'Timings (ms): '+times.reduce((a,d)=>{return a+d.duration;},0)+'<ul>' +
+		times.map(d=>{
 			return '<li>' + d.name + ': ' + d.duration + ';</li>';
 		}).join('') +
 		'</ul>'
@@ -728,7 +672,7 @@ function drawGrid(programInfo, values = null){
 	let th = document.createElement('th');
 	th.innerHTML = '&nbsp;';
 	tr.append(th);
-	programInfo.content.inbound.a.forEach((d,i)=>{
+	runMetrics.inbound.a.forEach((d,i)=>{
 		let th = document.createElement('th');
 		th.innerHTML = String.fromCharCode(d).toUpperCase() + '<sub>'+i+'</sub>';
 		tr.append(th);
@@ -736,7 +680,7 @@ function drawGrid(programInfo, values = null){
 	for(let y=0,i=0; y<programInfo.dimensions.height ; y++){
 		tr = table.insertRow(-1);
 		let th = document.createElement('th');
-		th.innerHTML = String.fromCharCode(programInfo.content.inbound.b[y]).toUpperCase() + '<sub>'+y+'</sub>';
+		th.innerHTML = String.fromCharCode(runMetrics.inbound.b[y]).toUpperCase() + '<sub>'+y+'</sub>';
 		tr.append(th);
 		for(let x=0; x<programInfo.dimensions.width ; x++,i++){
 			let pix = new pixel(values,i*4);
@@ -757,6 +701,33 @@ function drawGrid(programInfo, values = null){
 		}
 	}
 
+}
+
+function drawChains(chains){
+	let tds = Array.from(document.querySelectorAll('td'));
+	let ths = Array.from(document.querySelectorAll('th'));
+	const colours = ['5DA5DA','4D4D4D','FAA43A','60BD68','F17CB0','B2912F','B276B2','DECF3F','F15854'];
+	chains.slice(0,colours.length).forEach((chain)=>{
+		let colour = colours.shift();
+		chain.chain.forEach(d=>{
+			let tomark = [];
+			tomark.push(tds[d.i]);
+			tomark.push(tds[d.i].parentElement.querySelector('th'));
+			tomark.push(ths[tds[d.i].cellIndex]);
+			tomark.forEach((td)=>{
+				if(td.style.backgroundColor === ''){
+					td.style.backgroundColor = 'white';
+					let easement = (Math.random()*500);
+					setTimeout(()=>{
+						td.style.transition = 'background-color 0.5s';
+						td.style.backgroundColor = '#'+colour;
+						td.style.textShadow = '0 0 5px white';
+						td.style.fontWeight = 'bold';
+					},easement);
+				}
+			});
+		});
+	});
 }
   </script>
  </body>
