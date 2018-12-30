@@ -125,10 +125,8 @@ class psGpu{
 			throw new Error('Unable to initialize WebGL. Your browser or machine may not support it.');
 		}
 
-
 		this._ = {
 			opts: opts,
-			canvas:canvas,
 			gl:gl,
 			programs:{}
 		};
@@ -160,6 +158,7 @@ class psGpu{
 		return {
 			height:1,
 			width:1,
+			PixelType: Uint8Array,
 		};
 	}
 
@@ -178,8 +177,29 @@ class psGpu{
 		this.gl.bindTexture(this.gl.TEXTURE_2D, buffer.texture);
 	}
 
+	sanitizeRect(dim={}){
+		dim.x = dim.x || 0;
+		dim.y = dim.y || 0;
+		dim.width = dim.width || this.width;
+		dim.height = dim.height || this.height;
+		if(this.width < dim.width+dim.x){
+			dim.width = this.width - dim.x;
+		}
+		if(this.height < dim.height+dim.y){
+			dim.height = this.height - dim.y;
+		}
+
+		return dim;
+	}
+
+	emptyData(dim={}){
+		dim = this.sanitizeRect(dim);
+		let pixels = new Uint8Array(dim.width * dim.height * 4);
+		return pixels;
+	}
+
 	read(dim={}){
-		let gl = this.gl;
+		const gl = this.gl;
 
 		dim.x = dim.x || 0;
 		dim.y = dim.y || 0;
@@ -192,9 +212,7 @@ class psGpu{
 			dim.height = gl.drawingBufferHeight - dim.y;
 		}
 
-		//flush(psGpu);
-
-		let pixels = new Uint8Array(dim.width * dim.height * 4);
+		let pixels = this.emptyData(dim);
 		gl.readPixels(dim.x, dim.y, dim.width, dim.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels, 0);
 		return pixels;
 	}
@@ -253,7 +271,7 @@ class psGpu{
 			]), gl.STATIC_DRAW);
 
 		// Create a texture.
-		const pixel = new Uint8Array(gl.drawingBufferWidth*gl.drawingBufferHeight*4);
+		const pixel = this.emptyData();
 		this._.textures = [0,1].map(d=>{
 				let texture = gl.createTexture();
 				gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -492,7 +510,7 @@ function main() {
 	gpu.initProgram('smithwaterman');
 	// This could be done awesomely in a single pass as a GPU program
 	window.performance.mark('init.start');
-	let data = gpu.read();
+	let data = gpu.emptyData();
 	let x = 0;
 	let y = 0;
 	for(let pos=0; pos < data.length; pos+=4){
