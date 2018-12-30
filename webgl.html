@@ -128,7 +128,8 @@ class psGpu{
 		this._ = {
 			opts: opts,
 			gl:gl,
-			programs:{}
+			programs:{},
+			buffers:{}
 		};
 
 		// Create a dummy program. It does nothing but pass the textures
@@ -161,16 +162,6 @@ class psGpu{
 		return this.gl.drawingBufferHeight;
 	}
 
-	get CurrentProgram(){
-		if(!this._.CurrentProgram){
-			this._.CurrentProgram = '';
-		}
-		return this._.CurrentProgram;
-	}
-	set CurrentProgram(name){
-		this._.CurrentProgram = name;
-	}
-
 	static get BaseOpts(){
 		return {
 			height:1,
@@ -179,12 +170,13 @@ class psGpu{
 		};
 	}
 
-	run(name){
-		if(name === ''){
-			name = this.CurrentProgram;
+	run(name = ''){
+		if(!name){
+			name = '';
 		}
 		if(this.CurrentProgram !== name){
 			this.CurrentProgram = name;
+			this.initProgram(name);
 		}
 		let buffer = this._.textures.shift();
 		this._.textures.push(buffer);
@@ -192,6 +184,7 @@ class psGpu{
 		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, buffer.framebuffer);
 		this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
 		this.gl.bindTexture(this.gl.TEXTURE_2D, buffer.texture);
+
 	}
 
 	sanitizeRect(dim={}){
@@ -251,20 +244,14 @@ class psGpu{
 		gl.texSubImage2D(gl.TEXTURE_2D, 0, dim.x, dim.y, dim.width, dim.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels , 0);
 	}
 
-	initProgram(name) {
+	initMemory(){
 		let gl = this.gl;
-		// setup GLSL program
-		var program = this._.programs[name];
-
-		// look up where the vertex data needs to go.
-		let positionLocation = gl.getAttribLocation(program, "a_position");
-		let texcoordLocation = gl.getAttribLocation(program, "a_texCoord");
 
 		// Create a buffer to put three 2d clip space points in
-		let positionBuffer = gl.createBuffer();
+		let position = this._.buffers.position = gl.createBuffer();
 
 		// Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
-		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+		gl.bindBuffer(gl.ARRAY_BUFFER, position);
 		// Set a rectangle the same size as the image.
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
 				0                     , 0,
@@ -276,8 +263,8 @@ class psGpu{
 			]), gl.STATIC_DRAW);
 
 		// provide texture coordinates for the rectangle.
-		let texcoordBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
+		let texcoord = this._.buffers.texcoord = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, texcoord);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
 				0.0,  0.0,
 				1.0,  0.0,
@@ -310,7 +297,19 @@ class psGpu{
 					framebuffer: frameBuffer,
 				};
 			});
+		// bind the textures
+		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this._.textures[0].framebuffer);
+		this.gl.bindTexture(this.gl.TEXTURE_2D, this._.textures[1].texture);
+	}
 
+	initProgram(name) {
+		let gl = this.gl;
+		// setup GLSL program
+		var program = this._.programs[name];
+
+		// look up where the vertex data needs to go.
+		let positionLocation = program.attribs.position;
+		let texcoordLocation = program.attribs.texcoord;
 
 		// Tell WebGL how to convert from clip space to pixels
 		gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
@@ -320,31 +319,24 @@ class psGpu{
 		gl.clear(gl.COLOR_BUFFER_BIT);
 
 		// Tell it to use our program (pair of shaders)
-		gl.useProgram(program);
+		gl.useProgram(program.program);
 
 		// Turn on the position attribute
 		gl.enableVertexAttribArray(positionLocation);
-
-		// Bind the position buffer.
-		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-
-		// Tell the position attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._.buffers.position);
 		gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-		// Turn on the teccord attribute
+		// Turn on the texc0ord attribute
 		gl.enableVertexAttribArray(texcoordLocation);
-
-		// Bind the position buffer.
-		gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
-
-		// Tell the position attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._.buffers.texcoord);
 		gl.vertexAttribPointer(texcoordLocation, 2, gl.FLOAT, false, 0, 0);
 
+
 		// lookup uniforms
-		let resolutionLocation = gl.getUniformLocation(program, "u_resolution");
+		let resolutionLocation = program.uniforms.resolution;
 		gl.uniform2f(resolutionLocation, gl.drawingBufferWidth, gl.drawingBufferHeight);
 		/* MATCH = 2; SKIP = -1; MISMATCH = -1; */
-		let scores = gl.getUniformLocation(program, "scores");
+		let scores = program.uniforms.scores;
 		let sValues = [2,-1,-1].map((d)=>{
 			return d/128.0;
 		});
@@ -418,7 +410,17 @@ class psGpu{
 			throw new Error('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram));
 		}
 
-		this._.programs[name] = shaderProgram;
+		this._.programs[name] = {
+			program: shaderProgram,
+			attribs:{
+				position: gl.getAttribLocation(shaderProgram, "a_position"),
+				texcoord: gl.getAttribLocation(shaderProgram, "a_texCoord"),
+			},
+			uniforms:{
+				resolution: gl.getUniformLocation(shaderProgram, "u_resolution"),
+				scores: gl.getUniformLocation(shaderProgram, "scores"),
+			}
+		};
 		return this;
 
 	}
@@ -435,13 +437,20 @@ main();
  */
 function main() {
 
+/*
+Cycles......: 430
+Timings (ms): 1854.8
+ * init: 16.3;
+ * frames: 5.5;
+ * chains: 1837.0;
+*/
 	let submissions = [
 			// ~10 ms based on CPU
 			'PELLICAN',
 			'COELACANTH',
 			// 5.5 seconds based on CPU
-			//'In maxime voluptates veniam sed eum aut soluta. Commodi modi aliquam reprehenderit quia eveniet nemo non modi. Quaerat doloribus ut id est corrupti. Facilis et consequatur',
-			//'Repudiandae quam ratione neque minus. Consectetur soluta dicta est quidem accusamus cumque. Et fugiat quia consequatur aut. Deleniti alias itaque incidunt ad in omnis. Dolores hic vitae rerum ad possimus rem repellat. Voluptatem in similique labore reiciendis.',
+			'In maxime voluptates veniam sed eum aut soluta. Commodi modi aliquam reprehenderit quia eveniet nemo non modi. Quaerat doloribus ut id est corrupti. Facilis et consequatur',
+			'Repudiandae quam ratione neque minus. Consectetur soluta dicta est quidem accusamus cumque. Et fugiat quia consequatur aut. Deleniti alias itaque incidunt ad in omnis. Dolores hic vitae rerum ad possimus rem repellat. Voluptatem in similique labore reiciendis.',
 		]
 		.map(d=>{
 			return d
@@ -543,7 +552,7 @@ function main() {
 		}
 	`);
 
-	gpu.initProgram('smithwaterman');
+	gpu.initMemory();
 	// This could be done awesomely in a single pass as a GPU program
 	window.performance.mark('init.start');
 	let data = gpu.emptyData();
