@@ -131,6 +131,23 @@ class psGpu{
 			programs:{}
 		};
 
+		// Create a dummy program. It does nothing but pass the textures
+		// through. It's safe and cheap to run.
+		this.addProgram('', `
+			precision mediump float;
+
+			// our texture
+			uniform sampler2D u_image;
+			// the texCoords passed in from the vertex shader.
+			varying vec2 v_texCoord;
+
+			void main() {
+				gl_FragColor = texture2D(u_image, v_texCoord);
+			}
+		`);
+
+
+
 	}
 
 	get gl(){
@@ -146,7 +163,7 @@ class psGpu{
 
 	get CurrentProgram(){
 		if(!this._.CurrentProgram){
-			this._.CurrentProgram = null;
+			this._.CurrentProgram = '';
 		}
 		return this._.CurrentProgram;
 	}
@@ -504,6 +521,25 @@ function main() {
 			/*******************************/
 
 			gl_FragColor = here;
+		}
+	`);
+
+	gpu.addProgram('initializeSpace', `
+		precision mediump float;
+
+		// our texture
+		uniform sampler2D u_image;
+		// the texCoords passed in from the vertex shader.
+		varying vec2 v_texCoord;
+
+		// constants
+		uniform vec2 u_resolution;
+		uniform vec3 scores;
+
+		void main() {
+			vec4 w = texture2D(u_image, vec2(v_texCoord.x,0));
+			vec4 n = texture2D(u_image, vec2(0,v_texCoord.y));
+			gl_FragColor = vec4(w.r,n.g,0,0);
 		}
 	`);
 
