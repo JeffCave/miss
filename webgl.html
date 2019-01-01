@@ -178,13 +178,19 @@ class psGpu{
 			this.CurrentProgram = name;
 			this.initProgram(name);
 		}
-		let buffer = this._.textures.shift();
-		this._.textures.push(buffer);
-
-		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, buffer.framebuffer);
+		this.rotateTextures();
 		this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
-		this.gl.bindTexture(this.gl.TEXTURE_2D, buffer.texture);
 
+	}
+
+	rotateTextures(){
+		let textures = this._.textures;
+		// rotate
+		let buffer = textures.shift();
+		textures.push(buffer);
+		//rebind
+		this.gl.bindTexture(this.gl.TEXTURE_2D, textures[0].texture);
+		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, textures[1].framebuffer);
 	}
 
 	sanitizeRect(dim={}){
@@ -210,17 +216,7 @@ class psGpu{
 
 	read(dim={}){
 		const gl = this.gl;
-
-		dim.x = dim.x || 0;
-		dim.y = dim.y || 0;
-		dim.width = dim.width || gl.drawingBufferWidth;
-		dim.height = dim.height || gl.drawingBufferHeight;
-		if(gl.drawingBufferWidth < dim.width+dim.x){
-			dim.width = gl.drawingBufferWidth - dim.x;
-		}
-		if(gl.drawingBufferHeight < dim.height+dim.y){
-			dim.height = gl.drawingBufferHeight - dim.y;
-		}
+		dim = this.sanitizeRect(dim);
 
 		let pixels = this.emptyData(dim);
 		gl.readPixels(dim.x, dim.y, dim.width, dim.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels, 0);
@@ -229,18 +225,7 @@ class psGpu{
 
 	write(pixels, dim={}){
 		let gl = this.gl;
-
-		dim.x = dim.x || 0;
-		dim.y = dim.y || 0;
-		dim.width = dim.width || gl.drawingBufferWidth;
-		dim.height = dim.height || gl.drawingBufferHeight;
-		if(gl.drawingBufferWidth < dim.width+dim.x){
-			dim.width = gl.drawingBufferWidth - dim.x;
-		}
-		if(gl.drawingBufferHeight < dim.height+dim.y){
-			dim.height = gl.drawingBufferHeight - dim.y;
-		}
-
+		dim = this.sanitizeRect(dim);
 		gl.texSubImage2D(gl.TEXTURE_2D, 0, dim.x, dim.y, dim.width, dim.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels , 0);
 	}
 
@@ -298,8 +283,7 @@ class psGpu{
 				};
 			});
 		// bind the textures
-		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this._.textures[0].framebuffer);
-		this.gl.bindTexture(this.gl.TEXTURE_2D, this._.textures[1].texture);
+		this.rotateTextures();
 	}
 
 	initProgram(name) {
@@ -326,11 +310,12 @@ class psGpu{
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._.buffers.position);
 		gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-		// Turn on the texc0ord attribute
+		// Turn on the texcoord attribute
 		gl.enableVertexAttribArray(texcoordLocation);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._.buffers.texcoord);
 		gl.vertexAttribPointer(texcoordLocation, 2, gl.FLOAT, false, 0, 0);
 
+		this.rotateTextures();
 
 		// lookup uniforms
 		let resolutionLocation = program.uniforms.resolution;
@@ -354,23 +339,15 @@ class psGpu{
 			attribute vec2 a_texCoord;
 
 			uniform vec2 u_resolution;
-
 			varying vec2 v_texCoord;
 
 			void main() {
 				// convert the rectangle from pixels to 0.0 to 1.0
 				vec2 zeroToOne = a_position / u_resolution;
-
-				// convert from 0->1 to 0->2
 				vec2 zeroToTwo = zeroToOne * 2.0;
-
-				// convert from 0->2 to -1->+1 (clipspace)
 				vec2 clipSpace = zeroToTwo - 1.0;
-
 				gl_Position = vec4(clipSpace * vec2(1, 1), 0, 1);
-
 				// pass the texCoord to the fragment shader
-				// The GPU will interpolate this value between points.
 				v_texCoord = a_texCoord;
 			}
 		`);
@@ -449,8 +426,8 @@ Timings (ms): 1854.8
 			'PELLICAN',
 			'COELACANTH',
 			// 5.5 seconds based on CPU
-			'In maxime voluptates veniam sed eum aut soluta. Commodi modi aliquam reprehenderit quia eveniet nemo non modi. Quaerat doloribus ut id est corrupti. Facilis et consequatur',
-			'Repudiandae quam ratione neque minus. Consectetur soluta dicta est quidem accusamus cumque. Et fugiat quia consequatur aut. Deleniti alias itaque incidunt ad in omnis. Dolores hic vitae rerum ad possimus rem repellat. Voluptatem in similique labore reiciendis.',
+			//'In maxime voluptates veniam sed eum aut soluta. Commodi modi aliquam reprehenderit quia eveniet nemo non modi. Quaerat doloribus ut id est corrupti. Facilis et consequatur',
+			//'Repudiandae quam ratione neque minus. Consectetur soluta dicta est quidem accusamus cumque. Et fugiat quia consequatur aut. Deleniti alias itaque incidunt ad in omnis. Dolores hic vitae rerum ad possimus rem repellat. Voluptatem in similique labore reiciendis.',
 		]
 		.map(d=>{
 			return d
@@ -548,7 +525,9 @@ Timings (ms): 1854.8
 		void main() {
 			vec4 w = texture2D(u_image, vec2(v_texCoord.x,0));
 			vec4 n = texture2D(u_image, vec2(0,v_texCoord.y));
-			gl_FragColor = vec4(w.r,n.g,0,0);
+			float score = 0.0;
+			score = (w.r == n.g) ? scores.x : scores.y;
+			gl_FragColor = vec4(score,0,0,score);
 		}
 	`);
 
@@ -570,6 +549,7 @@ Timings (ms): 1854.8
 	}
 	// Write the values ot the image
 	gpu.write(data);
+	gpu.run();
 	window.performance.mark('init.end');
 	window.performance.measure('init','init.start','init.end');
 
@@ -578,6 +558,7 @@ Timings (ms): 1854.8
 	window.performance.mark('frames.start');
 	for(swVals.cycle=0; swVals.cycle < swVals.total_cycles; swVals.cycle++){
 		gpu.run('smithwaterman');
+		//drawGrid(gpu,swVals);
 	}
 	window.performance.mark('frames.end');
 	window.performance.measure('frames','frames.start','frames.end');
@@ -668,7 +649,7 @@ function drawGrid(gpu, runMetrics){
 
 
 	let caption = table.querySelector('caption');
-	let times = performance.getEntriesByType('measure');
+	let times = window.performance.getEntriesByType('measure');
 	caption.innerHTML =
 		'Cycles......: ' + runMetrics.cycle + '\n' +
 		'Timings (ms): '+times.reduce((a,d)=>{return a+d.duration;},0).toFixed(1)+'<ul>' +
