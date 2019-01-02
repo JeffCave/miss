@@ -170,29 +170,6 @@ class psGpu{
 		};
 	}
 
-	run(name = ''){
-		if(!name){
-			name = '';
-		}
-		if(this.CurrentProgram !== name){
-			this.CurrentProgram = name;
-			this.initProgram(name);
-		}
-		this.rotateTextures();
-		this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
-
-	}
-
-	rotateTextures(){
-		let textures = this._.textures;
-		// rotate
-		let buffer = textures.shift();
-		textures.push(buffer);
-		//rebind
-		this.gl.bindTexture(this.gl.TEXTURE_2D, textures[0].texture);
-		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, textures[1].framebuffer);
-	}
-
 	sanitizeRect(dim={}){
 		dim.x = dim.x || 0;
 		dim.y = dim.y || 0;
@@ -217,8 +194,12 @@ class psGpu{
 	read(dim={}){
 		const gl = this.gl;
 		dim = this.sanitizeRect(dim);
-
 		let pixels = this.emptyData(dim);
+
+		// grad the buffer that is most appropriate for reading from
+		//console.debug('Buffer: ' + this._.textures.read.id + ' -> 😐');
+		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this._.textures.read.framebuffer);
+
 		gl.readPixels(dim.x, dim.y, dim.width, dim.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels, 0);
 		return pixels;
 	}
@@ -226,7 +207,36 @@ class psGpu{
 	write(pixels, dim={}){
 		let gl = this.gl;
 		dim = this.sanitizeRect(dim);
+
+		// whichever buffer we write to will become the best one to read from
+		// may as well just use the current read buffer
+		//console.debug('Buffer: 😐 -> ' + this._.textures.read.id);
+		this.gl.bindTexture(this.gl.TEXTURE_2D, this._.textures.read.texture);
+
 		gl.texSubImage2D(gl.TEXTURE_2D, 0, dim.x, dim.y, dim.width, dim.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels , 0);
+	}
+
+	run(name = ''){
+		if(!name){
+			name = '';
+		}
+		if(this.CurrentProgram !== name){
+			this.CurrentProgram = name;
+			this.initProgram(name);
+		}
+
+		// get the read buffer
+		let read = this._.textures.read;
+		// the write buffer is the one we aren't reading from
+		let write = 1-this._.textures.read.id;
+		write = this._.textures[write];
+		// whichever one we just wrote to is now the one we should be reading from.
+		this._.textures.read = write;
+		//console.debug('Buffer: ' + read.id + ' -> ' + write.id);
+
+		this.gl.bindTexture(this.gl.TEXTURE_2D, read.texture);
+		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, write.framebuffer);
+		this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
 	}
 
 	initMemory(){
@@ -278,12 +288,13 @@ class psGpu{
 
 				return {
 					id: d,
+					texId: (gl.TEXTURE0+d),
 					texture: texture,
 					framebuffer: frameBuffer,
 				};
 			});
 		// bind the textures
-		this.rotateTextures();
+		this._.textures.read = this._.textures[0];
 	}
 
 	initProgram(name) {
@@ -298,10 +309,6 @@ class psGpu{
 		// Tell WebGL how to convert from clip space to pixels
 		gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 
-		// Clear the canvas
-		gl.clearColor(0, 0, 0, 0);
-		gl.clear(gl.COLOR_BUFFER_BIT);
-
 		// Tell it to use our program (pair of shaders)
 		gl.useProgram(program.program);
 
@@ -314,8 +321,6 @@ class psGpu{
 		gl.enableVertexAttribArray(texcoordLocation);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._.buffers.texcoord);
 		gl.vertexAttribPointer(texcoordLocation, 2, gl.FLOAT, false, 0, 0);
-
-		this.rotateTextures();
 
 		// lookup uniforms
 		let resolutionLocation = program.uniforms.resolution;
@@ -531,7 +536,8 @@ Timings (ms): 1854.8
 	`);
 
 	gpu.initMemory();
-	// This could be done awesomely in a single pass as a GPU program
+
+	// Initialize the workspace
 	window.performance.mark('init.start');
 	let data = gpu.emptyData();
 	for(let x=0,pos=0; x < gpu.width; x++,pos+=4){
@@ -542,17 +548,7 @@ Timings (ms): 1854.8
 	}
 	// Write the values to the image
 	gpu.write(data);
-	/**
-	 * WTF: Why do I need to write to the buffer twice?
-	 *
-	 * This implies that there is something wonky in the texture rotation and
-	 * the way it interacts with the initialization of a program. Perhaps we
-	 * should not be rotating? Perhaps we should rotate back to initial
-	 * position (twice)?
-	 */
 	gpu.run('initializeSpace');
-	gpu.run('initializeSpace');
-	/** WTF **/
 	window.performance.mark('init.end');
 	window.performance.measure('init','init.start','init.end');
 
