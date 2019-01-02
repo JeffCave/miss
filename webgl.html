@@ -530,7 +530,7 @@ Timings (ms): 1854.8
 			vec4 w = texture2D(u_image, vec2(v_texCoord.x,0));
 			vec4 n = texture2D(u_image, vec2(0,v_texCoord.y));
 			float score = 0.0;
-			score = (w.r == n.g) ? scores.x : scores.y;
+			score = (w.rg == n.ba) ? scores.x : scores.y;
 			gl_FragColor = vec4(score,0,0,score);
 		}
 	`);
@@ -540,11 +540,12 @@ Timings (ms): 1854.8
 	// Initialize the workspace
 	window.performance.mark('init.start');
 	let data = gpu.emptyData();
-	for(let x=0,pos=0; x < gpu.width; x++,pos+=4){
-		data[pos+0] = swVals.inbound.a[x];
+	let data16 = new Uint16Array(data.buffer);
+	for(let x=0,pos=0; x < gpu.width; x++,pos+=2){
+		data16[pos] = swVals.inbound.a[x];
 	}
-	for(let y=0,pos=0; y < gpu.height; y++,pos+=(gpu.width*4)){
-		data[pos+1] = swVals.inbound.b[y];
+	for(let y=0,pos=1; y < gpu.height; y++,pos+=(gpu.width*2)){
+		data16[pos] = swVals.inbound.b[y];
 	}
 	// Write the values to the image
 	gpu.write(data);
