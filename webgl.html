@@ -228,10 +228,10 @@ class psGpu{
 		// get the read buffer
 		let read = this._.textures.read;
 		// the write buffer is the one we aren't reading from
-		let write = 1-this._.textures.read.id;
-		write = this._.textures[write];
+		let write = this._.textures.alt;
 		// whichever one we just wrote to is now the one we should be reading from.
 		this._.textures.read = write;
+		this._.textures.alt = read;
 		//console.debug('Buffer: ' + read.id + ' -> ' + write.id);
 
 		this.gl.bindTexture(this.gl.TEXTURE_2D, read.texture);
@@ -295,6 +295,7 @@ class psGpu{
 			});
 		// bind the textures
 		this._.textures.read = this._.textures[0];
+		this._.textures.alt = this._.textures[1];
 	}
 
 	initProgram(name) {
@@ -650,8 +651,8 @@ function drawGrid(gpu, runMetrics){
 	let caption = table.querySelector('caption');
 	let times = window.performance.getEntriesByType('measure');
 	caption.innerHTML =
-		'Cycles......: ' + runMetrics.cycle + '\n' +
-		'Timings (ms): '+times.reduce((a,d)=>{return a+d.duration;},0).toFixed(1)+'<ul>' +
+		'Cycles........: ' + runMetrics.cycle + '\n' +
+		'Timings (ms)..: '+times.reduce((a,d)=>{return a+d.duration;},0).toFixed(1)+'<ul>' +
 		times.map(d=>{
 			return '<li>' + d.name + ': ' + d.duration.toFixed(1) + ';</li>';
 		}).join('') +
