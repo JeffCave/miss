@@ -520,15 +520,15 @@ class DeepDiff {
 		let algo = this.Algorithm;
 		console.log("Performing comparison on " + pair.name );
 		let result = await algo(pair,async (comparer)=>{
-			comparer = comparer.data.data;
-			let result = this.report.results[comparer.name];
+			comparer = comparer.data;
+			let result = this.report.results[comparer.data.name];
 			if(!result) return;
 			//result.complete = (comparer.totalSize - comparer.remaining) -1;
 			//result.totalTokens = comparer.totalSize;
 			//result.identicalTokens = comparer.tokenMatch;
 			//result.percentMatched = result.identicalTokens / result.totalTokens;
-			let completePct = (comparer.totalSize - comparer.remaining) -1;
-			completePct = completePct / comparer.totalSize;
+			let completePct = (comparer.data.totalSize - comparer.data.remaining) -1;
+			completePct = completePct / comparer.data.totalSize;
 			result.percentMatched = completePct;
 			result.submissions.forEach((orig,i)=>{
 				//let sub = comparer.submissions[i];
@@ -566,9 +566,29 @@ class DeepDiff {
 					return true;
 				})
 				.sort((a,b)=>{
-					a = a.submissions[0].totalTokens * a.submissions[1].totalTokens;
-					b = b.submissions[0].totalTokens * b.submissions[1].totalTokens;
-					return b - a;
+					let compare = 0;
+					let compareSizeA = 0;
+					let compareSizeB = 0;
+
+					// put the ones that have the nearest number of tokens first
+					// ones that look similar?
+					compareSizeA = Math.abs(a.submissions[0].totalTokens - a.submissions[1].totalTokens);
+					compareSizeB = Math.abs(b.submissions[0].totalTokens - b.submissions[1].totalTokens);
+					compare = compareSizeB - compareSizeA;
+					if(compare !== 0){
+						return compare;
+					}
+
+					// if its the same, do the smaller of the two
+					compareSizeA = a.submissions[0].totalTokens * a.submissions[1].totalTokens;
+					compareSizeB = b.submissions[0].totalTokens * b.submissions[1].totalTokens;
+					compare = compareSizeB - compareSizeA;
+					if(compare !== 0){
+						return compare;
+					}
+
+					// at this point I don't care
+					return 0;
 				})
 				;
 

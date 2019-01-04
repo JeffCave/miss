@@ -181,6 +181,7 @@ input[type=range]::-ms-track {
 #results > details[data-type='html'] th, #results > details[data-type='html'] th > span {
 	background-color: transparent;
 	writing-mode: vertical-rl;
+	text-align:right;
 }
 #results > details[data-type='html'] tbody {
 	background-color: var(--notice-info-off);

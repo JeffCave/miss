@@ -16,9 +16,6 @@ import {DeepDiff} from './DeepDiff/DeepDiff.js';
 import {Submission} from './DeepDiff/submission/Submission.js';
 
 
-import './DeepDiff/visualizations/similaritymatrix/output/MatrixToCSVPrinter.js';
-import './DeepDiff/visualizations/similaritymatrix/output/MatrixToHTMLPrinter.js';
-
 import * as Panels from './widgets/panel.js';
 import './widgets/treeview.js';
 import './widgets/submissions.js';

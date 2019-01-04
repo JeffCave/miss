@@ -21,8 +21,8 @@ TokenizerRegistry.processors[TOKENTYPE] = {
 		checkNotNull(content);
 
 		let tokens = content.split('')
-			.map((character) => {
-				return LexemeMap.CreateToken(character, TOKENTYPE);
+			.map((character,pos) => {
+				return LexemeMap.CreateToken(character, TOKENTYPE,true,[pos,pos]);
 			});
 
 		let toReturn = new TokenList(TOKENTYPE,tokens);
