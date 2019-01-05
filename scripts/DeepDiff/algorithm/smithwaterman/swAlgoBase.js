@@ -39,7 +39,7 @@ export default class SmithWatermanBase{
 	constructor(name, a, b, opts){
 		this._ = {};
 		this._.scores = {
-			match:+1,
+			match:+2,
 			mismatch: -1,
 			skippable: -1,
 			terminus: 5,
@@ -97,7 +97,7 @@ export default class SmithWatermanBase{
 	 * it has dropped off.
 	 */
 	get ScoreTerminus(){
-		return this._.terminus;
+		return this._.scores.terminus;
 	}
 
 	/**
@@ -105,7 +105,7 @@ export default class SmithWatermanBase{
 	 * of significant length.
 	 */
 	get ScoreSignificant(){
-		return this._.significant;
+		return this._.scores.significant;
 	}
 
 	start(){
@@ -176,6 +176,18 @@ export default class SmithWatermanBase{
 		let x = Math.floor(i/len);
 		let y = i%len;
 		return [x,y];
+	}
+
+	resetShareMarkers(value){
+		let isvalue = typeof value !== 'undefined';
+		this.submissions.forEach((sequence)=>{
+			sequence.forEach((lexeme)=>{
+				delete lexeme.shared;
+				if(isvalue){
+					lexeme.shared = value;
+				}
+			});
+		});
 	}
 
 

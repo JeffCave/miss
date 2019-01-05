@@ -36,7 +36,6 @@ class swAlgoGpu extends SmithWatermanBase{
 		this.remaining = a.length + b.length - 1;
 		this.totalSize = this.remaining;
 		this.tokenMatch = 0;
-		this.resetShareMarkers();
 
 		this.handlers = {
 			progress:[],
@@ -53,14 +52,16 @@ class swAlgoGpu extends SmithWatermanBase{
 		let data = this.gpu.emptyData();
 		let data16 = new Uint16Array(data.buffer);
 		for(let x=0,pos=0; x < this.gpu.width; x++,pos+=2){
-			data16[pos] = this.submissions[0][x];
+			data16[pos] = this.submissions[0][x].lexeme;
 		}
 		for(let y=0,pos=1; y < this.gpu.height; y++,pos+=(this.gpu.width*2)){
-			data16[pos] = this.submissions[1][y];
+			data16[pos] = this.submissions[1][y].lexeme;
 		}
 		// Write the values to the image
 		this.gpu.write(data);
+		//this.debugDraw();
 		this.gpu.run('initializeSpace');
+		//this.debugDraw();
 
 
 		this.start();
@@ -115,7 +116,9 @@ class swAlgoGpu extends SmithWatermanBase{
 		let timeLimit = Date.now() + 100;
 		while(timeLimit > Date.now()){
 			for(let limit = 100; limit>=0 && this.remaining > 0; this.remaining--, limit--){
+				//this.debugDraw();
 				this.gpu.run('smithwaterman');
+				//this.debugDraw();
 			}
 		}
 
@@ -136,28 +139,31 @@ class swAlgoGpu extends SmithWatermanBase{
 	ResolveCandidates(){
 		if(this._chains) return this._chains;
 
+		// Copy values out of the GPU data into a JS array, but skip anything
+		// that did not get a score at all.
 		let values = this.gpu.read();
 		let index = new Map();
 		for(let i=values.length-4; i>=0; i-=4){
-			let score = values[i+3];
-			let dir = values[i+2];
-			if(score === 0) continue;
+			let d = {
+				i:i,
+				score:values[i+3],
+				dir: values[i+2]
+			};
 
-			let d = this.IndexToCoord(i);
-			d.i = i;
-			d.score = score;
-			d.history = [];
-
-			let md = modDir[dir%modDir.length];
-			d.prev = i;
-			d.prev -= md[0] * 1;
-			d.prev -= md[1] * this.gpu.width;
-			index.set(d.i, d);
+			if(d.score > 0){
+				index.set(d.i, d);
+			}
 		}
+		values = null;
+
+
+		/*
+		* Now for the fun part
+		*/
 		let chains = [];
 		let root = {score:Number.MAX_VALUE};
-		const significantScore = this.ScoreSignificant * this.ScoreMatch;
-		while(index.size > 0 && chains.length < MAX_CHAINS && root.score < significantScore){
+		this.resetShareMarkers(Number.MAX_VALUE);
+		while(index.size > 0 && chains.length < MAX_CHAINS && root.score >= this.ScoreSignificant){
 			root = Array.from(index.values())
 				.sort((a,b)=>{
 					let ord = b.score - a.score;
@@ -174,16 +180,39 @@ class swAlgoGpu extends SmithWatermanBase{
 				continue;
 			}
 
+			root.history = [];
 			for(let item = root; item; item = index.get(item.prev)){
 				root.history.push(item);
 				index.delete(item.i);
+
+				item.x = Math.floor(item.i/4)%this.gpu.width;
+				item.y = Math.floor(Math.floor(item.i/4)/this.gpu.width);
+
+				/*
+				 * If the character was already used by a previous chain, it
+				 * means this chain can't have it, and we have broken our chain
+				 */
+				let a = this.submissions[0][item.x];
+				let b = this.submissions[1][item.y];
+				if(a.shared < chains.length || b.shared < chains.length){
+					item.prev = -1;
+					continue;
+				}
+				a.shared = chains.length;
+				b.shared = chains.length;
+
+				let md = modDir[item.dir%modDir.length];
+				item.prev = item.i;
+				item.prev -= md[0] * 1 * 4;
+				item.prev -= md[1] * this.gpu.width * 4;
 			}
-			let finItem = root.chain[root.chain.length-1];
+			let finItem = root.history[root.history.length-1];
 			root.score -= Math.max(0,finItem.score-2);
-			if(root && root.score >= this.ScoreSignificant){
+			if(root.score >= this.ScoreSignificant){
 				chains.push(root);
 			}
 		}
+		index.clear();
 		chains = chains
 			.sort((a,b)=>{
 				let ord = b.score - a.score;
@@ -194,12 +223,11 @@ class swAlgoGpu extends SmithWatermanBase{
 			})
 			.slice(0,Math.min(MAX_CHAINS,chains.length))
 			;
-		chains.forEach((chain,i)=>{
-			chain.history.forEach((coord)=>{
-				let x = coord[0];
-				let y = coord[1];
-				this.submissions[0][x].shared = i;
-				this.submissions[1][y].shared = i;
+		this.submissions.forEach((sub)=>{
+			sub.forEach((lex)=>{
+				if(lex.shared > chains.length){
+					lex.shared = null;
+				}
 			});
 		});
 
@@ -207,17 +235,18 @@ class swAlgoGpu extends SmithWatermanBase{
 		return chains;
 	}
 
-	resetShareMarkers(){
-		this.submissions.forEach((sequence)=>{
-			sequence.forEach((lexeme)=>{
-				delete lexeme.shared;
-			});
-		});
+	debugDraw(){
+		let body = document.body;
+		let table = this.gpu.HtmlElement;
+		if(table !== body.firstChild){
+			body.insertBefore(table,body.firstChild);
+		}
 	}
+
 
 }
 
-let gpuFragInit = (`
+const gpuFragInit = (`
 	precision mediump float;
 
 	// our texture
@@ -239,7 +268,7 @@ let gpuFragInit = (`
 `);
 
 
-let gpuFragSW = (`
+const gpuFragSW = (`
 	precision mediump float;
 
 	// our texture

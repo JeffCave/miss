@@ -1,4 +1,10 @@
-export class psGpu{
+
+export{
+	psGpu,
+	pixel
+};
+
+class psGpu{
 
 	static get MAXAREA(){
 		// Reject anything over a certain memory capacity, but there is more to
@@ -85,6 +91,9 @@ export class psGpu{
 	}
 	get height(){
 		return this.gl.drawingBufferHeight;
+	}
+	get area(){
+		return this.width * this.height;
 	}
 
 	static get BaseOpts(){
@@ -259,11 +268,8 @@ export class psGpu{
 		gl.uniform3fv(scores, sValues);
 	}
 
-	addProgram(name,fsSource){
-		const gl = this.gl;
-
-		// Vertex shader program
-		const vsSource = (`
+	get VertexShader(){
+		const vsSource = `
 			precision mediump float;
 
 			attribute vec2 a_position;
@@ -281,10 +287,18 @@ export class psGpu{
 				// pass the texCoord to the fragment shader
 				v_texCoord = a_texCoord;
 			}
-		`);
+		`;
+		return vsSource;
+	}
 
+
+
+	addProgram(name,fsSource){
+		const gl = this.gl;
+
+		// Vertex shader program
 		let shaders = [
-				{type:'VERTEX',typeId:gl.VERTEX_SHADER,source:vsSource},
+				{type:'VERTEX',typeId:gl.VERTEX_SHADER,source:this.VertexShader},
 				{type:'FRAGMENT',typeId:gl.FRAGMENT_SHADER,source:fsSource}
 			]
 			.map((s)=>{
@@ -332,10 +346,85 @@ export class psGpu{
 		return this;
 
 	}
+
+	toString(){
+		return this.HtmlElement.outerHtml;
+	}
+
+	get HtmlElement(){
+		console.warn("The code is currently executing `psGpu.HtmlElement` which is known to be extremely slow");
+
+		const colours = ['red','green','blue','black'];
+
+		let values = this.read();
+
+		let table = this._.htmlTableElement;
+		if(!table){
+			table = document.createElement("table");
+			this._.htmlTableElement = table;
+		}
+		table.style = 'border-collapse: collapse;font-family:monospace;white-space: pre;';
+		table.innerHTML = "<caption></caption><tbody></tbody>";
+
+
+		let caption = table.querySelector('caption');
+		caption.style.textAlign = 'left';
+		caption.innerHTML = [
+				'Width ...: ' + this.width,
+				'Height ..: '+this.height,
+				'Area ....: '+this.area,
+			]
+			.join('\n')
+			;
+
+		let body = table.tBodies[0];
+		body.style = 'text-align:right';
+		body.innerHTML = '';
+		let tr = table.insertRow(-1);
+		let th = document.createElement('th');
+		th.innerHTML = '&nbsp;';
+		tr.append(th);
+		for(let i=0; i<this.width; i++){
+			let th = document.createElement('th');
+			th.innerHTML = '<sub>'+i+'</sub>';
+			tr.append(th);
+		}
+		for(let y=0,i=0; y<this.height ; y++){
+			tr = table.insertRow(-1);
+			let th = document.createElement('th');
+			th.innerHTML = '<sub>'+y+'</sub>';
+			tr.append(th);
+			for(let x=0; x<this.width ; x++,i++){
+				let pix = new pixel(values,i*4);
+
+				let td = document.createElement('td');
+				td.innerHTML = pix.values
+					.map((d,i)=>{
+						let str = d.toString().split('');
+						while(str.length < 3){
+							str.unshift(String.fromCharCode(160));
+						}
+						str = str.join('');
+						return '<i style="color:'+colours[i]+'">' + str + '</i>' + (i==1?'\n':'');
+					})
+					.join(' ')
+					;
+				tr.append(td);
+			}
+		}
+		return table;
+
+	}
+
 }
 
 
-export class pixel{
+/**
+ * Pixel as perceived by GPUs
+ *
+ * This is a helper class to interpret the arrays returned by the GPU.
+ */
+class pixel{
 	constructor(pixels=[0,0,0,0], offset = 0){
 		this.offset = offset;
 		this.pixels = pixels;
@@ -395,6 +484,17 @@ export class pixel{
 
 	static NZ(val){
 		return val ? val : 0;
+	}
+
+	toString(){
+		return[
+				this.r.toString(16),
+				this.g.toString(16),
+				this.b.toString(16),
+				this.a.toString(16),
+			]
+			.join('')
+			;
 	}
 }
 

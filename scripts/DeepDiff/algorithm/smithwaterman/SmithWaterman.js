@@ -19,7 +19,7 @@ const threads = {};
 const scores = {
 	// an exact positional match (diagonal in SmithWaterman terms). This is
 	// the highest possible match.
-	match:+1,
+	match:+2,
 	// a exact mismatch. If the pattern continues, this character is a change.
 	// An example of a mismatch would be "dune", and "dude": there is an
 	// obvious match, but there is one character that has been completely

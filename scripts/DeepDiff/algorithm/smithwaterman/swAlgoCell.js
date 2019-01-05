@@ -40,7 +40,7 @@ class swAlgoCell extends SmithWatermanBase{
 			action:'start',
 			name:this.name,
 			submissions:[this.a, this.b],
-			options:this._.opts,
+			options:this._,
 		}));
 	}
 

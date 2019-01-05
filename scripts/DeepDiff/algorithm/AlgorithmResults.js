@@ -79,7 +79,7 @@ export default async function Create(a, b, finalListA = null, finalListB = null,
 		d.totalTokens = await d.totalTokens;
 
 		d.identicalTokens = Array.from(d.finalList).reduce((sum,token)=>{
-			sum = sum + (!token.valid || token.shared?1:0);
+			sum += (token.shared || token.shared === 0) ? 1 : 0;
 			return sum;
 		},0);
 
