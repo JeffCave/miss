@@ -85,12 +85,15 @@ class Matrix{
 	}
 
 	stop(){
-		this.ResolveCandidates();
-		let entries = this.submissions;
-		let msg = {type:'stopped',data:entries};
+		let chains = this.ResolveCandidates();
+
+		let msg = {type:'stopped',data:this.toJSON()};
+		msg.data.chains = chains;
+		msg.data.submissions = this.submissions;
 		if(this.remaining === 0){
 			msg.type = 'complete';
 		}
+
 		matrix = null;
 		postMessage(msg);
 		close();
@@ -451,10 +454,10 @@ class Matrix{
 			tokenMatch: this.tokenMatch,
 			submissions: [
 					{
-						totalTokens:this.submissions[0].length
+						length:this.submissions[0].length
 					},
 					{
-						totalTokens:this.submissions[1].length
+						length:this.submissions[1].length
 					}
 				]
 		};
@@ -469,7 +472,7 @@ let matrix = null;
 
 onmessage = function(params){
 	if(matrix === null && params.data.action === 'start') {
-		console.log("starting web worker");
+		console.log("Initializing web worker");
 
 		let id = params.data.name;
 		let a = params.data.submissions[0];
@@ -479,7 +482,7 @@ onmessage = function(params){
 	}
 	if(matrix !== null){
 		if(params.data.action === 'start'){
-			console.log("restarting web worker");
+			console.log("Starting web worker");
 			matrix.start();
 		}
 		else if(params.data.action === 'pause'){

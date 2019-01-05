@@ -4,33 +4,9 @@ export{
 	SmithWaterman
 };
 
-import {psGpu} from '../../lib/psGpu.js';
 import * as utils from '../../util/misc.js';
-
-
-const scores = {
-	// an exact positional match (diagonal in SmithWaterman terms). This is
-	// the highest possible match.
-	match:+1,
-	// a exact mismatch. If the pattern continues, this character is a change.
-	// An example of a mismatch would be "dune", and "dude": there is an
-	// obvious match, but there is one character that has been completely
-	// changed. This is the lowest possible match.
-	mismatch: -1,
-	// A partial mismatch. Generally, the insertion (or removal) of a
-	// character. Depending on the context, this may be just as bad as a
-	// "mismatch" or somewhere between "mismatch" and "match".
-	skippable: -1,
-	// The point to the terminus is to measure when the chain is broken.
-	// A chain may grow in score, getting larger and larger, until
-	// matches stop being made. At this point, the score will start dropping.
-	// Once it drops by the points specified by the terminator, we can assume
-	// it has dropped off.
-	terminus: 5,
-	// the number of lexemes that need to match for a chain to be considered
-	// of significant length.
-	significant: 5,
-};
+import {psGpu} from '../../lib/psGpu.js';
+import {SmithWatermanAlgorithmBaseClass} from './SmithWatermanAlgorithmBaseClass.js';
 
 
 const MAX_CHAINS = 1000;
@@ -41,33 +17,9 @@ const modDir = [
 		[1,1]
 	];
 
-class SmithWaterman{
-
-	/**
-	 * Maximum area is 1 GB
-	 *
-	 * Basically an arbitrary size, but we have to draw the line somewhere
-	 *
-	 */
-	static get MAXAREA(){
-		// 1GB
-		let maxarea = (1024**3);
-		// but each pixel takes 4 elements
-		maxarea /= 4;
-		// and each element is a Float32 (so 4 bytes each)
-		maxarea /= 4;
-
-		SmithWaterman.MAXAREA = maxarea;
-		return maxarea;
-	}
-
-	static get OptimalDimension(){
-		let optimal = SmithWaterman.MAXAREA ** 0.5;
-		SmithWaterman.OptimalDimension = optimal;
-		return optimal;
-	}
-
+class SmithWaterman extends SmithWatermanAlgorithmBaseClass{
 	constructor(name, a, b, opts){
+		super(name, a, b, opts);
 
 		if(!a && !b && name.name){
 			a = name.submissions[0];
@@ -81,8 +33,7 @@ class SmithWaterman{
 		this.name = name;
 		this.submissions = [a,b];
 
-		this.cycles = a.length + b.length - 1;
-		this.remaining = a.length * b.length;
+		this.remaining = a.length + b.length - 1;
 		this.totalSize = this.remaining;
 		this.tokenMatch = 0;
 		this.resetShareMarkers();
@@ -115,8 +66,26 @@ class SmithWaterman{
 		this.start();
 	}
 
+	destroy(){
+		if(this.gpu){
+			this.gpu.destroy();
+			this.gpu = null;
+			delete this.gpu;
+		}
+	}
+
+	get remaining(){
+		if(this._.remaining < 0){
+			this._.remaining = 0;
+		}
+		return this._.remaining;
+	}
+	set remaining(value){
+		this._.remaining = value;
+	}
+
 	start(){
-		if(this.isPaused){
+		if(this.isPaused === true){
 			utils.defer(()=>{
 				this.calc();
 			});
@@ -124,56 +93,37 @@ class SmithWaterman{
 		this.isPaused = false;
 	}
 
-	pause(){
-		this.isPaused = true;
-	}
-
-	terminate(){
-		this.stop();
-	}
-
 	stop(){
+		if(!this.gpu) return;
+
 		this.pause();
-		this.ResolveCandidates();
-		this.gpu.destroy();
-		let entries = this.submissions;
-		let msg = {type:'stopped',data:entries};
+		let chains = this.ResolveCandidates();
+
+		let msg = {type:'stopped',data:this.status};
+		msg.data.chains = chains;
+		msg.data.submissions = this.submissions;
+
 		if(this.remaining === 0){
 			msg.type = 'complete';
 		}
+
+		this.destroy();
 		this.postMessage(msg);
 	}
 
-	postMessage(msg){
-		if(this.isPosting){
-			return;
-		}
-		this.isPosting = true;
-		if(this.onmessage){
-			this.onmessage(msg);
-		}
-		this.isPosting = false;
-	}
-
-	CoordToIndex(x,y){
-		return y * this.submissions[0].length + x;
-	}
-
-	IndexToCoord(i){
-		let len = this.submissions[0].length;
-		let x = i/len;
-		let y = i%len;
-		return [x,y];
-	}
-
 	calc(){
-		let timeLimit = Date.now() + 500;
+		let timeLimit = Date.now() + 100;
 		while(timeLimit > Date.now()){
-			for(let limit = 1000; limit>=0 && this.cycles >= 0; this.cycles--, limit--){
+			for(let limit = 100; limit>=0 && this.remaining > 0; this.remaining--, limit--){
 				this.gpu.run('smithwaterman');
 			}
 		}
-		if(this.cycles > 0){
+
+		// Periodically report it up
+		let msg = {type:'progress', data:this.toJSON()};
+		this.postMessage(msg);
+
+		if(this.remaining > 0){
 			utils.defer(()=>{
 				this.calc();
 			});
@@ -193,11 +143,10 @@ class SmithWaterman{
 			let dir = values[i+2];
 			if(score === 0) continue;
 
-			let d = {
-				i: i,
-				score: score,
-				chain:[]
-			};
+			let d = this.IndexToCoord(i);
+			d.i = i;
+			d.score = score;
+			d.history = [];
 
 			let md = modDir[dir%modDir.length];
 			d.prev = i;
@@ -207,7 +156,7 @@ class SmithWaterman{
 		}
 		let chains = [];
 		let root = {score:Number.MAX_VALUE};
-		const significantScore = scores.significant * scores.match;
+		const significantScore = this.ScoreSignificant * this.ScoreMatch;
 		while(index.size > 0 && chains.length < MAX_CHAINS && root.score < significantScore){
 			root = Array.from(index.values())
 				.sort((a,b)=>{
@@ -226,12 +175,12 @@ class SmithWaterman{
 			}
 
 			for(let item = root; item; item = index.get(item.prev)){
-				root.chain.push(item);
+				root.history.push(item);
 				index.delete(item.i);
 			}
 			let finItem = root.chain[root.chain.length-1];
 			root.score -= Math.max(0,finItem.score-2);
-			if(root && root.score >= scores.significant){
+			if(root && root.score >= this.ScoreSignificant){
 				chains.push(root);
 			}
 		}
@@ -245,6 +194,15 @@ class SmithWaterman{
 			})
 			.slice(0,Math.min(MAX_CHAINS,chains.length))
 			;
+		chains.forEach((chain,i)=>{
+			chain.history.forEach((coord)=>{
+				let x = coord[0];
+				let y = coord[1];
+				this.submissions[0][x].shared = i;
+				this.submissions[1][y].shared = i;
+			});
+		});
+
 		this._chains = chains;
 		return chains;
 	}
@@ -255,24 +213,6 @@ class SmithWaterman{
 				delete lexeme.shared;
 			});
 		});
-	}
-
-	toJSON(){
-		let json = {
-			name: this.name,
-			totalSize: this.totalSize,
-			remaining: this.remaining,
-			tokenMatch: this.tokenMatch,
-			submissions: [
-					{
-						totalTokens:this.submissions[0].length
-					},
-					{
-						totalTokens:this.submissions[1].length
-					}
-				]
-		};
-		return json;
 	}
 
 }

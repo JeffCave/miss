@@ -29,7 +29,7 @@ class SmithWaterman extends SmithWatermanAlgorithmBaseClass{
 			this.postMessage(msg);
 		};
 		this.thread.onerror = (msg)=>{
-			this.postMessage({type:'error',});
+			this.postMessage({type:'error',data:{error:msg}});
 		};
 
 		this.pause();

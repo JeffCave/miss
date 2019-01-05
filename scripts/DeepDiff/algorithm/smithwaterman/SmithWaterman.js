@@ -8,7 +8,8 @@ import {AlgorithmRegistry} from '../../algorithm/AlgorithmRegistry.js';
 import * as AlgorithmResults from '../../algorithm/AlgorithmResults.js';
 import {checkNotNull} from '../../util/misc.js';
 
-import {SmithWaterman} from './SmithWatermanAlgorithmMemfriend.js';
+//import {SmithWaterman} from './SmithWatermanAlgorithmMemfriend.js';
+import {SmithWaterman} from './SmithWatermanAlgorithmGPU.js';
 
 (function(){
 
@@ -105,12 +106,20 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=
 		thread.onmessage = function(msg){
 			let handler = progHandler;
 			switch(msg.data.type){
+				// don't care
 				case 'progress':
+				case 'pause':
 					handler = progHandler;
 					break;
+				// ERROR!! Post a message and then terminate processing
 				case 'error':
-					console.error(msg.data.error);
 				default:
+					console.error(msg.data);
+					thread.stop();
+					break;
+				// Done. Terminate processing
+				case 'stop':
+				case 'complete':
 					handler = resolve;
 					thread.terminate();
 					thread = null;
@@ -126,13 +135,14 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=
 	performance.mark('smithwaterman-end.'+req.name);
 	performance.measure('smithwaterman.'+req.name,'smithwaterman-start.'+req.name,'smithwaterman-end.'+req.name);
 	let perf = performance.getEntriesByName('smithwaterman.'+req.name);
-	notes.duration = JSON.stringify(perf.pop());
+	notes.duration = perf.pop();
 
-	if(endLists.data.type === 'stopped'){
+	if(endLists.data.type !== 'complete'){
 		return null;
 	}
 
-	let results = await AlgorithmResults.Create(a, b, endLists.data.data[0], endLists.data.data[1], notes);
+	endLists = endLists.data.data.submissions;
+	let results = await AlgorithmResults.Create(a, b, endLists[0], endLists[1], notes);
 	results.complete = results.totalTokens;
 
 	return results;
