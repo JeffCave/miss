@@ -1,12 +1,12 @@
 'use strict';
 
 export{
-	SmithWaterman
+	swAlgoGpu
 };
 
 import * as utils from '../../util/misc.js';
 import {psGpu} from '../../lib/psGpu.js';
-import {SmithWatermanAlgorithmBaseClass} from './SmithWatermanAlgorithmBaseClass.js';
+import {SmithWatermanBase} from './swAlgoBase.js';
 
 
 const MAX_CHAINS = 1000;
@@ -17,7 +17,7 @@ const modDir = [
 		[1,1]
 	];
 
-class SmithWaterman extends SmithWatermanAlgorithmBaseClass{
+class swAlgoGpu extends SmithWatermanBase{
 	constructor(name, a, b, opts){
 		super(name, a, b, opts);
 

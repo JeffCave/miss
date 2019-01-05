@@ -2,10 +2,10 @@
 
 
 export{
-	SmithWatermanAlgorithmBaseClass
+	SmithWatermanBase
 };
 
-export default class SmithWatermanAlgorithmBaseClass{
+export default class SmithWatermanBase{
 
 	/**
 	 * Maximum area is 1 GB
@@ -13,8 +13,8 @@ export default class SmithWatermanAlgorithmBaseClass{
 	 * Basically an arbitrary size, but we have to draw the line somewhere
 	 */
 	static get MAXAREA(){
-		if(SmithWatermanAlgorithmBaseClass._MAXAREA){
-			return SmithWatermanAlgorithmBaseClass._MAXAREA;
+		if(SmithWatermanBase._MAXAREA){
+			return SmithWatermanBase._MAXAREA;
 		}
 		// 1GB
 		let maxarea = (1024**3);
@@ -23,16 +23,16 @@ export default class SmithWatermanAlgorithmBaseClass{
 		// and each element is a Float32 (so 4 bytes each)
 		maxarea /= 4;
 
-		SmithWatermanAlgorithmBaseClass._MAXAREA = maxarea;
+		SmithWatermanBase._MAXAREA = maxarea;
 		return maxarea;
 	}
 
 	static get OptimalDimension(){
-		if(SmithWatermanAlgorithmBaseClass._OptimalDimension){
-			return SmithWatermanAlgorithmBaseClass._OptimalDimension;
+		if(SmithWatermanBase._OptimalDimension){
+			return SmithWatermanBase._OptimalDimension;
 		}
-		let optimal = SmithWatermanAlgorithmBaseClass.MAXAREA ** 0.5;
-		SmithWatermanAlgorithmBaseClass.OptimalDimension = optimal;
+		let optimal = SmithWatermanBase.MAXAREA ** 0.5;
+		SmithWatermanBase.OptimalDimension = optimal;
 		return optimal;
 	}
 
@@ -133,14 +133,11 @@ export default class SmithWatermanAlgorithmBaseClass{
 		if(msg.eventPhase){
 			msg = msg.data;
 		}
-		msg = {
-			data:msg
-		};
-		if(!msg.data.type){
-			throw new Error("Invalid message type: " + msg.data.type);
+		if(!msg.type){
+			throw new Error("Invalid message type: " + msg.type);
 		}
-		if(!msg.data.data){
-			msg.data.data = this.status;
+		if(!msg.data){
+			msg.data = this.status;
 		}
 		if(this.onmessage){
 			this.onmessage(msg);

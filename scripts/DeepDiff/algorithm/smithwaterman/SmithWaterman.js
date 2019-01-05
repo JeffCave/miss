@@ -8,8 +8,8 @@ import {AlgorithmRegistry} from '../../algorithm/AlgorithmRegistry.js';
 import * as AlgorithmResults from '../../algorithm/AlgorithmResults.js';
 import {checkNotNull} from '../../util/misc.js';
 
-//import {SmithWaterman} from './SmithWatermanAlgorithmMemfriend.js';
-import {SmithWaterman} from './SmithWatermanAlgorithmGPU.js';
+//import {swAlgoCell as SmithWaterman} from './swAlgoCell.js';
+import {swAlgoGpu as SmithWaterman} from './swAlgoGpu.js';
 
 (function(){
 
@@ -105,7 +105,7 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=
 		threads[req.name] = thread;
 		thread.onmessage = function(msg){
 			let handler = progHandler;
-			switch(msg.data.type){
+			switch(msg.type){
 				// don't care
 				case 'progress':
 				case 'pause':
@@ -114,7 +114,7 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=
 				// ERROR!! Post a message and then terminate processing
 				case 'error':
 				default:
-					console.error(msg.data);
+					console.error(msg);
 					thread.stop();
 					break;
 				// Done. Terminate processing
@@ -137,11 +137,11 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=
 	let perf = performance.getEntriesByName('smithwaterman.'+req.name);
 	notes.duration = perf.pop();
 
-	if(endLists.data.type !== 'complete'){
+	if(endLists.type !== 'complete'){
 		return null;
 	}
 
-	endLists = endLists.data.data.submissions;
+	endLists = endLists.data.submissions;
 	let results = await AlgorithmResults.Create(a, b, endLists[0], endLists[1], notes);
 	results.complete = results.totalTokens;
 

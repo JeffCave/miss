@@ -2,13 +2,13 @@
 
 
 export{
-	SmithWaterman
+	swAlgoCell
 };
 
-import SmithWatermanAlgorithmBaseClass from './SmithWatermanAlgorithmBaseClass.js';
+import SmithWatermanBase from './swAlgoBase.js';
 
 
-class SmithWaterman extends SmithWatermanAlgorithmBaseClass{
+class swAlgoCell extends SmithWatermanBase{
 
 	constructor(name, a, b, opts){
 		super(name,a,b,opts);
@@ -19,7 +19,7 @@ class SmithWaterman extends SmithWatermanAlgorithmBaseClass{
 
 		let WorkerUrl = window.location.pathname.split('/');
 		WorkerUrl.pop();
-		WorkerUrl = WorkerUrl.concat('/scripts/DeepDiff/algorithm/smithwaterman/SmithWatermanMemfriendly.js'.split('/'));
+		WorkerUrl = WorkerUrl.concat('/scripts/DeepDiff/algorithm/smithwaterman/webworkers/swAlgoCell.js'.split('/'));
 		WorkerUrl = WorkerUrl.filter((u)=>{return u;});
 		WorkerUrl.unshift(window.location.origin);
 		WorkerUrl = WorkerUrl.join('/');
