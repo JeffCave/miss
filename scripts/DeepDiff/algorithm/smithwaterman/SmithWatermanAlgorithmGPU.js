@@ -43,7 +43,31 @@ const modDir = [
 
 class SmithWaterman{
 
-	constructor(name, a, b){
+	/**
+	 * Maximum area is 1 GB
+	 *
+	 * Basically an arbitrary size, but we have to draw the line somewhere
+	 *
+	 */
+	static get MAXAREA(){
+		// 1GB
+		let maxarea = (1024**3);
+		// but each pixel takes 4 elements
+		maxarea /= 4;
+		// and each element is a Float32 (so 4 bytes each)
+		maxarea /= 4;
+
+		SmithWaterman.MAXAREA = maxarea;
+		return maxarea;
+	}
+
+	static get OptimalDimension(){
+		let optimal = SmithWaterman.MAXAREA ** 0.5;
+		SmithWaterman.OptimalDimension = optimal;
+		return optimal;
+	}
+
+	constructor(name, a, b, opts){
 
 		if(!a && !b && name.name){
 			a = name.submissions[0];

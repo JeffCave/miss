@@ -8,18 +8,37 @@ import {AlgorithmRegistry} from '../../algorithm/AlgorithmRegistry.js';
 import * as AlgorithmResults from '../../algorithm/AlgorithmResults.js';
 import {checkNotNull} from '../../util/misc.js';
 
+import {SmithWaterman} from './SmithWatermanAlgorithmMemfriend.js';
+
 (function(){
 
-const largeCompare = (1024**3)*4;
-
-let WorkerUrl = window.location.pathname.split('/');
-WorkerUrl.pop();
-WorkerUrl = WorkerUrl.concat('/scripts/DeepDiff/algorithm/smithwaterman/SmithWatermanMemfriendly.js'.split('/'));
-WorkerUrl = WorkerUrl.filter((u)=>{return u;});
-WorkerUrl.unshift(window.location.origin);
-WorkerUrl = WorkerUrl.join('/');
 
 const threads = {};
+
+const scores = {
+	// an exact positional match (diagonal in SmithWaterman terms). This is
+	// the highest possible match.
+	match:+1,
+	// a exact mismatch. If the pattern continues, this character is a change.
+	// An example of a mismatch would be "dune", and "dude": there is an
+	// obvious match, but there is one character that has been completely
+	// changed. This is the lowest possible match.
+	mismatch: -1,
+	// A partial mismatch. Generally, the insertion (or removal) of a
+	// character. Depending on the context, this may be just as bad as a
+	// "mismatch" or somewhere between "mismatch" and "match".
+	skippable: -1,
+	// The point to the terminus is to measure when the chain is broken.
+	// A chain may grow in score, getting larger and larger, until
+	// matches stop being made. At this point, the score will start dropping.
+	// Once it drops by the points specified by the terminator, we can assume
+	// it has dropped off.
+	terminus: 5,
+	// the number of lexemes that need to match for a chain to be considered
+	// of significant length.
+	significant: 5,
+};
+
 
 
 /**
@@ -75,13 +94,13 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=
 	let notes = {
 		algorithm: 'smithwaterman'
 	};
-	if(aTokens.length * bTokens.length > largeCompare){
+	if(aTokens.length * bTokens.length > SmithWaterman.MAXAREA){
 		notes.isMassive = true;
 	}
 
 	// Alright, easy cases taken care of. Generate an instance to perform the actual algorithm
 	let endLists = await new Promise((resolve,reject)=>{
-		let thread = new Worker(WorkerUrl);
+		let thread = new SmithWaterman(req.name, aTokens, bTokens, {scores:scores});
 		threads[req.name] = thread;
 		thread.onmessage = function(msg){
 			let handler = progHandler;
@@ -89,6 +108,8 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=
 				case 'progress':
 					handler = progHandler;
 					break;
+				case 'error':
+					console.error(msg.data.error);
 				default:
 					handler = resolve;
 					thread.terminate();
@@ -98,11 +119,7 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=
 			}
 			handler(msg);
 		};
-		thread.postMessage(JSON.clone({
-			action:'start',
-			name:req.name,
-			submissions:[aTokens, bTokens]
-		}));
+		thread.start();
 	});
 
 

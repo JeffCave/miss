@@ -80,6 +80,10 @@ class Matrix{
 		this.isPaused = true;
 	}
 
+	terminate(){
+		this.stop();
+	}
+
 	stop(){
 		this.ResolveCandidates();
 		let entries = this.submissions;
@@ -87,6 +91,7 @@ class Matrix{
 		if(this.remaining === 0){
 			msg.type = 'complete';
 		}
+		matrix = null;
 		postMessage(msg);
 		close();
 	}
@@ -463,16 +468,25 @@ let matrix = null;
 
 
 onmessage = function(params){
-	if(params.data.action === 'start'){
+	if(matrix === null && params.data.action === 'start') {
+		console.log("starting web worker");
+
 		let id = params.data.name;
 		let a = params.data.submissions[0];
 		let b = params.data.submissions[1];
 
-		console.log("starting web worker");
 		matrix = new Matrix(id,a,b);
-		matrix.start();
 	}
-	else if(params.data.action === 'pause'){
-		matrix.pause();
+	if(matrix !== null){
+		if(params.data.action === 'start'){
+			console.log("restarting web worker");
+			matrix.start();
+		}
+		else if(params.data.action === 'pause'){
+			matrix.pause();
+		}
+		else if(params.data.action === 'stop'){
+			matrix.stop();
+		}
 	}
 };
