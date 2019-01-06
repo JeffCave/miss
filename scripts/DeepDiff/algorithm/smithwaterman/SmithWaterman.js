@@ -8,14 +8,33 @@ import {AlgorithmRegistry} from '../../algorithm/AlgorithmRegistry.js';
 import * as AlgorithmResults from '../../algorithm/AlgorithmResults.js';
 import {checkNotNull} from '../../util/misc.js';
 
-//import {swAlgoCell as SmithWaterman} from './swAlgoCell.js';
-import {swAlgoGpu as SmithWaterman} from './swAlgoGpu.js';
+import {swAlgoCell} from './swAlgoCell.js';
+import {swAlgoGpu} from './swAlgoGpu.js';
 
 (function(){
 
 
-const threads = {};
+/**
+ * Register each of our variants as a runnable algorithm
+ */
+[swAlgoCell,swAlgoGpu].forEach(AlgoVariant=>{
+	// come up with a unique name
+	let name = 'smithwaterman-'+AlgoVariant.name;
+	// Add a function to the registry
+	AlgorithmRegistry.processors[name] = (req, progHandler)=>{
+		// apply the variation settings
+		req.AlgoVariant = AlgoVariant;
+		// call the base function (see below)
+		return ProcSW(req,progHandler);
+	};
+});
+// also register a default one
+AlgorithmRegistry.processors['smithwaterman'] = AlgorithmRegistry.processors['smithwaterman-swAlgoCell'];
 
+
+
+
+const threads = {};
 const scores = {
 	// an exact positional match (diagonal in SmithWaterman terms). This is
 	// the highest possible match.
@@ -43,15 +62,9 @@ const scores = {
 
 
 /**
- * Apply the Smith-Waterman algorithm to determine the similarity between two submissions.
- *
- * Token list types of A and B must match
- *
- * @param a First submission to apply to
- * @param b Second submission to apply to
- * @return Similarity results of comparing submissions A and B
+ * Do a comparison using SmithWaterman algorithm
  */
-AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=()=>{}) {
+async function ProcSW(req, progHandler=()=>{}) {
 	checkNotNull(req);
 
 	if(req.action === 'stop'){
@@ -92,14 +105,20 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=
 		return result;
 	}
 
+	let SmithWaterman = req.AlgoVariant;
 	let notes = {
-		algorithm: 'smithwaterman'
+		algorithm: 'smithwaterman-'+SmithWaterman.name
 	};
 	if(aTokens.length * bTokens.length > SmithWaterman.MAXAREA){
 		notes.isMassive = true;
 	}
 
-	// Alright, easy cases taken care of. Generate an instance to perform the actual algorithm
+	// Alright, easy cases taken care of. Generate an instance to perform the
+	// actual algorithm. This is done (in many cases) on a separate thread, so
+	// we don't know it is done until we get a call back. Stuff it in a
+	// promise so we can await the response
+	//
+	// TODO: put the promise inside the class as something that can be 'awaited'
 	let endLists = await new Promise((resolve,reject)=>{
 		let thread = new SmithWaterman(req.name, aTokens, bTokens, {scores:scores});
 		threads[req.name] = thread;
