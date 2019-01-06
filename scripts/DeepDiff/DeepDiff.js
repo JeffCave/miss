@@ -19,14 +19,17 @@ import * as utils from './util/misc.js';
 /*
 global PouchDB
 global emit
+global EventTarget
 */
 
 /**
  * CLI Entry point and main public API endpoint for DeepDiff.
  */
-class DeepDiff {
+class DeepDiff extends EventTarget{
 
 	constructor() {
+		super();
+
 		this.numThreads = 1;
 		this.db = new PouchDB('DeepDiff');
 		this.report = new Vue({
@@ -253,8 +256,9 @@ class DeepDiff {
 	 * @return Similarity detection algorithm to use
 	 */
 	get Algorithm() {
-		if(!('algorithm' in this)){
-			this.algorithm = AlgorithmRegistry.processors['smithwaterman'];
+		if(!this.algorithm){
+			this.algorithm = AlgorithmRegistry.def;
+			this.algorithm = AlgorithmRegistry.processors[this.algorithm];
 		}
 		return this.algorithm;
 	}
@@ -271,7 +275,7 @@ class DeepDiff {
 		this.algorithm = newAlgorithm;
 	}
 	get AlgorithmRegistry(){
-		return AlgorithmRegistry.getInstance();
+		return AlgorithmRegistry.processors;
 	}
 
 	/**
@@ -521,14 +525,14 @@ class DeepDiff {
 		console.log("Performing comparison on " + pair.name );
 		let result = await algo(pair,async (comparer)=>{
 			comparer = comparer.data;
-			let result = this.report.results[comparer.data.name];
+			let result = this.report.results[comparer.name];
 			if(!result) return;
 			//result.complete = (comparer.totalSize - comparer.remaining) -1;
 			//result.totalTokens = comparer.totalSize;
 			//result.identicalTokens = comparer.tokenMatch;
 			//result.percentMatched = result.identicalTokens / result.totalTokens;
-			let completePct = (comparer.data.totalSize - comparer.data.remaining) -1;
-			completePct = completePct / comparer.data.totalSize;
+			let completePct = (comparer.totalSize - comparer.remaining) -1;
+			completePct = completePct / comparer.totalSize;
 			result.percentMatched = completePct;
 			result.submissions.forEach((orig,i)=>{
 				//let sub = comparer.submissions[i];

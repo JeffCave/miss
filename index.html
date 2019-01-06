@@ -15,6 +15,8 @@
  <script async src='https://unpkg.com/vuetify/dist/vuetify.js'></script>
  <script async src="https://unpkg.com/http-vue-loader"></script>
 
+ <script src='scripts/widgets/deepdiff-opts.js'></script>
+
 
  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:400,500,700,400italic|Material+Icons">
  <link rel="stylesheet" href="//unpkg.com/vue-material@beta/dist/theme/default.css">
@@ -153,6 +155,15 @@
       and is know to currently break the application.
      </dd>
    </dl>
+  </section>
+  <section id='options'>
+   <i>settings</i>
+   <h1>Options</h1>
+   <form is='deepdiff-opts'>
+    <select name='algorithm' list='algorithms'>
+     <option value='test'>Test</option>
+    </select>
+   </form>
   </section>
   <section id='files'>
    <i>folder</i>

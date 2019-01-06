@@ -1,53 +1,30 @@
 'use strict';
 
+//import "https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.4.3/pouchdb.min.js";
+//import "../../lib/pouchdb.upsert.min.js";
+//import {Progress} from "../../util/Progress.js";
 
-export{
-	SmithWaterman
-};
+//import * as utils from '../../util/misc.js';
 
-import * as utils from '../../util/misc.js';
-
-
-const scores = {
-	// an exact positional match (diagonal in SmithWaterman terms). This is
-	// the highest possible match.
-	match:+1,
-	// a exact mismatch. If the pattern continues, this character is a change.
-	// An example of a mismatch would be "dune", and "dude": there is an
-	// obvious match, but there is one character that has been completely
-	// changed. This is the lowest possible match.
-	mismatch: -1,
-	// A partial mismatch. Generally, the insertion (or removal) of a
-	// character. Depending on the context, this may be just as bad as a
-	// "mismatch" or somewhere between "mismatch" and "match".
-	skippable: -1,
-	// The point to the terminus is to measure when the chain is broken.
-	// A chain may grow in score, getting larger and larger, until
-	// matches stop being made. At this point, the score will start dropping.
-	// Once it drops by the points specified by the terminator, we can assume
-	// it has dropped off.
-	terminus: 5,
-	// the number of lexemes that need to match for a chain to be considered
-	// of significant length.
-	significant: 5,
+const utils = {
+	defer: function(func){
+		return setTimeout(func,0);
+	}
 };
 
 
-class SmithWaterman{
+const swMatrixes = {};
 
-	constructor(name, a, b){
+class Matrix{
 
-		if(!a && !b && name.name){
-			a = name.submissions[0];
-			b = name.submissions[1];
-			name = name.name;
-		}
+	constructor(name, a, b, opts){
 		this.matrix = [];
 		this.partial = new Map();
 		this.finishedChains = [];
 
 		this.name = name;
 		this.submissions = [a,b];
+		this.opts = opts;
 
 		this.remaining = this.submissions[0].length * this.submissions[1].length;
 		this.totalSize = this.remaining;
@@ -84,25 +61,18 @@ class SmithWaterman{
 	}
 
 	stop(){
-		this.pause();
-		this.ResolveCandidates();
-		let entries = this.submissions;
-		let msg = {type:'stopped',data:entries};
+		let chains = this.ResolveCandidates();
+
+		let msg = {type:'stopped',data:this.toJSON()};
+		msg.data.chains = chains;
+		msg.data.submissions = this.submissions;
 		if(this.remaining === 0){
 			msg.type = 'complete';
 		}
-		this.postMessage(msg);
-	}
 
-	postMessage(msg){
-		if(this.isPosting){
-			return;
-		}
-		this.isPosting = true;
-		if(this.onmessage){
-			this.onmessage(msg);
-		}
-		this.isPosting = false;
+		matrix = null;
+		postMessage(msg);
+		close();
 	}
 
 
@@ -204,7 +174,7 @@ class SmithWaterman{
 
 			// Periodically report it up
 			let msg = {type:'progress', data:this.toJSON()};
-			this.postMessage(msg);
+			postMessage(msg);
 
 			// schedule the next processing cycle
 			if(this.matrix.length > 0){
@@ -281,14 +251,14 @@ class SmithWaterman{
 		// add the match or mismatch score
 		let localScore = 0;
 		if(axis0.lexeme === axis1.lexeme){
-			localScore = scores.match;
+			localScore = this.opts.scores.match;
 			// if it is not "NW" match, it is a skipped character
 			if(path.length === 1){
-				localScore += scores.skippable;
+				localScore += this.opts.scores.skippable;
 			}
 		}
 		else{
-			localScore = scores.mismatch;
+			localScore = this.opts.scores.mismatch;
 		}
 		score += localScore;
 		if(score < 0){
@@ -305,13 +275,13 @@ class SmithWaterman{
 			score = Number.MIN_SAFE_INTEGER;
 		}
 		//console.debug("scoring: " + JSON.stringify(chain.id) + ' (' + score + ') ' + this.remaining + ' of '+this.totalSize+'('+(100.0*this.remaining/this.totalSize).toFixed(0)+'%) ');
-		if(highscore - score >= scores.terminus){
+		if(highscore - score >= this.opts.scores.terminus){
 			// rewind our chain to the highwater mark
 			while(history.length > 0 && highscore > history[0][2]){
 				history.shift();
 			}
 			// check to ensure that the chain is of significant length to be kept
-			if(history.length >= scores.significant){
+			if(history.length >= this.opts.scores.significant){
 				this.finishedChains.push({
 					score:highscore,
 					history:history
@@ -413,7 +383,7 @@ class SmithWaterman{
 
 				// put it back in processing queue (at the end because it is
 				// now going to be almost worthless?)
-				if(chain.history.length >= scores.significant){
+				if(chain.history.length >= this.opts.scores.significant){
 					this.finishedChains.push(chain);
 				}
 
@@ -460,10 +430,10 @@ class SmithWaterman{
 			tokenMatch: this.tokenMatch,
 			submissions: [
 					{
-						totalTokens:this.submissions[0].length
+						length:this.submissions[0].length
 					},
 					{
-						totalTokens:this.submissions[1].length
+						length:this.submissions[1].length
 					}
 				]
 		};
@@ -472,12 +442,31 @@ class SmithWaterman{
 
 }
 
-/**
- * Can you distinguish between Shit and Shinola?
- *
- * https://www.neatorama.com/2014/02/11/Spectroscopic-Discrimination-of-Shit-from-Shinola/
- *
- * Apparently, it is actually very difficult to distinguish between the two
- * using only the human eye, though a spectromitor can easily distinguish
- * between the two.
- */
+
+let matrix = null;
+
+
+onmessage = function(params){
+	if(matrix === null && params.data.action === 'start') {
+		console.log("Initializing web worker");
+
+		let id = params.data.name;
+		let a = params.data.submissions[0];
+		let b = params.data.submissions[1];
+		let opts = params.data.options;
+
+		matrix = new Matrix(id,a,b,opts);
+	}
+	if(matrix !== null){
+		if(params.data.action === 'start'){
+			console.log("Starting web worker");
+			matrix.start();
+		}
+		else if(params.data.action === 'pause'){
+			matrix.pause();
+		}
+		else if(params.data.action === 'stop'){
+			matrix.stop();
+		}
+	}
+};

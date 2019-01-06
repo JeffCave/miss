@@ -1,36 +1,12 @@
 'use strict';
 
 export{
-	SmithWaterman
+	swAlgoGpu
 };
 
-import {psGpu} from '../../lib/psGpu.js';
 import * as utils from '../../util/misc.js';
-
-
-const scores = {
-	// an exact positional match (diagonal in SmithWaterman terms). This is
-	// the highest possible match.
-	match:+1,
-	// a exact mismatch. If the pattern continues, this character is a change.
-	// An example of a mismatch would be "dune", and "dude": there is an
-	// obvious match, but there is one character that has been completely
-	// changed. This is the lowest possible match.
-	mismatch: -1,
-	// A partial mismatch. Generally, the insertion (or removal) of a
-	// character. Depending on the context, this may be just as bad as a
-	// "mismatch" or somewhere between "mismatch" and "match".
-	skippable: -1,
-	// The point to the terminus is to measure when the chain is broken.
-	// A chain may grow in score, getting larger and larger, until
-	// matches stop being made. At this point, the score will start dropping.
-	// Once it drops by the points specified by the terminator, we can assume
-	// it has dropped off.
-	terminus: 5,
-	// the number of lexemes that need to match for a chain to be considered
-	// of significant length.
-	significant: 5,
-};
+import {psGpu} from '../../lib/psGpu.js';
+import {SmithWatermanBase} from './swAlgoBase.js';
 
 
 const MAX_CHAINS = 1000;
@@ -41,9 +17,9 @@ const modDir = [
 		[1,1]
 	];
 
-class SmithWaterman{
-
-	constructor(name, a, b){
+class swAlgoGpu extends SmithWatermanBase{
+	constructor(name, a, b, opts){
+		super(name, a, b, opts);
 
 		if(!a && !b && name.name){
 			a = name.submissions[0];
@@ -57,11 +33,9 @@ class SmithWaterman{
 		this.name = name;
 		this.submissions = [a,b];
 
-		this.cycles = a.length + b.length - 1;
-		this.remaining = a.length * b.length;
+		this.remaining = a.length + b.length - 1;
 		this.totalSize = this.remaining;
 		this.tokenMatch = 0;
-		this.resetShareMarkers();
 
 		this.handlers = {
 			progress:[],
@@ -78,21 +52,41 @@ class SmithWaterman{
 		let data = this.gpu.emptyData();
 		let data16 = new Uint16Array(data.buffer);
 		for(let x=0,pos=0; x < this.gpu.width; x++,pos+=2){
-			data16[pos] = this.submissions[0][x];
+			data16[pos] = this.submissions[0][x].lexeme;
 		}
 		for(let y=0,pos=1; y < this.gpu.height; y++,pos+=(this.gpu.width*2)){
-			data16[pos] = this.submissions[1][y];
+			data16[pos] = this.submissions[1][y].lexeme;
 		}
 		// Write the values to the image
 		this.gpu.write(data);
+		//this.debugDraw();
 		this.gpu.run('initializeSpace');
+		//this.debugDraw();
 
 
 		this.start();
 	}
 
+	destroy(){
+		if(this.gpu){
+			this.gpu.destroy();
+			this.gpu = null;
+			delete this.gpu;
+		}
+	}
+
+	get remaining(){
+		if(this._.remaining < 0){
+			this._.remaining = 0;
+		}
+		return this._.remaining;
+	}
+	set remaining(value){
+		this._.remaining = value;
+	}
+
 	start(){
-		if(this.isPaused){
+		if(this.isPaused === true){
 			utils.defer(()=>{
 				this.calc();
 			});
@@ -100,56 +94,39 @@ class SmithWaterman{
 		this.isPaused = false;
 	}
 
-	pause(){
-		this.isPaused = true;
-	}
-
-	terminate(){
-		this.stop();
-	}
-
 	stop(){
+		if(!this.gpu) return;
+
 		this.pause();
-		this.ResolveCandidates();
-		this.gpu.destroy();
-		let entries = this.submissions;
-		let msg = {type:'stopped',data:entries};
+		let chains = this.ResolveCandidates();
+
+		let msg = {type:'stopped',data:this.status};
+		msg.data.chains = chains;
+		msg.data.submissions = this.submissions;
+
 		if(this.remaining === 0){
 			msg.type = 'complete';
 		}
+
+		this.destroy();
 		this.postMessage(msg);
 	}
 
-	postMessage(msg){
-		if(this.isPosting){
-			return;
-		}
-		this.isPosting = true;
-		if(this.onmessage){
-			this.onmessage(msg);
-		}
-		this.isPosting = false;
-	}
-
-	CoordToIndex(x,y){
-		return y * this.submissions[0].length + x;
-	}
-
-	IndexToCoord(i){
-		let len = this.submissions[0].length;
-		let x = i/len;
-		let y = i%len;
-		return [x,y];
-	}
-
 	calc(){
-		let timeLimit = Date.now() + 500;
+		let timeLimit = Date.now() + 100;
 		while(timeLimit > Date.now()){
-			for(let limit = 1000; limit>=0 && this.cycles >= 0; this.cycles--, limit--){
+			for(let limit = 100; limit>=0 && this.remaining > 0; this.remaining--, limit--){
+				//this.debugDraw();
 				this.gpu.run('smithwaterman');
+				//this.debugDraw();
 			}
 		}
-		if(this.cycles > 0){
+
+		// Periodically report it up
+		let msg = {type:'progress', data:this.toJSON()};
+		this.postMessage(msg);
+
+		if(this.remaining > 0){
 			utils.defer(()=>{
 				this.calc();
 			});
@@ -162,29 +139,31 @@ class SmithWaterman{
 	ResolveCandidates(){
 		if(this._chains) return this._chains;
 
+		// Copy values out of the GPU data into a JS array, but skip anything
+		// that did not get a score at all.
 		let values = this.gpu.read();
 		let index = new Map();
 		for(let i=values.length-4; i>=0; i-=4){
-			let score = values[i+3];
-			let dir = values[i+2];
-			if(score === 0) continue;
-
 			let d = {
-				i: i,
-				score: score,
-				chain:[]
+				i:i,
+				score:values[i+3],
+				dir: values[i+2]
 			};
 
-			let md = modDir[dir%modDir.length];
-			d.prev = i;
-			d.prev -= md[0] * 1;
-			d.prev -= md[1] * this.gpu.width;
-			index.set(d.i, d);
+			if(d.score > 0){
+				index.set(d.i, d);
+			}
 		}
+		values = null;
+
+
+		/*
+		* Now for the fun part
+		*/
 		let chains = [];
 		let root = {score:Number.MAX_VALUE};
-		const significantScore = scores.significant * scores.match;
-		while(index.size > 0 && chains.length < MAX_CHAINS && root.score < significantScore){
+		this.resetShareMarkers(Number.MAX_VALUE);
+		while(index.size > 0 && chains.length < MAX_CHAINS && root.score >= this.ScoreSignificant){
 			root = Array.from(index.values())
 				.sort((a,b)=>{
 					let ord = b.score - a.score;
@@ -201,16 +180,39 @@ class SmithWaterman{
 				continue;
 			}
 
+			root.history = [];
 			for(let item = root; item; item = index.get(item.prev)){
-				root.chain.push(item);
+				root.history.push(item);
 				index.delete(item.i);
+
+				item.x = Math.floor(item.i/4)%this.gpu.width;
+				item.y = Math.floor(Math.floor(item.i/4)/this.gpu.width);
+
+				/*
+				 * If the character was already used by a previous chain, it
+				 * means this chain can't have it, and we have broken our chain
+				 */
+				let a = this.submissions[0][item.x];
+				let b = this.submissions[1][item.y];
+				if(a.shared < chains.length || b.shared < chains.length){
+					item.prev = -1;
+					continue;
+				}
+				a.shared = chains.length;
+				b.shared = chains.length;
+
+				let md = modDir[item.dir%modDir.length];
+				item.prev = item.i;
+				item.prev -= md[0] * 1 * 4;
+				item.prev -= md[1] * this.gpu.width * 4;
 			}
-			let finItem = root.chain[root.chain.length-1];
+			let finItem = root.history[root.history.length-1];
 			root.score -= Math.max(0,finItem.score-2);
-			if(root && root.score >= scores.significant){
+			if(root.score >= this.ScoreSignificant){
 				chains.push(root);
 			}
 		}
+		index.clear();
 		chains = chains
 			.sort((a,b)=>{
 				let ord = b.score - a.score;
@@ -221,39 +223,30 @@ class SmithWaterman{
 			})
 			.slice(0,Math.min(MAX_CHAINS,chains.length))
 			;
+		this.submissions.forEach((sub)=>{
+			sub.forEach((lex)=>{
+				if(lex.shared > chains.length){
+					lex.shared = null;
+				}
+			});
+		});
+
 		this._chains = chains;
 		return chains;
 	}
 
-	resetShareMarkers(){
-		this.submissions.forEach((sequence)=>{
-			sequence.forEach((lexeme)=>{
-				delete lexeme.shared;
-			});
-		});
+	debugDraw(){
+		let body = document.body;
+		let table = this.gpu.HtmlElement;
+		if(table !== body.firstChild){
+			body.insertBefore(table,body.firstChild);
+		}
 	}
 
-	toJSON(){
-		let json = {
-			name: this.name,
-			totalSize: this.totalSize,
-			remaining: this.remaining,
-			tokenMatch: this.tokenMatch,
-			submissions: [
-					{
-						totalTokens:this.submissions[0].length
-					},
-					{
-						totalTokens:this.submissions[1].length
-					}
-				]
-		};
-		return json;
-	}
 
 }
 
-let gpuFragInit = (`
+const gpuFragInit = (`
 	precision mediump float;
 
 	// our texture
@@ -275,7 +268,7 @@ let gpuFragInit = (`
 `);
 
 
-let gpuFragSW = (`
+const gpuFragSW = (`
 	precision mediump float;
 
 	// our texture

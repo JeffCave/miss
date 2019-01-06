@@ -8,30 +8,63 @@ import {AlgorithmRegistry} from '../../algorithm/AlgorithmRegistry.js';
 import * as AlgorithmResults from '../../algorithm/AlgorithmResults.js';
 import {checkNotNull} from '../../util/misc.js';
 
+import {swAlgoCell} from './swAlgoCell.js';
+import {swAlgoGpu} from './swAlgoGpu.js';
+
 (function(){
-
-const largeCompare = (1024**3)*4;
-
-let WorkerUrl = window.location.pathname.split('/');
-WorkerUrl.pop();
-WorkerUrl = WorkerUrl.concat('/scripts/DeepDiff/algorithm/smithwaterman/SmithWatermanMemfriendly.js'.split('/'));
-WorkerUrl = WorkerUrl.filter((u)=>{return u;});
-WorkerUrl.unshift(window.location.origin);
-WorkerUrl = WorkerUrl.join('/');
-
-const threads = {};
 
 
 /**
- * Apply the Smith-Waterman algorithm to determine the similarity between two submissions.
- *
- * Token list types of A and B must match
- *
- * @param a First submission to apply to
- * @param b Second submission to apply to
- * @return Similarity results of comparing submissions A and B
+ * Register each of our variants as a runnable algorithm
  */
-AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=()=>{}) {
+[swAlgoCell,swAlgoGpu].forEach(AlgoVariant=>{
+	// come up with a unique name
+	let name = 'smithwaterman-'+AlgoVariant.name;
+	// Add a function to the registry
+	AlgorithmRegistry.processors[name] = (req, progHandler)=>{
+		// apply the variation settings
+		req.AlgoVariant = AlgoVariant;
+		// call the base function (see below)
+		return ProcSW(req,progHandler);
+	};
+});
+// also register a default one
+AlgorithmRegistry.processors['smithwaterman'] = AlgorithmRegistry.processors['smithwaterman-swAlgoCell'];
+
+
+
+
+const threads = {};
+const scores = {
+	// an exact positional match (diagonal in SmithWaterman terms). This is
+	// the highest possible match.
+	match:+2,
+	// a exact mismatch. If the pattern continues, this character is a change.
+	// An example of a mismatch would be "dune", and "dude": there is an
+	// obvious match, but there is one character that has been completely
+	// changed. This is the lowest possible match.
+	mismatch: -1,
+	// A partial mismatch. Generally, the insertion (or removal) of a
+	// character. Depending on the context, this may be just as bad as a
+	// "mismatch" or somewhere between "mismatch" and "match".
+	skippable: -1,
+	// The point to the terminus is to measure when the chain is broken.
+	// A chain may grow in score, getting larger and larger, until
+	// matches stop being made. At this point, the score will start dropping.
+	// Once it drops by the points specified by the terminator, we can assume
+	// it has dropped off.
+	terminus: 5,
+	// the number of lexemes that need to match for a chain to be considered
+	// of significant length.
+	significant: 5,
+};
+
+
+
+/**
+ * Do a comparison using SmithWaterman algorithm
+ */
+async function ProcSW(req, progHandler=()=>{}) {
 	checkNotNull(req);
 
 	if(req.action === 'stop'){
@@ -72,24 +105,40 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=
 		return result;
 	}
 
+	let SmithWaterman = req.AlgoVariant;
 	let notes = {
-		algorithm: 'smithwaterman'
+		algorithm: 'smithwaterman-'+SmithWaterman.name
 	};
-	if(aTokens.length * bTokens.length > largeCompare){
+	if(aTokens.length * bTokens.length > SmithWaterman.MAXAREA){
 		notes.isMassive = true;
 	}
 
-	// Alright, easy cases taken care of. Generate an instance to perform the actual algorithm
+	// Alright, easy cases taken care of. Generate an instance to perform the
+	// actual algorithm. This is done (in many cases) on a separate thread, so
+	// we don't know it is done until we get a call back. Stuff it in a
+	// promise so we can await the response
+	//
+	// TODO: put the promise inside the class as something that can be 'awaited'
 	let endLists = await new Promise((resolve,reject)=>{
-		let thread = new Worker(WorkerUrl);
+		let thread = new SmithWaterman(req.name, aTokens, bTokens, {scores:scores});
 		threads[req.name] = thread;
 		thread.onmessage = function(msg){
 			let handler = progHandler;
-			switch(msg.data.type){
+			switch(msg.type){
+				// don't care
 				case 'progress':
+				case 'pause':
 					handler = progHandler;
 					break;
+				// ERROR!! Post a message and then terminate processing
+				case 'error':
 				default:
+					console.error(msg);
+					thread.stop();
+					break;
+				// Done. Terminate processing
+				case 'stop':
+				case 'complete':
 					handler = resolve;
 					thread.terminate();
 					thread = null;
@@ -98,24 +147,21 @@ AlgorithmRegistry.processors['smithwaterman'] = async function(req, progHandler=
 			}
 			handler(msg);
 		};
-		thread.postMessage(JSON.clone({
-			action:'start',
-			name:req.name,
-			submissions:[aTokens, bTokens]
-		}));
+		thread.start();
 	});
 
 
 	performance.mark('smithwaterman-end.'+req.name);
 	performance.measure('smithwaterman.'+req.name,'smithwaterman-start.'+req.name,'smithwaterman-end.'+req.name);
 	let perf = performance.getEntriesByName('smithwaterman.'+req.name);
-	notes.duration = JSON.stringify(perf.pop());
+	notes.duration = perf.pop();
 
-	if(endLists.data.type === 'stopped'){
+	if(endLists.type !== 'complete'){
 		return null;
 	}
 
-	let results = await AlgorithmResults.Create(a, b, endLists.data.data[0], endLists.data.data[1], notes);
+	endLists = endLists.data.submissions;
+	let results = await AlgorithmResults.Create(a, b, endLists[0], endLists[1], notes);
 	results.complete = results.totalTokens;
 
 	return results;

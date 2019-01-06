@@ -38,15 +38,15 @@ class indexPage {
 		let self = this;
 
 
+		Array.from(document.querySelectorAll('form[is="deepdiff-opts"]')).forEach(opts=>{
+			opts.ddInstance = this.runner;
+		});
 		this.displaySubmissions = new Vue({
 			el:'#submissions',
 			data: {
 				db: this.runner.db,
 				filter: 'checksims/submissions',
 			},
-//			components: {
-//				'my-component': 'my-component.vue'
-//			},
 		});
 		this.displayFiles = new Vue({
 			el: '#files',
@@ -178,7 +178,6 @@ class indexPage {
 window.addEventListener('load',async function(){
 	Vue.use(VueMaterial.default);
 	Vue.use(httpVueLoader);
-
 
 	let checker = new indexPage();
 });
