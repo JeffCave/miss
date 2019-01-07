@@ -160,11 +160,12 @@ class swAlgoGpu extends SmithWatermanBase{
 		/*
 		* Now for the fun part
 		*/
-		let chains = [];
-		let root = {score:Number.MAX_VALUE};
+		let resolved = [];
+		let chain = {score:Number.MAX_VALUE};
 		this.resetShareMarkers(Number.MAX_VALUE);
-		while(index.size > 0 && chains.length < this.MaxChains && root.score >= this.ScoreSignificant){
-			root = Array.from(index.values())
+
+		while(index.size > 0 && resolved.length < this.MaxChains && chain.score >= this.ScoreSignificant){
+			chain = Array.from(index.values())
 				.sort((a,b)=>{
 					let ord = b.score - a.score;
 					if(ord === 0){
@@ -174,15 +175,17 @@ class swAlgoGpu extends SmithWatermanBase{
 				})
 				.shift()
 				;
-			if(!root.score){
-				index.delete(root.i);
+			if(!chain.score){
+				index.delete(chain.i);
 				console.warn('This should never happen');
 				continue;
 			}
 
-			root.history = [];
-			for(let item = root; item; item = index.get(item.prev)){
-				root.history.push(item);
+			// walk the chain checking for coordinates we have already assigned
+			// to a previous chain
+			chain.history = [];
+			for(let item = chain; item; item = index.get(item.prev)){
+				chain.history.push(item);
 				index.delete(item.i);
 
 				item.x = Math.floor(item.i/4)%this.gpu.width;
@@ -194,26 +197,31 @@ class swAlgoGpu extends SmithWatermanBase{
 				 */
 				let a = this.submissions[0][item.x];
 				let b = this.submissions[1][item.y];
-				if(a.shared < chains.length || b.shared < chains.length){
+				if(a.shared < resolved.length || b.shared < resolved.length){
 					item.prev = -1;
 					continue;
 				}
-				a.shared = chains.length;
-				b.shared = chains.length;
+				// this element belongs to this chain, indicate that future
+				// chains should not use it
+				a.shared = resolved.length;
+				b.shared = resolved.length;
 
+
+				// map the next node in the chain
 				let md = modDir[item.dir%modDir.length];
 				item.prev = item.i;
 				item.prev -= md[0] * 1 * 4;
 				item.prev -= md[1] * this.gpu.width * 4;
 			}
-			let finItem = root.history[root.history.length-1];
-			root.score -= Math.max(0,finItem.score-2);
-			if(root.score >= this.ScoreSignificant){
-				chains.push(root);
+
+			let finItem = chain.history[chain.history.length-1];
+			chain.score -= Math.max(0,finItem.score-2);
+			if(chain.score >= this.ScoreSignificant){
+				resolved.push(chain);
 			}
 		}
 		index.clear();
-		chains = chains
+		resolved = resolved
 			.sort((a,b)=>{
 				let ord = b.score - a.score;
 				if(ord === 0){
@@ -221,18 +229,20 @@ class swAlgoGpu extends SmithWatermanBase{
 				}
 				return ord;
 			})
-			.slice(0,Math.min(this.MaxChains,chains.length))
+			.slice(0,Math.min(this.MaxChains,resolved.length))
 			;
+		// we removed a bunch of chains, but may have marked lexemes as shared.
+		// they aren't anymore, so re-run the entire "shared" markers
 		this.submissions.forEach((sub)=>{
 			sub.forEach((lex)=>{
-				if(lex.shared > chains.length){
+				if(lex.shared > resolved.length){
 					lex.shared = null;
 				}
 			});
 		});
 
-		this._chains = chains;
-		return chains;
+		this._chains = resolved;
+		return resolved;
 	}
 
 	postMessage(msg){
@@ -274,6 +284,27 @@ const gpuFragSW = (`
 	// constants
 	uniform vec2 u_resolution;
 	uniform vec3 scores;
+
+	/****************************************************
+	 * Encode values across vector positions
+	 *
+	 * https://stackoverflow.com/a/18454838/1961413
+	 */
+	const vec4 bitEnc = vec4(1.,255.,65025.,16581375.);
+	const vec4 bitDec = 1./bitEnc;
+	vec4 EncodeFloatRGBA (float v) {
+		vec4 enc = bitEnc * v;
+		enc = fract(enc);
+		enc -= enc.yzww * vec2(1./255., 0.).xxxy;
+		return enc;
+	}
+	float DecodeFloatRGBA (vec4 v) {
+		return dot(v, bitDec);
+	}
+	/* https://stackoverflow.com/a/18454838/1961413
+	 *
+	 *************************************************/
+
 
 	void main() {
 
