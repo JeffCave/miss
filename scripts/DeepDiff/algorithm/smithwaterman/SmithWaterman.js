@@ -8,8 +8,7 @@ import {AlgorithmRegistry} from '../../algorithm/AlgorithmRegistry.js';
 import * as AlgorithmResults from '../../algorithm/AlgorithmResults.js';
 import {checkNotNull} from '../../util/misc.js';
 
-import {swAlgoCell} from './swAlgoCell.js';
-import {swAlgoGpu} from './swAlgoGpu.js';
+import {swAlgoWebWorker} from './swAlgoWebWorker.js';
 
 (function(){
 
@@ -17,9 +16,9 @@ import {swAlgoGpu} from './swAlgoGpu.js';
 /**
  * Register each of our variants as a runnable algorithm
  */
-[swAlgoCell,swAlgoGpu].forEach(AlgoVariant=>{
+['swAlgoCell','swAlgoGpu'].forEach(AlgoVariant=>{
 	// come up with a unique name
-	let name = 'smithwaterman-'+AlgoVariant.name;
+	let name = 'smithwaterman-'+AlgoVariant;
 	// Add a function to the registry
 	AlgorithmRegistry.processors[name] = (req, progHandler)=>{
 		// apply the variation settings
@@ -29,7 +28,7 @@ import {swAlgoGpu} from './swAlgoGpu.js';
 	};
 });
 // also register a default one
-AlgorithmRegistry.processors['smithwaterman'] = AlgorithmRegistry.processors['smithwaterman-swAlgoCell'];
+AlgorithmRegistry.processors['smithwaterman'] = AlgorithmRegistry.processors['smithwaterman-swAlgoGpu'];
 
 
 
@@ -107,7 +106,7 @@ async function ProcSW(req, progHandler=()=>{}) {
 
 	let SmithWaterman = req.AlgoVariant;
 	let notes = {
-		algorithm: 'smithwaterman-'+SmithWaterman.name
+		algorithm: 'smithwaterman-'+SmithWaterman
 	};
 	if(aTokens.length * bTokens.length > SmithWaterman.MAXAREA){
 		notes.isMassive = true;
@@ -120,7 +119,11 @@ async function ProcSW(req, progHandler=()=>{}) {
 	//
 	// TODO: put the promise inside the class as something that can be 'awaited'
 	let endLists = await new Promise((resolve,reject)=>{
-		let thread = new SmithWaterman(req.name, aTokens, bTokens, {scores:scores});
+		let options = {
+			scores:scores,
+			variant:SmithWaterman,
+		};
+		let thread = new swAlgoWebWorker(req.name, aTokens, bTokens, options);
 		threads[req.name] = thread;
 		thread.onmessage = function(msg){
 			let handler = progHandler;
@@ -165,7 +168,7 @@ async function ProcSW(req, progHandler=()=>{}) {
 	results.complete = results.totalTokens;
 
 	return results;
-};
+}
 
 
 })();

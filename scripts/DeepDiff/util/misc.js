@@ -74,6 +74,9 @@ JSON.clone = function(obj){
 };
 
 JSON.merge = function(a){
+	if(arguments.length > 1){
+		a = Array.from(arguments);
+	}
 	if(!Array.isArray(a)){
 		a = [a];
 	}

@@ -4,6 +4,10 @@ export{
 	pixel
 };
 
+/*
+global OffscreenCanvas
+*/
+
 class psGpu{
 
 	static get MAXAREA(){
@@ -36,9 +40,16 @@ class psGpu{
 			throw new Error('Oversized work unit. Size may not exceed area of ' + psGpu.MAXAREA);
 		}
 
-		let canvas = document.createElement('canvas');
-		canvas.height = opts.height;
-		canvas.width = opts.width;
+		let canvas = null;
+		if(OffscreenCanvas){
+			canvas = new OffscreenCanvas(opts.width,opts.height);
+		}
+		else{
+			canvas = document.createElement('canvas');
+			canvas.height = opts.height;
+			canvas.width = opts.width;
+		}
+
 
 		const gl = canvas.getContext('webgl2');
 		// If we don't have a GL context, give up now

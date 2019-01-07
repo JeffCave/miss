@@ -1,21 +1,21 @@
 'use strict';
 
-export{
-	swAlgoGpu
+import {psGpu} from '../../../lib/psGpu.js';
+import {SmithWatermanBase} from '../swAlgoBase.js';
+
+const utils = {
+	defer: function(func){
+		return setTimeout(func,0);
+	}
 };
 
-import * as utils from '../../util/misc.js';
-import {psGpu} from '../../lib/psGpu.js';
-import {SmithWatermanBase} from './swAlgoBase.js';
-
-
-const MAX_CHAINS = 1000;
 const modDir = [
 		[0,0], // don't move
 		[0,1],
 		[1,0],
 		[1,1]
 	];
+
 
 class swAlgoGpu extends SmithWatermanBase{
 	constructor(name, a, b, opts){
@@ -163,7 +163,7 @@ class swAlgoGpu extends SmithWatermanBase{
 		let chains = [];
 		let root = {score:Number.MAX_VALUE};
 		this.resetShareMarkers(Number.MAX_VALUE);
-		while(index.size > 0 && chains.length < MAX_CHAINS && root.score >= this.ScoreSignificant){
+		while(index.size > 0 && chains.length < this.MaxChains && root.score >= this.ScoreSignificant){
 			root = Array.from(index.values())
 				.sort((a,b)=>{
 					let ord = b.score - a.score;
@@ -221,7 +221,7 @@ class swAlgoGpu extends SmithWatermanBase{
 				}
 				return ord;
 			})
-			.slice(0,Math.min(MAX_CHAINS,chains.length))
+			.slice(0,Math.min(this.MaxChains,chains.length))
 			;
 		this.submissions.forEach((sub)=>{
 			sub.forEach((lex)=>{
@@ -235,14 +235,9 @@ class swAlgoGpu extends SmithWatermanBase{
 		return chains;
 	}
 
-	debugDraw(){
-		let body = document.body;
-		let table = this.gpu.HtmlElement;
-		if(table !== body.firstChild){
-			body.insertBefore(table,body.firstChild);
-		}
+	postMessage(msg){
+		postMessage(msg);
 	}
-
 
 }
 
@@ -335,3 +330,32 @@ const gpuFragSW = (`
  * using only the human eye, though a spectromitor can easily distinguish
  * between the two.
  */
+
+
+let matrix = null;
+
+
+onmessage = function(params){
+	if(matrix === null && params.data.action === 'start') {
+		console.log("Initializing web worker");
+
+		let id = params.data.name;
+		let a = params.data.submissions[0];
+		let b = params.data.submissions[1];
+		let opts = params.data.options;
+
+		matrix = new swAlgoGpu(id,a,b,opts);
+	}
+	if(matrix !== null){
+		if(params.data.action === 'start'){
+			console.log("Starting web worker");
+			matrix.start();
+		}
+		else if(params.data.action === 'pause'){
+			matrix.pause();
+		}
+		else if(params.data.action === 'stop'){
+			matrix.stop();
+		}
+	}
+};

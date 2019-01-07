@@ -1,5 +1,6 @@
 'use strict';
 
+import '../../util/misc.js';
 
 export{
 	SmithWatermanBase
@@ -37,19 +38,30 @@ export default class SmithWatermanBase{
 	}
 
 	constructor(name, a, b, opts){
-		this._ = {};
-		this._.scores = {
-			match:+2,
-			mismatch: -1,
-			skippable: -1,
-			terminus: 5,
-			significant: 5,
+		this._ = {
+			scores: {
+				match:+2,
+				mismatch: -1,
+				skippable: -1,
+				terminus: 5,
+				significant: 5,
+			},
+			variant:'swAlgoCell',
 		};
-		this._.scores = JSON.merge(this._.scores, opts);
+		this._ = JSON.merge(this._, opts);
 
 		this.remaining = 0;
 		this.totalSize = a.length*b.length;
 		this.tokenMatch = 0;
+
+		this.submissions = [
+				{length:a.length},
+				{length:b.length}
+			];
+	}
+
+	get MaxChains(){
+		return 100;
 	}
 
 	get remaining(){

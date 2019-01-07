@@ -2,13 +2,13 @@
 
 
 export{
-	swAlgoCell
+	swAlgoWebWorker
 };
 
 import SmithWatermanBase from './swAlgoBase.js';
 
 
-class swAlgoCell extends SmithWatermanBase{
+class swAlgoWebWorker extends SmithWatermanBase{
 
 	constructor(name, a, b, opts){
 		super(name,a,b,opts);
@@ -19,12 +19,12 @@ class swAlgoCell extends SmithWatermanBase{
 
 		let WorkerUrl = window.location.pathname.split('/');
 		WorkerUrl.pop();
-		WorkerUrl = WorkerUrl.concat('/scripts/DeepDiff/algorithm/smithwaterman/webworkers/swAlgoCell.js'.split('/'));
+		WorkerUrl = WorkerUrl.concat('/scripts/DeepDiff/algorithm/smithwaterman/webworkers/'+this._.variant+'.js'.split('/'));
 		WorkerUrl = WorkerUrl.filter((u)=>{return u;});
 		WorkerUrl.unshift(window.location.origin);
 		WorkerUrl = WorkerUrl.join('/');
 
-		this.thread = new Worker(WorkerUrl);
+		this.thread = new Worker(WorkerUrl, {type:'module'});
 		this.thread.onmessage = (msg)=>{
 			this.postMessage(msg);
 		};
