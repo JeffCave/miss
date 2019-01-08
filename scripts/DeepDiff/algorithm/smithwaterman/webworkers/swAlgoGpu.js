@@ -268,7 +268,7 @@ const gpuFragInit = (`
 		vec4 n = texture2D(u_image, vec2(0,v_texCoord.y));
 		float score = 0.0;
 		score = (w.rg == n.ba) ? scores.x : scores.y;
-		gl_FragColor = vec4(score,0,0,score);
+		gl_FragColor = vec4(score,0,0,0);
 	}
 `);
 
@@ -290,12 +290,12 @@ const gpuFragSW = (`
 	 *
 	 * https://stackoverflow.com/a/18454838/1961413
 	 */
-	const vec4 bitEnc = vec4(1.,255.,65025.,16581375.);
-	const vec4 bitDec = 1./bitEnc;
+	const vec4 bitEnc = vec4(1.0, 255.0, 65025.0, 16581375.0);
+	const vec4 bitDec = 1.0/bitEnc;
 	vec4 EncodeFloatRGBA (float v) {
 		vec4 enc = bitEnc * v;
 		enc = fract(enc);
-		enc -= enc.yzww * vec2(1./255., 0.).xxxy;
+		enc -= enc.yzww * vec2(1.0/255.0, 0.0).xxxy;
 		return enc;
 	}
 	float DecodeFloatRGBA (vec4 v) {
@@ -327,16 +327,23 @@ const gpuFragSW = (`
 			w = pixNull;
 		}
 		// Find the max score from the chain
-		here.g = max(w.a, n.a);
-		here.g = max(here.g, nw.a);
+		vec4 score = vec4(0.0, 0.0, 0.0, 0.0);
+		score.x = DecodeFloatRGBA(vec4(nw.a, 0.0, 0.0, 0.0));
+		score.y = DecodeFloatRGBA(vec4( w.a, 0.0, 0.0, 0.0));
+		score.z = DecodeFloatRGBA(vec4( n.a, 0.0, 0.0, 0.0));
+		// pick the biggest of the highest score
+		score.w = 0.0;
+		score.w = max(score.w, score.x);
+		score.w = max(score.w, score.y);
+		score.w = max(score.w, score.z);
 		// add up our new score
-		here.a  = here.g + here.r;
+		score.w = score.w + here.r;
 
 		// Figure out what the directionality of the score was
-		if(nw.a == here.g){
+		if(score.x == score.w){
 			here.g = 3.0/256.0;
 		}
-		else if(w.a == here.g){
+		else if(score.y == score.w){
 			here.g = 2.0/256.0;
 		}
 		else{
@@ -344,7 +351,8 @@ const gpuFragSW = (`
 		}
 
 		// apply the skip penalty if it was anything but NW
-		here.a += scores.z * (here.g==float(3) ? float(0) : float(1));
+		score.w += scores.z * (here.g==float(3) ? float(0) : float(1));
+		here.a = score.w;
 		/*******************************/
 
 		gl_FragColor = here;
