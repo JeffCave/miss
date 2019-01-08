@@ -147,7 +147,7 @@ class swAlgoGpu extends SmithWatermanBase{
 			let d = {
 				i:i,
 				score:values[i+3],
-				dir: values[i+2]
+				dir: values[i+1]
 			};
 
 			if(d.score > 0){
@@ -327,24 +327,24 @@ const gpuFragSW = (`
 			w = pixNull;
 		}
 		// Find the max score from the chain
-		here.b = max(w.a, n.a);
-		here.b = max(here.b, nw.a);
+		here.g = max(w.a, n.a);
+		here.g = max(here.g, nw.a);
 		// add up our new score
-		here.a  = here.b + here.r;
+		here.a  = here.g + here.r;
 
 		// Figure out what the directionality of the score was
-		if(nw.a == here.b){
-			here.b = 3.0/256.0;
+		if(nw.a == here.g){
+			here.g = 3.0/256.0;
 		}
-		else if(w.a == here.b){
-			here.b = 2.0/256.0;
+		else if(w.a == here.g){
+			here.g = 2.0/256.0;
 		}
 		else{
-			here.b = 1.0/256.0;
+			here.g = 1.0/256.0;
 		}
 
 		// apply the skip penalty if it was anything but NW
-		here.a += scores.z * (here.b==float(3) ? float(0) : float(1));
+		here.a += scores.z * (here.g==float(3) ? float(0) : float(1));
 		/*******************************/
 
 		gl_FragColor = here;
