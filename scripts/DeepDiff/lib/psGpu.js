@@ -274,7 +274,7 @@ class psGpu{
 		/* MATCH = 2; SKIP = -1; MISMATCH = -1; */
 		let scores = program.uniforms.scores;
 		let sValues = [2,-1,-1].map((d)=>{
-			return d/256.0;
+			return (d+127)/255.0;
 		});
 		gl.uniform3fv(scores, sValues);
 	}
@@ -317,8 +317,11 @@ class psGpu{
 				gl.shaderSource(shader, s.source);
 				gl.compileShader(shader);
 				if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+					let error = gl.getError();
+					let msg = gl.getShaderInfoLog(shader);
+					msg = msg.substr(0,msg.length-1).trim();
 					gl.deleteShader(shader);
-					throw new Error('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
+					throw new Error('An error occurred compiling shader: ('+error+')' + msg);
 				}
 				s.shader = shader;
 				return s;

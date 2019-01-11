@@ -35,7 +35,14 @@ class swAlgoGpu extends SmithWatermanBase{
 
 		this.remaining = a.length + b.length - 1;
 		this.totalSize = this.remaining;
-		this.tokenMatch = 0;
+
+		this.submissions.forEach((sub,s)=>{
+			sub.forEach((lex,i)=>{
+				if(lex.lexeme > 65535){
+					throw new Error('Token '+name+'['+s+']['+i+'] is greater than 65535 ('+lex.lexeme+')');
+				}
+			});
+		});
 
 		this.handlers = {
 			progress:[],
@@ -59,10 +66,9 @@ class swAlgoGpu extends SmithWatermanBase{
 		}
 		// Write the values to the image
 		this.gpu.write(data);
-		//this.debugDraw();
+		//this.postMessage({type:'progress', data:this.toJSON()});
 		this.gpu.run('initializeSpace');
-		//this.debugDraw();
-
+		//this.postMessage({type:'progress', data:this.toJSON()});
 
 		this.start();
 	}
@@ -108,17 +114,17 @@ class swAlgoGpu extends SmithWatermanBase{
 			msg.type = 'complete';
 		}
 
-		this.destroy();
 		this.postMessage(msg);
+		this.destroy();
 	}
 
 	calc(){
 		let timeLimit = Date.now() + 100;
 		while(timeLimit > Date.now()){
 			for(let limit = 100; limit>=0 && this.remaining > 0; this.remaining--, limit--){
-				//this.debugDraw();
+				//this.postMessage({type:'progress', data:this.toJSON()});
 				this.gpu.run('smithwaterman');
-				//this.debugDraw();
+				//this.postMessage({type:'progress', data:this.toJSON()});
 			}
 		}
 
@@ -146,9 +152,11 @@ class swAlgoGpu extends SmithWatermanBase{
 		for(let i=values.length-4; i>=0; i-=4){
 			let d = {
 				i:i,
-				score:values[i+3],
 				dir: values[i+1]
 			};
+
+			d.score = new Uint16Array(values.buffer,i,2);
+			d.score = d.score[1];
 
 			if(d.score > 0){
 				index.set(d.i, d);
@@ -215,7 +223,7 @@ class swAlgoGpu extends SmithWatermanBase{
 			}
 
 			let finItem = chain.history[chain.history.length-1];
-			chain.score -= Math.max(0,finItem.score-2);
+			chain.score -= Math.max(0,finItem.score-this.ScoreMatch);
 			if(chain.score >= this.ScoreSignificant){
 				resolved.push(chain);
 			}
@@ -246,7 +254,55 @@ class swAlgoGpu extends SmithWatermanBase{
 	}
 
 	postMessage(msg){
+		//msg.html = this.html;
 		postMessage(msg);
+	}
+
+	get html(){
+		//if(this._html && this._htmlN >= 2){
+		//	return this._html;
+		//}
+		if(!this.gpu){
+			return this._html || '';
+		}
+
+		function format(val){
+			val = "\u00a0\u00a0\u00a0" + val;
+			val = val.split('').reverse().slice(0,3).reverse().join('');
+			return val;
+		}
+
+		let val = this.gpu.read();
+		let values = Array.from(val).map(d=>{
+			return format(d);
+		});
+		let v = 0;
+
+		let table = [];
+		let row = ['&nbsp;'];
+		for(let c=0; c<this.gpu.width; c++){
+			row.push(c);
+		}
+		table.push(row.map((d)=>{return '<td>'+d+'</td>';}).join(''));
+
+		for(let r=0; r<this.gpu.height && v<values.length; r++){
+			let row = [r];
+			for(let c=0; c<this.gpu.width && v<values.length; c++){
+				let cell = [
+					[values[v+0],values[v+1]].join('&nbsp;'),
+					[values[v+2],values[v+3]].join('&nbsp;'),
+				].join('\n');
+				v += 4;
+				row.push(cell);
+			}
+			table.push(row.map((d)=>{return '<td style="border:1px solid black;">'+d+'</td>';}).join(''));
+		}
+		table = table.join('</tr><tr>');
+
+		this._html = "<table style='border:1px solid black;'><tr>"+table+"</tr></table>";
+		this._htmlN = (this._htmlN || 0) +1;
+
+		return this._html;
 	}
 
 }
@@ -267,8 +323,17 @@ const gpuFragInit = (`
 		vec4 w = texture2D(u_image, vec2(v_texCoord.x,0));
 		vec4 n = texture2D(u_image, vec2(0,v_texCoord.y));
 		float score = 0.0;
-		score = (w.rg == n.ba) ? scores.x : scores.y;
-		gl_FragColor = vec4(score,0,0,0);
+		w *= 255.0;
+		n *= 255.0;
+		// exact match
+		if(int(w.r) == int(n.b) && int(w.g) == int(n.a)){
+			score = scores.x;
+		}
+		// a mis-match
+		else{
+			score = scores.y;
+		}
+		gl_FragColor = vec4(score,0,score,0);
 	}
 `);
 
@@ -285,12 +350,12 @@ const gpuFragSW = (`
 	uniform vec2 u_resolution;
 	uniform vec3 scores;
 
-	/****************************************************
+	/*******************************************************
 	 * Encode values across vector positions
 	 *
 	 * https://stackoverflow.com/a/18454838/1961413
 	 */
-	const vec4 bitEnc = vec4(1.0, 255.0, 65025.0, 16581375.0);
+	const vec4 bitEnc = vec4(255.0, 65535.0, 16777215.0, 4294967295.0);
 	const vec4 bitDec = 1.0/bitEnc;
 	vec4 EncodeFloatRGBA (float v) {
 		vec4 enc = bitEnc * v;
@@ -303,20 +368,22 @@ const gpuFragSW = (`
 	}
 	/* https://stackoverflow.com/a/18454838/1961413
 	 *
-	 *************************************************/
+	 *******************************************************/
 
 
 	void main() {
 
-		/*******************************/
+		vec3 scoresExpanded = (scores*bitEnc.x)-127.0;
 		// calculate the size of a pixel
 		vec2 pixSize = vec2(1.0, 1.0) / u_resolution;
 		vec4 pixNull = vec4(0.0,0.0,0.0,0.0);
+
 		// find our four critical points
 		vec4 here = texture2D(u_image, v_texCoord);
 		vec4 nw   = texture2D(u_image, v_texCoord + vec2(-pixSize.x,-pixSize.y));
 		vec4 w    = texture2D(u_image, v_texCoord + vec2(-pixSize.x,         0));
 		vec4 n    = texture2D(u_image, v_texCoord + vec2(         0,-pixSize.y));
+
 		// test for out of bounds values
 		if(v_texCoord.y <= pixSize.y){
 			nw = pixNull;
@@ -326,35 +393,48 @@ const gpuFragSW = (`
 			nw = pixNull;
 			w = pixNull;
 		}
+
+		/*******************************/
 		// Find the max score from the chain
-		vec4 score = vec4(0.0, 0.0, 0.0, 0.0);
-		score.x = DecodeFloatRGBA(vec4(nw.a, 0.0, 0.0, 0.0));
-		score.y = DecodeFloatRGBA(vec4( w.a, 0.0, 0.0, 0.0));
-		score.z = DecodeFloatRGBA(vec4( n.a, 0.0, 0.0, 0.0));
+		float nwScore = (nw.b*bitEnc.x) + (nw.a*bitEnc.y);
+		float wScore  = ( w.b*bitEnc.x) + ( w.a*bitEnc.y);
+		float nScore  = ( n.b*bitEnc.x) + ( n.a*bitEnc.y);
+
 		// pick the biggest of the highest score
-		score.w = 0.0;
-		score.w = max(score.w, score.x);
-		score.w = max(score.w, score.y);
-		score.w = max(score.w, score.z);
-		// add up our new score
-		score.w = score.w + here.r;
+		float score = 0.0;
+		score = max(score, nwScore);
+		score = max(score,  wScore);
+		score = max(score,  nScore);
 
 		// Figure out what the directionality of the score was
-		if(score.x == score.w){
-			here.g = 3.0/256.0;
+		if(int(score) == int(nwScore)){
+			here.g = 3.0/bitEnc.x;
+			// remove the skip penalty for the diagonal case (we add it later)
+			score -= scoresExpanded.z;
 		}
-		else if(score.y == score.w){
-			here.g = 2.0/256.0;
+		else if(int(score) == int(wScore)){
+			here.g = 2.0/bitEnc.x;
 		}
 		else{
-			here.g = 1.0/256.0;
+			here.g = 1.0/bitEnc.x;
 		}
 
-		// apply the skip penalty if it was anything but NW
-		score.w += scores.z * (here.g==float(3) ? float(0) : float(1));
-		here.a = score.w;
+		// apply the skip penalty (we already removed it if it was NW)
+		score += scoresExpanded.z;
+
+		// add up our new score
+		score += (here.r*bitEnc.x)-127.0;
+
+		// clamp it to Zero
+		score = max(score , 0.0);
+		score = min(score , bitEnc.y);
+
+		// place the result in the last two registers
+		here.a = floor(score / 256.0);
+		here.b = score - (here.a*256.0);
 		/*******************************/
 
+		here.ba = here.ba / bitEnc.x;
 		gl_FragColor = here;
 	}
 `);

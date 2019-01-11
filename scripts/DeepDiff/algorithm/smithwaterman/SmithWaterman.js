@@ -28,7 +28,7 @@ import {swAlgoWebWorker} from './swAlgoWebWorker.js';
 	};
 });
 // also register a default one
-AlgorithmRegistry.processors['smithwaterman'] = AlgorithmRegistry.processors['smithwaterman-swAlgoCell'];
+AlgorithmRegistry.processors['smithwaterman'] = AlgorithmRegistry.processors['smithwaterman-swAlgoGpu'];
 
 
 
@@ -149,6 +149,9 @@ async function ProcSW(req, progHandler=()=>{}) {
 					thread = null;
 					delete threads[req.name];
 					break;
+			}
+			if(msg.html){
+				document.querySelector('pre').innerHTML = msg.html;
 			}
 			handler(msg);
 		};
