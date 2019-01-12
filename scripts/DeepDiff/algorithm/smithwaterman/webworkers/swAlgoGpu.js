@@ -33,9 +33,26 @@ class swAlgoGpu extends SmithWatermanBase{
 		this.name = name;
 		this.submissions = [a,b];
 
-		this.remaining = a.length + b.length - 1;
+		this.cycles = a.length + b.length - 1;
+		this.remaining =
+			// initialization loop and write to GPU
+			a.length + b.length + 1 +
+			// apply initial score if values equal each other
+			1 +
+			// the number of cycles to calculate the space
+			this.cycles +
+			// number of cycles to process the chains
+			(a.length * b.length) +
+			0;
 		this.totalSize = this.remaining;
-		this.tokenMatch = 0;
+
+		this.submissions.forEach((sub,s)=>{
+			sub.forEach((lex,i)=>{
+				if(lex.lexeme > 65535){
+					throw new Error('Token '+name+'['+s+']['+i+'] is greater than 65535 ('+lex.lexeme+')');
+				}
+			});
+		});
 
 		this.handlers = {
 			progress:[],
@@ -53,16 +70,21 @@ class swAlgoGpu extends SmithWatermanBase{
 		let data16 = new Uint16Array(data.buffer);
 		for(let x=0,pos=0; x < this.gpu.width; x++,pos+=2){
 			data16[pos] = this.submissions[0][x].lexeme;
+			this.remaining--;
 		}
+		this.postMessage({type:'progress', data:this.toJSON()});
 		for(let y=0,pos=1; y < this.gpu.height; y++,pos+=(this.gpu.width*2)){
 			data16[pos] = this.submissions[1][y].lexeme;
+			this.remaining--;
 		}
+		this.postMessage({type:'progress', data:this.toJSON()});
 		// Write the values to the image
 		this.gpu.write(data);
-		//this.debugDraw();
+		this.remaining--;
+		this.postMessage({type:'progress', data:this.toJSON()});
 		this.gpu.run('initializeSpace');
-		//this.debugDraw();
-
+		this.remaining--;
+		this.postMessage({type:'progress', data:this.toJSON()});
 
 		this.start();
 	}
@@ -108,17 +130,18 @@ class swAlgoGpu extends SmithWatermanBase{
 			msg.type = 'complete';
 		}
 
-		this.destroy();
 		this.postMessage(msg);
+		this.destroy();
 	}
 
 	calc(){
 		let timeLimit = Date.now() + 100;
 		while(timeLimit > Date.now()){
-			for(let limit = 100; limit>=0 && this.remaining > 0; this.remaining--, limit--){
-				//this.debugDraw();
+			for(let limit = 100; limit>=0 && this.cycles > 0; this.remaining--, limit--, this.cycles--){
+				//this.postMessage({type:'progress', data:this.toJSON()});
 				this.gpu.run('smithwaterman');
-				//this.debugDraw();
+				//this.postMessage({type:'progress', data:this.toJSON()});
+				this.remaining--;
 			}
 		}
 
@@ -126,7 +149,7 @@ class swAlgoGpu extends SmithWatermanBase{
 		let msg = {type:'progress', data:this.toJSON()};
 		this.postMessage(msg);
 
-		if(this.remaining > 0){
+		if(this.cycles > 0){
 			utils.defer(()=>{
 				this.calc();
 			});
@@ -146,25 +169,33 @@ class swAlgoGpu extends SmithWatermanBase{
 		for(let i=values.length-4; i>=0; i-=4){
 			let d = {
 				i:i,
-				score:values[i+3],
-				dir: values[i+2]
+				dir: values[i+1]
 			};
+
+			d.score = new Uint16Array(values.buffer,i,2);
+			d.score = d.score[1];
 
 			if(d.score > 0){
 				index.set(d.i, d);
 			}
+			else{
+				this.remaining--;
+			}
 		}
 		values = null;
 
+		this.remaining = index.size;
+		this.postMessage({type:'progress', data:this.toJSON()});
 
 		/*
 		* Now for the fun part
 		*/
-		let chains = [];
-		let root = {score:Number.MAX_VALUE};
+		let resolved = [];
+		let chain = {score:Number.MAX_VALUE};
 		this.resetShareMarkers(Number.MAX_VALUE);
-		while(index.size > 0 && chains.length < this.MaxChains && root.score >= this.ScoreSignificant){
-			root = Array.from(index.values())
+
+		while(index.size > 0 && resolved.length < this.MaxChains && chain.score >= this.ScoreSignificant){
+			chain = Array.from(index.values())
 				.sort((a,b)=>{
 					let ord = b.score - a.score;
 					if(ord === 0){
@@ -174,15 +205,19 @@ class swAlgoGpu extends SmithWatermanBase{
 				})
 				.shift()
 				;
-			if(!root.score){
-				index.delete(root.i);
+			if(!chain.score){
+				index.delete(chain.i);
 				console.warn('This should never happen');
 				continue;
 			}
+			this.remaining = index.size;
+			this.postMessage({type:'progress', data:this.toJSON()});
 
-			root.history = [];
-			for(let item = root; item; item = index.get(item.prev)){
-				root.history.push(item);
+			// walk the chain checking for coordinates we have already assigned
+			// to a previous chain
+			chain.history = [];
+			for(let item = chain; item; item = index.get(item.prev)){
+				chain.history.push(item);
 				index.delete(item.i);
 
 				item.x = Math.floor(item.i/4)%this.gpu.width;
@@ -194,26 +229,50 @@ class swAlgoGpu extends SmithWatermanBase{
 				 */
 				let a = this.submissions[0][item.x];
 				let b = this.submissions[1][item.y];
-				if(a.shared < chains.length || b.shared < chains.length){
+				if(a.shared < resolved.length || b.shared < resolved.length){
 					item.prev = -1;
 					continue;
 				}
-				a.shared = chains.length;
-				b.shared = chains.length;
+				// this element belongs to this chain, indicate that future
+				// chains should not use it
+				a.shared = resolved.length;
+				b.shared = resolved.length;
 
+
+				// map the next node in the chain
 				let md = modDir[item.dir%modDir.length];
 				item.prev = item.i;
 				item.prev -= md[0] * 1 * 4;
 				item.prev -= md[1] * this.gpu.width * 4;
 			}
-			let finItem = root.history[root.history.length-1];
-			root.score -= Math.max(0,finItem.score-2);
-			if(root.score >= this.ScoreSignificant){
-				chains.push(root);
-			}
+
+			let PushChain = (chain)=>{
+				let finItem = chain.history[chain.history.length-1];
+				chain.score -= Math.max(0,finItem.score-this.ScoreMatch);
+				if(chain.score >= this.ScoreSignificant){
+					resolved.push(chain);
+				}
+			};
+			//let current = chain.history.length-1;
+			//let highwater = current;
+			//for(; current >=0; current--){
+			//	let c = chain.history[current];
+			//	let h = chain.history[highwater];
+			//	if(c.score >= h.score){
+			//		highwater = current;
+			//		continue;
+			//	}
+			//	let diff = h.score - c.score;
+			//	if(diff > this.ScoreTerminus){
+			//		PushChain(chain.slice(highwater,chain.length-1));
+			//		chain = chain.slice(0,current);
+			//	}
+			//}
+			PushChain(chain);
 		}
+		this.postMessage({type:'progress', data:this.toJSON()});
 		index.clear();
-		chains = chains
+		resolved = resolved
 			.sort((a,b)=>{
 				let ord = b.score - a.score;
 				if(ord === 0){
@@ -221,22 +280,77 @@ class swAlgoGpu extends SmithWatermanBase{
 				}
 				return ord;
 			})
-			.slice(0,Math.min(this.MaxChains,chains.length))
+			.slice(0,Math.min(this.MaxChains,resolved.length))
 			;
+		// we removed a bunch of chains, but may have marked lexemes as shared.
+		// they aren't anymore, so re-run the entire "shared" markers
+		this.remaining = this.submissions[0].length + this.submissions[1].length;
 		this.submissions.forEach((sub)=>{
+			this.postMessage({type:'progress', data:this.toJSON()});
 			sub.forEach((lex)=>{
-				if(lex.shared > chains.length){
+				this.remaining--;
+				if(lex.shared > resolved.length){
 					lex.shared = null;
 				}
 			});
 		});
+		this.postMessage({type:'progress', data:this.toJSON()});
 
-		this._chains = chains;
-		return chains;
+		this._chains = resolved;
+		return resolved;
 	}
 
 	postMessage(msg){
+		//msg.html = this.html;
 		postMessage(msg);
+	}
+
+	get html(){
+		//if(this._html && this._htmlN >= 2){
+		//	return this._html;
+		//}
+		if(!this.gpu){
+			return this._html || '';
+		}
+
+		function format(val){
+			val = "\u00a0\u00a0\u00a0" + val;
+			val = val.split('').reverse().slice(0,3).reverse().join('');
+			return val;
+		}
+
+		let val = this.gpu.read();
+		let values = Array.from(val).map(d=>{
+			return format(d);
+		});
+		let v = 0;
+
+		let table = [];
+		let row = ['&nbsp;'];
+		for(let c=0; c<this.gpu.width; c++){
+			row.push(this.submissions[0][c].lexeme + '<sub>['+c+']</sub>');
+		}
+		table.push(row.map((d,i)=>{return '<th>'+d+'</th>';}).join(''));
+
+		for(let r=0; r<this.gpu.height && v<values.length; r++){
+			let row = [this.submissions[1][r].lexeme+'<sub>['+r+']</sub>'];
+			for(let c=0; c<this.gpu.width && v<values.length; c++){
+				let cell = [
+					[values[v+0]-127,values[v+1]].join('&nbsp;'),
+					[values[v+2]    ,values[v+3]].join('&nbsp;'),
+					'<sub>['+[r,c].join(',')+']</sub>',
+				].join('\n');
+				v += 4;
+				row.push(cell);
+			}
+			table.push(row.map((d)=>{return '<td style="border:1px solid black;">'+d+'</td>';}).join(''));
+		}
+		table = table.join('</tr><tr>');
+
+		this._html = "<table style='border:1px solid black;'><tr>"+table+"</tr></table>";
+		this._htmlN = (this._htmlN || 0) +1;
+
+		return this._html;
 	}
 
 }
@@ -251,14 +365,24 @@ const gpuFragInit = (`
 
 	// constants
 	uniform vec2 u_resolution;
-	uniform vec3 scores;
+	uniform vec4 scores;
 
 	void main() {
 		vec4 w = texture2D(u_image, vec2(v_texCoord.x,0));
 		vec4 n = texture2D(u_image, vec2(0,v_texCoord.y));
 		float score = 0.0;
-		score = (w.rg == n.ba) ? scores.x : scores.y;
-		gl_FragColor = vec4(score,0,0,score);
+		w *= 255.0;
+		n *= 255.0;
+		// exact match
+		//TODO: There is a bug visible in the 'bellican/coelicanth' compare where (4 == 3)
+		if(int(w.r) == int(n.b) && int(w.g) == int(n.a)){
+			score = scores.x;
+		}
+		// a mis-match
+		else{
+			score = scores.y;
+		}
+		gl_FragColor = vec4(score,0,score,0);
 	}
 `);
 
@@ -273,19 +397,43 @@ const gpuFragSW = (`
 
 	// constants
 	uniform vec2 u_resolution;
-	uniform vec3 scores;
+	uniform vec4 scores;
+
+	/*******************************************************
+	 * Encode values across vector positions
+	 *
+	 * https://stackoverflow.com/a/18454838/1961413
+	 */
+	const vec4 bitEnc = vec4(255.0, 65535.0, 16777215.0, 4294967295.0);
+	const vec4 bitDec = 1.0/bitEnc;
+	vec4 EncodeFloatRGBA (float v) {
+		vec4 enc = bitEnc * v;
+		enc = fract(enc);
+		enc -= enc.yzww * vec2(1.0/255.0, 0.0).xxxy;
+		return enc;
+	}
+	float DecodeFloatRGBA (vec4 v) {
+		return dot(v, bitDec);
+	}
+	/* https://stackoverflow.com/a/18454838/1961413
+	 *
+	 *******************************************************/
+
 
 	void main() {
+		int dir = 0;
 
-		/*******************************/
+		vec4 scoresExpanded = (scores*bitEnc.x)-127.0;
 		// calculate the size of a pixel
 		vec2 pixSize = vec2(1.0, 1.0) / u_resolution;
 		vec4 pixNull = vec4(0.0,0.0,0.0,0.0);
+
 		// find our four critical points
 		vec4 here = texture2D(u_image, v_texCoord);
 		vec4 nw   = texture2D(u_image, v_texCoord + vec2(-pixSize.x,-pixSize.y));
 		vec4 w    = texture2D(u_image, v_texCoord + vec2(-pixSize.x,         0));
 		vec4 n    = texture2D(u_image, v_texCoord + vec2(         0,-pixSize.y));
+
 		// test for out of bounds values
 		if(v_texCoord.y <= pixSize.y){
 			nw = pixNull;
@@ -295,25 +443,76 @@ const gpuFragSW = (`
 			nw = pixNull;
 			w = pixNull;
 		}
+
+		/*******************************/
+		// Get the running terminus
+
+		vec4 term  = vec4(0.0, n.g, w.g, nw.g);
+		term = floor((term * bitEnc.x) / 4.0);
+
 		// Find the max score from the chain
-		here.b = max(w.a, n.a);
-		here.b = max(here.b, nw.a);
-		// add up our new score
-		here.a  = here.b + here.r;
+		float nwScore = (nw.b*bitEnc.x) + (nw.a*bitEnc.y);
+		float wScore  = ( w.b*bitEnc.x) + ( w.a*bitEnc.y);
+		float nScore  = ( n.b*bitEnc.x) + ( n.a*bitEnc.y);
+		vec4 score = vec4(0.0, nScore, wScore, nwScore);
+
+		// pick the biggest of the highest score
+		score.x = max(score.x, score[1]);
+		score.x = max(score.x, score[2]);
+		score.x = max(score.x, score[3]);
 
 		// Figure out what the directionality of the score was
-		if(nw.a == here.b){
-			here.b = 3.0/256.0;
+		if(int(score.x) == int(score[3])){
+			dir = 3;
+			term.x = term[3];
 		}
-		else if(w.a == here.b){
-			here.b = 2.0/256.0;
+		else if(int(score.x) == int(score[2])){
+			dir = 2;
+			term.x = term[2];
 		}
 		else{
-			here.b = 1.0/256.0;
+			dir = 1;
+			term.x = term[1];
+		}
+		term.y = score.x;
+
+
+		// apply the skip penalty (we already removed it if it was NW)
+		if(dir != 3){
+			score.x += scoresExpanded.z;
+		}
+		// add up our new score
+		score.x += (here.r*bitEnc.x)-127.0;
+
+		// clamp it to Zero
+		score.x = max(score.x , 0.0);
+		score.x = min(score.x , bitEnc.y);
+
+		// calcuate ther termination value
+		term.y -= score.x;
+		term.x += term.y;
+		if(term.y < 0.0){
+			term.x = 0.0;
+		}
+		if(term.x > score.w){
+			score.x = 0.0;
+			term.x = 0.0;
 		}
 
-		// apply the skip penalty if it was anything but NW
-		here.a += scores.z * (here.b==float(3) ? float(0) : float(1));
+		// place the result in the last two registers
+		here.b = score.x - (here.a*256.0);
+		here.a = floor(score.x / 256.0);
+
+		// encode the directionality and terminus in a single register
+		// direction
+		here.g = float(dir);
+		here.g /= 4.0;
+		here.g -= floor(here.g);
+		here.g *= 4.0;
+		// terminus
+		here.g += floor(term.x) * 4.0;
+
+		here.gba = here.gba / bitEnc.x;
 		/*******************************/
 
 		gl_FragColor = here;

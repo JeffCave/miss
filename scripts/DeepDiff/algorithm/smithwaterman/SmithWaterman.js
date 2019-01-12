@@ -28,13 +28,15 @@ import {swAlgoWebWorker} from './swAlgoWebWorker.js';
 	};
 });
 // also register a default one
-AlgorithmRegistry.processors['smithwaterman'] = AlgorithmRegistry.processors['smithwaterman-swAlgoCell'];
+AlgorithmRegistry.processors['smithwaterman'] = AlgorithmRegistry.processors['smithwaterman-swAlgoGpu'];
 
 
 
 
 const threads = {};
 const scores = {
+	MAX_SCORE:2**16,
+	MIN_SCORE:0,
 	// an exact positional match (diagonal in SmithWaterman terms). This is
 	// the highest possible match.
 	match:+2,
@@ -121,7 +123,7 @@ async function ProcSW(req, progHandler=()=>{}) {
 	let endLists = await new Promise((resolve,reject)=>{
 		let options = {
 			scores:scores,
-			variant:SmithWaterman,
+			variant:SmithWaterman
 		};
 		let thread = new swAlgoWebWorker(req.name, aTokens, bTokens, options);
 		threads[req.name] = thread;
@@ -147,6 +149,9 @@ async function ProcSW(req, progHandler=()=>{}) {
 					thread = null;
 					delete threads[req.name];
 					break;
+			}
+			if(msg.html){
+				document.querySelector('pre').innerHTML = msg.html;
 			}
 			handler(msg);
 		};

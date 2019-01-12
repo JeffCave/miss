@@ -271,12 +271,12 @@ class psGpu{
 		// lookup uniforms
 		let resolutionLocation = program.uniforms.resolution;
 		gl.uniform2f(resolutionLocation, gl.drawingBufferWidth, gl.drawingBufferHeight);
-		/* MATCH = 2; SKIP = -1; MISMATCH = -1; */
+		/* MATCH = 2; SKIP = -1; MISMATCH = -1; TERMINUS=5 */
 		let scores = program.uniforms.scores;
-		let sValues = [2,-1,-1].map((d)=>{
-			return d/256.0;
+		let sValues = [2,-1,-1,5].map((d)=>{
+			return (d+127)/255.0;
 		});
-		gl.uniform3fv(scores, sValues);
+		gl.uniform4fv(scores, sValues);
 	}
 
 	get VertexShader(){
@@ -317,8 +317,11 @@ class psGpu{
 				gl.shaderSource(shader, s.source);
 				gl.compileShader(shader);
 				if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+					let error = gl.getError();
+					let msg = gl.getShaderInfoLog(shader);
+					msg = msg.substr(0,msg.length-1).trim();
 					gl.deleteShader(shader);
-					throw new Error('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
+					throw new Error('An error occurred compiling shader: ('+error+')' + msg);
 				}
 				s.shader = shader;
 				return s;
@@ -397,13 +400,13 @@ class psGpu{
 		tr.append(th);
 		for(let i=0; i<this.width; i++){
 			let th = document.createElement('th');
-			th.innerHTML = '<sub>'+i+'</sub>';
+			th.innerHTML = '<sub>['+i+']</sub>';
 			tr.append(th);
 		}
 		for(let y=0,i=0; y<this.height ; y++){
 			tr = table.insertRow(-1);
 			let th = document.createElement('th');
-			th.innerHTML = '<sub>'+y+'</sub>';
+			th.innerHTML = '<sub>['+y+']</sub>';
 			tr.append(th);
 			for(let x=0; x<this.width ; x++,i++){
 				let pix = new pixel(values,i*4);
@@ -411,6 +414,9 @@ class psGpu{
 				let td = document.createElement('td');
 				td.innerHTML = pix.values
 					.map((d,i)=>{
+						if(i === 0){
+							d = d-127;
+						}
 						let str = d.toString().split('');
 						while(str.length < 3){
 							str.unshift(String.fromCharCode(160));

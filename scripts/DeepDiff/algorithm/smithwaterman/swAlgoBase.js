@@ -146,7 +146,7 @@ export default class SmithWatermanBase{
 			msg = msg.data;
 		}
 		if(!msg.type){
-			throw new Error("Invalid message type: " + msg);
+			throw new Error("Invalid message type: " + JSON.stringify(msg));
 		}
 		if(!msg.data){
 			msg.data = this.status;

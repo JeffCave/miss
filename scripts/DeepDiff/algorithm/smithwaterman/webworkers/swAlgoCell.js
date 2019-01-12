@@ -261,9 +261,10 @@ class Matrix{
 			localScore = this.opts.scores.mismatch;
 		}
 		score += localScore;
-		if(score < 0){
-			score = 0;
-		}
+
+		// clamp the score to one byte
+		score = Math.max(score,this.opts.scores.MIN_SCORE);
+		score = Math.min(score,this.opts.scores.MAX_SCORE);
 		highscore = Math.max(score, highscore || 0);
 
 
@@ -308,11 +309,11 @@ class Matrix{
 	ResolveCandidates(){
 		let resolved = [];
 		this.tokenMatch = 0;
-		this.resetShareMarkers();
+		this.resetShareMarkers(Number.MAX_VALUE);
 
 		// sort the chains to get the best scoring ones first
 		this.finishedChains.sort((a,b)=>{return b.score-a.score;});
-		while(this.finishedChains.length > 0){
+		for(let c=0; this.finishedChains.length > 0; c++){
 			let chain = this.finishedChains.shift();
 
 			// walk the chain checking for coordinates we have already assigned
@@ -323,15 +324,20 @@ class Matrix{
 				let coords = chain.history[i];
 				let x = coords[0];
 				let y = coords[1];
-				// if we have already followed a chain, stop processing
-				if(this.submissions[0][x].shared && this.submissions[1][y].shared){
+				/*
+				 * If the character was already used by a previous chain, it
+				 * means this chain can't have it, and we have broken our chain
+				 */
+				let a = this.submissions[0][x];
+				let b = this.submissions[1][y];
+				if(a.shared && b.shared){
 					truncated = true;
 					break;
 				}
 				// this element belongs to this chain, indicate that future
 				// chains should not use it
-				this.submissions[0][x].shared = true;
-				this.submissions[1][y].shared = true;
+				a.shared = c;
+				b.shared = c;
 			}
 
 			if(!truncated){
@@ -401,13 +407,11 @@ class Matrix{
 
 		// we removed a bunch of chains, but may have marked lexemes as shared.
 		// they aren't anymore, so re-run the entire "shared" markers
-		this.resetShareMarkers();
-		resolved.forEach((chain)=>{
-			chain.history.forEach((coord)=>{
-				let x = coord[0];
-				let y = coord[1];
-				this.submissions[0][x].shared = true;
-				this.submissions[1][y].shared = true;
+		this.submissions.forEach((sub)=>{
+			sub.forEach((lex)=>{
+				if(lex.shared > resolved.length){
+					lex.shared = null;
+				}
 			});
 		});
 
@@ -429,13 +433,9 @@ class Matrix{
 			remaining: this.remaining,
 			tokenMatch: this.tokenMatch,
 			submissions: [
-					{
-						length:this.submissions[0].length
-					},
-					{
-						length:this.submissions[1].length
-					}
-				]
+				{ length:this.submissions[0].length },
+				{ length:this.submissions[1].length }
+			]
 		};
 		return json;
 	}
