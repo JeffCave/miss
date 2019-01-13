@@ -1,6 +1,6 @@
-'use strict';
-
 import '../../util/misc.js';
+
+'use strict';
 
 export{
 	SmithWatermanBase

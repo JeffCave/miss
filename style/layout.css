@@ -1,0 +1,133 @@
+* {
+	position:relative;
+}
+
+body{
+	position:relative;
+	font-family: 'Open Sans', sans-serif;
+	display: flex;
+	flex-flow: row wrap;
+	margin:0;
+	padding: 0;
+}
+
+body > * {
+	padding:1em;
+	position:relative;
+	flex: 1 100%;
+}
+
+body > header {
+	background: var(--main-color);
+	color: var(--main-color-contrast);
+	text-align: justify;
+	padding:0.1em;
+}
+
+
+a, a:link,a:visited, a:active, a:hover {
+	color:inherit;
+	text-decoration-style: wavy;
+	text-decoration-style: dotted;
+}
+
+a:hover{
+	text-shadow:0 0 0.01em black;
+}
+
+footer {
+	background: var(--main-color);
+	color: var(--main-color-contrast);
+	font-size:0.5em;
+	text-align:left;
+}
+
+main {
+	text-align: left;
+	background: white;
+}
+
+body > section:last-of-type {
+	/*background: deepskyblue*/;
+}
+
+body > section:first-of-type {
+	/*background: gold;*/
+}
+
+
+address{
+	text-decoration:none;
+	white-space: pre;
+}
+
+button, input, select{
+	border: 1px solid black;
+	border-radius:0.25em;
+	background-color:transparent;
+
+}
+
+button:hover, input:hover,input:focus, select:hover, select:focus{
+	box-shadow: 0px 0px 10px #888888;
+}
+
+button {
+	background:rgba(255,255,255,0.75);
+}
+
+label{
+	display:block;
+	font-weight: bold;
+	margin-bottom: 0;
+	margin-top:1em;
+}
+
+input,select{
+	display:block;
+	margin-top:0;
+	margin-bottom: 1em;
+	width:100%;
+}
+
+img {
+	max-width:100%;
+	height:auto;
+	border:1px solid black;
+	border-radius:0.25em;
+}
+
+table {
+	background-color: transparent;
+	max-width: 90%;
+	margin-bottom: 20px;
+	border: 1px solid #dedede;
+}
+caption {
+	padding-top: 8px;
+	padding-bottom: 8px;
+	color: #777;
+}
+th, td {
+	text-align: left;
+	padding: 8px;
+	line-height: 1.42857143;
+	vertical-align: top;
+	border-top: 1px solid #ddd;
+}
+th {
+	vertical-align: bottom;
+	border-bottom: 2px solid #ddd;
+	text-transform: none;
+	background-color: #777;
+	color: white;
+	text-align: left;
+}
+
+tbody > tr:nth-of-type(odd) {
+	background: #f9f9f9;
+}
+tbody > tr:nth-of-type(even) {
+	background: white;
+}
+

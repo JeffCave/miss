@@ -38,8 +38,6 @@ class indexPage {
 		this.files = [];
 		let self = this;
 
-		Panels.initialize();
-
 		Array.from(document.querySelectorAll('form[is="deepdiff-opts"]')).forEach(opts=>{
 			opts.ddInstance = this.runner;
 		});

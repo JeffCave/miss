@@ -142,23 +142,41 @@
 
 
  <link rel='stylesheet' href='index.css' />
+ <link rel='stylesheet' href='style/main.css' />
  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
 </head>
 <body>
- <pre></pre>
- <nav style='display:none;'>
-  <progress  value='1' min='0' max='2'>asdf</progress>
-  <input type='range' id='menu' value='0' min='0' max='3' list='forms' />
-  <datalist id='forms'>
-   <option value='0'>A</option>
-   <option value='1'>B</option>
-   <option value='2'>C</option>
-   <option value='3'>D</option>
-  </datalist>
- </nav>
+ <pre style='display:none;'></pre>
+ <header>
+  <h1>Checksims</h1>
+ </header>
+ <section>
+  <ps-panel icon='settings' state='minimize'>
+   <h1>Options</h1>
+   <form is='deepdiff-opts' state='minimize'>
+    <select name='algorithm' list='algorithms'>
+     <option value='test'>Test</option>
+    </select>
+   </form>
+  </ps-panel>
+  <ps-panel icon='folder'>
+   <h1>Files</h1>
+   <div id='files'>
+    <filedrop :onfile="onfile">&#128476; Upload a Zip</filedrop>
+    <treeview :filelist="treeData"></treeview>
+   </div>
+  </ps-panel>
+  <ps-panel icon='collections'>
+   <h1>Submissions</h1>
+   <div id='submissions'>
+    <span id='submissionMaker'>&#10133;</span>
+    <submission-list :pouchdb='db' :filter='filter'></submission-list>
+   </div>
+  </ps-panel>
+ </section>
  <main>
-  <section>
-   <i>help</i>
+  <a href=''>Help</a> | <a href=''>Reports</a> | <a href=''>Compare</a>
+  <ps-panel icon='help' state='minimize'>
    <h1>Sample Files</h1>
    <dl>
     <dt><a href='./tests/sampleassignment.zip'>Sample Assignments</a></dt>
@@ -192,75 +210,63 @@
       and is know to currently break the application.
      </dd>
    </dl>
-  </section>
-  <section id='options'>
-   <i>settings</i>
-   <h1>Options</h1>
-   <form is='deepdiff-opts'>
-    <select name='algorithm' list='algorithms'>
-     <option value='test'>Test</option>
-    </select>
-   </form>
-  </section>
-  <section id='files'>
-   <i>folder</i>
-   <h1>Files</h1>
-   <filedrop :onfile="onfile">&#128476; Upload a Zip</filedrop>
-   <treeview :filelist="treeData"></treeview>
-  </section>
-  <section id='submissions'>
-   <i>collections</i>
-   <h1>Submissions</h1>
-   <span id='submissionMaker'>&#10133;</span>
-   <submission-list :pouchdb='db' :filter='filter'></submission-list>
-  </section>
-  <section id='results'>
-   <i>show_chart</i>
+   <div id='unsupported' style='display:none;'>
+    <h1>Experimental Features required</h1>
+    <p>
+     In an effort to put this together, it seemed a good idea to use some
+     JavaScript v6 features. Unfortunately, it appears that your browser does
+     not currently support them <strong>by default</strong>
+    </p>
+    <p>
+     Don't Panic!! As of 2018, most browsers don't; however most allow you to
+     turn the features on.
+    </p>
+    <h2>Chrome</h2>
+    <ol>
+     <li>Navigate to <a href='chrome://flags/'>Chrome Experiments</a></li>
+     <li>Activate <a href='chrome://flags/#enable-javascript-harmony'>"Experimental Javascript"</a></li>
+     <li>Activate <a href='chrome://flags/#enable-experimental-web-platform-features'>"Experimental Web Platform Features"</a></li>
+    </ol>
+    <h2>Edge</h2>
+    <ol>
+     <li>Navigate to <a href='about:flags'>Edge Flags</a></li>
+     <li>Activate "Experimental Javascript"</li>
+    </ol>
+   </div>
+  </ps-panel>
+  <ps-panel icon='show_chart'>
    <h1>Reports</h1>
-   <details data-type='force' open>
-    <summary>Force</summary>
-    <forcedirected :width='300' :height="300" :results='report.results'></forcedirected>
-   </details>
-   <details data-type='lst' open>
-    <summary>Listing</summary>
-    <tornadoresult-list class='result' :report="report"></tornadoresult-list>
-   </details>
-   <details data-type='html' open>
-    <summary>HTML</summary>
-    <resultmatrix :report='report'></resultmatrix>
-   </details>
-  </section>
-  <section id='compare'>
-   <i>compare</i>
+   <section id='results' class='panel'>
+    <details data-type='force' open>
+     <summary>Force</summary>
+     <forcedirected :width='300' :height="300" :results='report.results'></forcedirected>
+    </details>
+    <details data-type='lst' open>
+     <summary>Listing</summary>
+     <tornadoresult-list class='result' :report="report"></tornadoresult-list>
+    </details>
+    <details data-type='html' open>
+     <summary>HTML</summary>
+     <resultmatrix :report='report'></resultmatrix>
+    </details>
+   </section>
+  </ps-panel>
+  <ps-panel icon='compare' state='minimize'>
    <h1>Comparison</h1>
-   <diffview :report='report'></diffview>
-  </section>
+   <section id='compare'>
+    <diffview :report='report'></diffview>
+   </section>
+  </ps-panel>
 
  </main>
-
- <div id='unsupported' style='display:none;'>
-  <h1>Experimental Features required</h1>
-  <p>
-   In an effort to put this together, it seemed a good idea to use some
-   JavaScript v6 features. Unfortunately, it appears that your browser does
-   not currently support them <strong>by default</strong>
-  </p>
-  <p>
-   Don't Panic!! As of 2018, most browsers don't; however most allow you to
-   turn the features on.
-  </p>
-  <h2>Chrome</h2>
-  <ol>
-   <li>Navigate to <a href='chrome://flags/'>Chrome Experiments</a></li>
-   <li>Activate <a href='chrome://flags/#enable-javascript-harmony'>"Experimental Javascript"</a></li>
-   <li>Activate <a href='chrome://flags/#enable-experimental-web-platform-features'>"Experimental Web Platform Features"</a></li>
-  </ol>
-  <h2>Edge</h2>
-  <ol>
-   <li>Navigate to <a href='about:flags'>Edge Flags</a></li>
-   <li>Activate "Experimental Javascript"</li>
-  </ol>
- </div>
+ <section style='display:none;'>
+Sidebar 2
+ </section>
+ <footer>
+  <a href='Jeff Cave
+  &mdash; Privacy
+  &mdash; <a href='docs/readme.md'>Purpose</a>
+ </footer>
 
 </body>
 </html>

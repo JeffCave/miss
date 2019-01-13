@@ -55,6 +55,7 @@ class DeepDiff extends EventTarget{
 						let ext = d[0].split('.').pop();
 						let handler = ContentHandlers.lookupHandlerByExt(ext);
 						a[d[0]] = handler.tokenizer.split(d[1],d[0]);
+						return a;
 					},{});
 					a[d.name] = d;
 					return a;
