@@ -10,7 +10,8 @@
 :root{
 	--main-color: rgb(36, 142, 194);
 	--main-color-contrast: white;
-	--corners:0.25em
+	--main-highlight: var(--notice-info-low);
+	--corners:0.25em;
 
 	--notice-info-off:whitesmoke;
 	--notice-info-low:lightsteelblue;

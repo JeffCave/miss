@@ -74,6 +74,12 @@ export default class psPanelElement extends HTMLElement {
 		this.setAttribute("icon", value);
 	}
 
+	get summary(){
+		let h1 = this.querySelector('h1');
+		let summary = this.domIcon.outerHTML + h1.outerHTML;
+		return summary;
+	}
+
 	minimize(){
 		this.classList.add('minimize');
 		this.classList.remove('maximize');

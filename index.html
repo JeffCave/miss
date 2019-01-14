@@ -175,88 +175,89 @@
   </ps-panel>
  </section>
  <main>
-  <a href=''>Help</a> | <a href=''>Reports</a> | <a href=''>Compare</a>
-  <ps-panel icon='help' state='minimize'>
-   <h1>Sample Files</h1>
-   <dl>
-    <dt><a href='./tests/sampleassignment.zip'>Sample Assignments</a></dt>
-     <dd>
-      A few demo files that I have used in classes. Formatted
-      appropriately for student submission, and copied a couple of way.
-      Gives some data that will match and some data that will not match.
-     </dd>
-    <dt><a href='./tests/smallcompares.zip'>Small Compares</a></dt>
-     <dd>
-      <p>
-      Two files with a very small comparison dataset. Suitable for debugging,
-      and manually tracing of the algorithm.
-      <ol>
-       <li><pre><a href="https://en.wikipedia.org/wiki/Coelacanth">C O E L A C A N T H</a></pre></li>
-       <li><pre>  P E L I C A N</pre></li>
-      </ol>
-      From a bioinformatics class slides I <a href="http://slideplayer.com/slide/5142106/16/images/21/Smith-Waterman-Algorithm.jpg">found online</a>
-      </p>
-      <p>
-       A better dataset would be one that matches multiple times.
+  <ps-tabpanel>
+   <ps-panel icon='show_chart'>
+    <h1>Reports</h1>
+    <section id='results' class='panel'>
+     <details data-type='force' open>
+      <summary>Force</summary>
+      <forcedirected :width='300' :height="300" :results='report.results'></forcedirected>
+     </details>
+     <details data-type='lst' open>
+      <summary>Listing</summary>
+      <tornadoresult-list class='result' :report="report"></tornadoresult-list>
+     </details>
+     <details data-type='html' open>
+      <summary>HTML</summary>
+      <resultmatrix :report='report'></resultmatrix>
+     </details>
+    </section>
+   </ps-panel>
+   <ps-panel icon='compare' state='minimize'>
+    <h1>Comparison</h1>
+    <section id='compare'>
+     <diffview :report='report'></diffview>
+    </section>
+   </ps-panel>
+   <ps-panel id='help' icon='help' state='minimize'>
+    <h1>Help</h1>
+    <dl>
+     <dt><a href='./tests/sampleassignment.zip'>Sample Assignments</a></dt>
+      <dd>
+       A few demo files that I have used in classes. Formatted
+       appropriately for student submission, and copied a couple of way.
+       Gives some data that will match and some data that will not match.
+      </dd>
+     <dt><a href='./tests/smallcompares.zip'>Small Compares</a></dt>
+      <dd>
+       <p>
+       Two files with a very small comparison dataset. Suitable for debugging,
+       and manually tracing of the algorithm.
        <ol>
-        <li><pre><a href="https://www.youtube.com/watch?v=iCclS78a7P0">H <span style='background-color:lightblue;'>E L L O</span> J <span style='background-color:lightblue;'>E L L O</span></a></pre></li>
-        <li><pre>B <span style='background-color:lightblue;'>E L L O</span> W , B <span style='background-color:lightblue;'>E L O</span> W</pre></li>
+        <li><pre><a href="https://en.wikipedia.org/wiki/Coelacanth">C O E L A C A N T H</a></pre></li>
+        <li><pre>  P E L I C A N</pre></li>
        </ol>
-      </p>
-     </dd>
-    <dt><a href='./tests/bigcompares.zip'>Big Compares</a></dt>
-     <dd>
-      Genome of E.Coli, and Y.Pestarius. Makes for a really big compare,
-      and is know to currently break the application.
-     </dd>
-   </dl>
-   <div id='unsupported' style='display:none;'>
-    <h1>Experimental Features required</h1>
-    <p>
-     In an effort to put this together, it seemed a good idea to use some
-     JavaScript v6 features. Unfortunately, it appears that your browser does
-     not currently support them <strong>by default</strong>
-    </p>
-    <p>
-     Don't Panic!! As of 2018, most browsers don't; however most allow you to
-     turn the features on.
-    </p>
-    <h2>Chrome</h2>
-    <ol>
-     <li>Navigate to <a href='chrome://flags/'>Chrome Experiments</a></li>
-     <li>Activate <a href='chrome://flags/#enable-javascript-harmony'>"Experimental Javascript"</a></li>
-     <li>Activate <a href='chrome://flags/#enable-experimental-web-platform-features'>"Experimental Web Platform Features"</a></li>
-    </ol>
-    <h2>Edge</h2>
-    <ol>
-     <li>Navigate to <a href='about:flags'>Edge Flags</a></li>
-     <li>Activate "Experimental Javascript"</li>
-    </ol>
-   </div>
-  </ps-panel>
-  <ps-panel icon='show_chart'>
-   <h1>Reports</h1>
-   <section id='results' class='panel'>
-    <details data-type='force' open>
-     <summary>Force</summary>
-     <forcedirected :width='300' :height="300" :results='report.results'></forcedirected>
-    </details>
-    <details data-type='lst' open>
-     <summary>Listing</summary>
-     <tornadoresult-list class='result' :report="report"></tornadoresult-list>
-    </details>
-    <details data-type='html' open>
-     <summary>HTML</summary>
-     <resultmatrix :report='report'></resultmatrix>
-    </details>
-   </section>
-  </ps-panel>
-  <ps-panel icon='compare' state='minimize'>
-   <h1>Comparison</h1>
-   <section id='compare'>
-    <diffview :report='report'></diffview>
-   </section>
-  </ps-panel>
+       From a bioinformatics class slides I <a href="http://slideplayer.com/slide/5142106/16/images/21/Smith-Waterman-Algorithm.jpg">found online</a>
+       </p>
+       <p>
+        A better dataset would be one that matches multiple times.
+        <ol>
+         <li><pre><a href="https://www.youtube.com/watch?v=iCclS78a7P0">H <span style='background-color:lightblue;'>E L L O</span> J <span style='background-color:lightblue;'>E L L O</span></a></pre></li>
+         <li><pre>B <span style='background-color:lightblue;'>E L L O</span> W , B <span style='background-color:lightblue;'>E L O</span> W</pre></li>
+        </ol>
+       </p>
+      </dd>
+     <dt><a href='./tests/bigcompares.zip'>Big Compares</a></dt>
+      <dd>
+       Genome of E.Coli, and Y.Pestarius. Makes for a really big compare,
+       and is know to currently break the application.
+      </dd>
+    </dl>
+    <div id='unsupported' style='display:none;'>
+     <h1>Experimental Features required</h1>
+     <p>
+      In an effort to put this together, it seemed a good idea to use some
+      JavaScript v6 features. Unfortunately, it appears that your browser does
+      not currently support them <strong>by default</strong>
+     </p>
+     <p>
+      Don't Panic!! As of 2018, most browsers don't; however most allow you to
+      turn the features on.
+     </p>
+     <h2>Chrome</h2>
+     <ol>
+      <li>Navigate to <a href='chrome://flags/'>Chrome Experiments</a></li>
+      <li>Activate <a href='chrome://flags/#enable-javascript-harmony'>"Experimental Javascript"</a></li>
+      <li>Activate <a href='chrome://flags/#enable-experimental-web-platform-features'>"Experimental Web Platform Features"</a></li>
+     </ol>
+     <h2>Edge</h2>
+     <ol>
+      <li>Navigate to <a href='about:flags'>Edge Flags</a></li>
+      <li>Activate "Experimental Javascript"</li>
+     </ol>
+    </div>
+   </ps-panel>
+  </ps-tabpanel>
 
  </main>
  <section style='display:none;'>

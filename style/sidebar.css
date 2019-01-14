@@ -4,8 +4,10 @@ body > section > *{
 }
 
 body > section{
+	/*
 	display: flex;
-	flex-flow: row wrap;
+	flex-flow: col wrap;
+	*/
 }
 
 body > section h1{

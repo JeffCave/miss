@@ -4,26 +4,20 @@
 global Vue
 */
 
-import "https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.0/underscore-min.js";
-
-//import 'https://unpkg.com/vue/dist/vue.js';
-import 'https://unpkg.com/vuetify/dist/vuetify.js';
-import 'https://unpkg.com/vue-material';
-//import 'https://unpkg.com/http-vue-loader';
-
 
 import {DeepDiff} from './DeepDiff/DeepDiff.js';
 import {Submission} from './DeepDiff/submission/Submission.js';
 
 
-import * as Panels from './widgets/panel.js';
 import './widgets/diffview.js';
-import './widgets/treeview.js';
-import './widgets/submissions.js';
 import './widgets/filedrop.js';
+import './widgets/force.js';
+import './widgets/panel.js';
+import './widgets/submissions.js';
+import './widgets/tabbedPanel.js';
+import './widgets/treeview.js';
 import './widgets/ResultsTable.js';
 import './widgets/ResultsMatrix.js';
-import './widgets/force.js';
 
 
 
