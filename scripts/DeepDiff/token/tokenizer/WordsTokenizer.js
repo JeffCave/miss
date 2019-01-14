@@ -17,7 +17,7 @@ let TOKENTYPE = 'words';
 TokenizerRegistry.processors[TOKENTYPE] = {
 	seperator: ' ',
 	tokentype: TOKENTYPE,
-	split: function(string) {
+	split: function(string, name='') {
 		checkNotNull(string);
 
 		let toReturn = string
@@ -40,6 +40,7 @@ TokenizerRegistry.processors[TOKENTYPE] = {
 			token.range.push(pos);
 			pos += text.length-1;
 			token.range.push(pos);
+			token.range.push(name);
 		});
 
 

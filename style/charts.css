@@ -1,0 +1,102 @@
+div[data-type='barchart'] {
+	/* border:1px solid black; */
+}
+
+div[data-type='barchart'] ul *{
+	margin:0;
+}
+div[data-type='barchart'] ul{
+	list-style-type:none;
+	padding:0;
+	margin:0;
+	/* transform: rotate(0.75turn); */
+}
+div[data-type='barchart'] ul li {
+	border-bottom:1px solid lightgray;
+	position:relative;
+}
+
+div[data-type='barchart'] ul li.changing{
+	background-color:lightgray;
+}
+
+div[data-type='barchart'] ul li.changed{
+	background-color:transparent;
+}
+
+div[data-type='barchart'] ul label{
+	display:inline-block;
+	width:20%;
+	text-align:right;
+	font-size:smaller;
+	white-space: nowrap;
+
+	position:relative;
+	left:0;
+	width:48%;
+	color:var(--main-color-contrast);
+	text-shadow:0 0 3px black ;
+	text-align:left;
+	z-index:100;
+
+}
+div[data-type='barchart'] ul meter{
+	width:70%;
+	padding-left:2px;
+
+	position:absolute;
+	left:0;
+	width:90%;
+	height:1.3em;
+	padding:0;
+	padding-top:2px;
+
+
+}
+div[data-type='barchart'] ul output {
+	display:inline-block;
+	font-size:smaller;
+	width:10%;
+	text-align:right;
+
+	position:absolute;
+	right:0;
+	width:30%;
+	color:black;
+	/* background-color:rgba(255,255,255,0.25); */
+	text-shadow:0 0 5px white ;
+	text-align:right;
+}
+div[data-type='barchart'] ul meter::-webkit-meter-optimum-value {
+	background: red;
+	background-color:var(--main-color);
+}
+div[data-type='barchart'] ul meter::-webkit-meter-bar {
+	background: transparent;
+}
+
+
+div[data-type='heatmap'] table{
+	border-collapse:collapse;
+}
+div[data-type='heatmap'] table *{
+	padding:0;
+	margin:0;
+}
+div[data-type='heatmap'] table tbody * {
+	/* border:1px solid LIGHTSTEELBLUE; */
+}
+div[data-type='heatmap'] table tbody td {
+	width:1em;
+	height:1em;
+	background-color:blue;
+	padding:0;
+	margin:0;
+}
+div[data-type='heatmap'] table thead th {
+	text-align:center;
+}
+div[data-type='heatmap'] table th {
+	background-color:transparent;
+	font-size:smaller;
+}

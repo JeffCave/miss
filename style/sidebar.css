@@ -1,0 +1,46 @@
+body > section > *{
+	border: 1px dotted lightgray;
+	border-radius: var(--corners);
+}
+
+body > section{
+	/*
+	display: flex;
+	flex-flow: col wrap;
+	*/
+}
+
+body > section h1{
+	font-size:100%;
+	font-size:larger;
+	font-weight:bold;
+}
+
+body > section > nav > ol,body > section > nav > ul{
+	padding-left:1em;
+}
+
+/*
+main{
+	display: flex;
+	flex-flow: row wrap;
+	height:100vh;
+	padding:0;
+	margin:0;
+}
+main > section{
+	flex:1 1 auto;
+	min-height:25vh;
+	width:100%;
+	min-width:300px;
+	max-width:400px;
+	margin:1vmin;
+	border:0.3vmin solid black;
+	padding:1.7vmin;
+	border-radius:0.5em;
+}
+main > section > *{
+	opacity:1;
+	transition: opacity 1s;
+}
+*/

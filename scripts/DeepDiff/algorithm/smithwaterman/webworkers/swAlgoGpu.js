@@ -1,7 +1,7 @@
-'use strict';
-
 import {psGpu} from '../../../lib/psGpu.js';
 import {SmithWatermanBase} from '../swAlgoBase.js';
+
+'use strict';
 
 const utils = {
 	defer: function(func){

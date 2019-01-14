@@ -114,114 +114,160 @@
    </tbody>
   </table>
  </template>
+ <template type='text/x-template' id='diffview-template'>
+  <div>
+   <ul>
+    <li>Group 1</li>
+    <li>Group 2</li>
+    <li>Group 3</li>
+    <li>Group 4</li>
+   </ul>
+
+   <section style='display:inline-block;width:48%;border:1px solid darkgrey;overflow:scroll;vertical-align: text-top;'>
+    <input style='max-width:100%;' list="submissions-asdf" v-model='left' />
+    <datalist id="submissions-asdf">
+     <option v-for='sub in report.submissions' :value="sub.name" />
+    </datalist>
+    <pre style='height:20em;'><span v-html="textLeft"></span></pre>
+   </section>
+   <section style='display:inline-block;width:48%;border:1px solid darkgrey;overflow:scroll;vertical-align: text-top;'>
+    <input style='max-width:100%;' list="submissions-fdsa" v-model='right' />
+    <datalist id="submissions-fdsa">
+     <option v-for='sub in report.submissions' :value="sub.name" />
+    </datalist>
+    <pre style='height:20em;'><span v-html="textRight"></span></pre>
+   </section>
+  </div>
+ </template>
 
 
  <link rel='stylesheet' href='index.css' />
+ <link rel='stylesheet' href='style/main.css' />
  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
 </head>
 <body>
- <pre></pre>
- <nav style='display:none;'>
-  <progress  value='1' min='0' max='2'>asdf</progress>
-  <input type='range' id='menu' value='0' min='0' max='3' list='forms' />
-  <datalist id='forms'>
-   <option value='0'>A</option>
-   <option value='1'>B</option>
-   <option value='2'>C</option>
-   <option value='3'>D</option>
-  </datalist>
- </nav>
- <main>
-  <section>
-   <i>help</i>
-   <h1>Sample Files</h1>
-   <dl>
-    <dt><a href='./tests/sampleassignment.zip'>Sample Assignments</a></dt>
-     <dd>
-      A few demo files that I have used in classes. Formatted
-      appropriately for student submission, and copied a couple of way.
-      Gives some data that will match and some data that will not match.
-     </dd>
-    <dt><a href='./tests/smallcompares.zip'>Small Compares</a></dt>
-     <dd>
-      Two files with a very small comparison dataset. Suitable for debugging,
-      and manually tracing of the algorithm.
-      <ol>
-       <li><pre><a href="https://en.wikipedia.org/wiki/Coelacanth">C O E L A C A N T H</a></pre></li>
-       <li><pre>  P E L I C A N</pre></li>
-      </ol>
-      From a bioinformatics class slides I <a href="http://slideplayer.com/slide/5142106/16/images/21/Smith-Waterman-Algorithm.jpg">found online</a>
-     </dd>
-    <dt><a href='./tests/bigcompares.zip'>Big Compares</a></dt>
-     <dd>
-      Genome of E.Coli, and Y.Pestarius. Makes for a really big compare,
-      and is know to currently break the application.
-     </dd>
-   </dl>
-  </section>
-  <section id='options'>
-   <i>settings</i>
+ <pre style='display:none;'></pre>
+ <header>
+  <h1>Checksims</h1>
+ </header>
+ <section>
+  <ps-panel icon='settings' state='minimize'>
    <h1>Options</h1>
-   <form is='deepdiff-opts'>
+   <form is='deepdiff-opts' state='minimize'>
     <select name='algorithm' list='algorithms'>
      <option value='test'>Test</option>
     </select>
    </form>
-  </section>
-  <section id='files'>
-   <i>folder</i>
+  </ps-panel>
+  <ps-panel icon='folder'>
    <h1>Files</h1>
-   <filedrop :onfile="onfile">&#128476; Upload a Zip</filedrop>
-   <treeview :filelist="treeData"></treeview>
-  </section>
-  <section id='submissions'>
-   <i>collections</i>
+   <div id='files'>
+    <filedrop :onfile="onfile">&#128476; Upload a Zip</filedrop>
+    <treeview :filelist="treeData"></treeview>
+   </div>
+  </ps-panel>
+  <ps-panel icon='collections'>
    <h1>Submissions</h1>
-   <span id='submissionMaker'>&#10133;</span>
-   <submission-list :pouchdb='db' :filter='filter'></submission-list>
-  </section>
-  <section id='results'>
-   <i>show_chart</i>
-   <h1>Reports</h1>
-   <details data-type='force' open>
-    <summary>Force</summary>
-    <forcedirected :width='300' :height="300" :results='report.results'></forcedirected>
-   </details>
-   <details data-type='lst' open>
-    <summary>Listing</summary>
-    <tornadoresult-list class='result' :report="report"></tornadoresult-list>
-   </details>
-   <details data-type='html' open>
-    <summary>HTML</summary>
-    <resultmatrix :report='report'></resultmatrix>
-   </details>
-  </section>
+   <div id='submissions'>
+    <span id='submissionMaker'>&#10133;</span>
+    <submission-list :pouchdb='db' :filter='filter'></submission-list>
+   </div>
+  </ps-panel>
+ </section>
+ <main>
+  <ps-tabpanel>
+   <ps-panel icon='show_chart'>
+    <h1>Reports</h1>
+    <section id='results' class='panel'>
+     <details data-type='force' open>
+      <summary>Force</summary>
+      <forcedirected :width='300' :height="300" :results='report.results'></forcedirected>
+     </details>
+     <details data-type='lst' open>
+      <summary>Listing</summary>
+      <tornadoresult-list class='result' :report="report"></tornadoresult-list>
+     </details>
+     <details data-type='html' open>
+      <summary>HTML</summary>
+      <resultmatrix :report='report'></resultmatrix>
+     </details>
+    </section>
+   </ps-panel>
+   <ps-panel icon='compare' state='minimize'>
+    <h1>Comparison</h1>
+    <section id='compare'>
+     <diffview :report='report'></diffview>
+    </section>
+   </ps-panel>
+   <ps-panel id='help' icon='help' state='minimize'>
+    <h1>Help</h1>
+    <dl>
+     <dt><a href='./tests/sampleassignment.zip'>Sample Assignments</a></dt>
+      <dd>
+       A few demo files that I have used in classes. Formatted
+       appropriately for student submission, and copied a couple of way.
+       Gives some data that will match and some data that will not match.
+      </dd>
+     <dt><a href='./tests/smallcompares.zip'>Small Compares</a></dt>
+      <dd>
+       <p>
+       Two files with a very small comparison dataset. Suitable for debugging,
+       and manually tracing of the algorithm.
+       <ol>
+        <li><pre><a href="https://en.wikipedia.org/wiki/Coelacanth">C O E L A C A N T H</a></pre></li>
+        <li><pre>  P E L I C A N</pre></li>
+       </ol>
+       From a bioinformatics class slides I <a href="http://slideplayer.com/slide/5142106/16/images/21/Smith-Waterman-Algorithm.jpg">found online</a>
+       </p>
+       <p>
+        A better dataset would be one that matches multiple times.
+        <ol>
+         <li><pre><a href="https://www.youtube.com/watch?v=iCclS78a7P0">H <span style='background-color:lightblue;'>E L L O</span> J <span style='background-color:lightblue;'>E L L O</span></a></pre></li>
+         <li><pre>B <span style='background-color:lightblue;'>E L L O</span> W , B <span style='background-color:lightblue;'>E L O</span> W</pre></li>
+        </ol>
+       </p>
+      </dd>
+     <dt><a href='./tests/bigcompares.zip'>Big Compares</a></dt>
+      <dd>
+       Genome of E.Coli, and Y.Pestarius. Makes for a really big compare,
+       and is know to currently break the application.
+      </dd>
+    </dl>
+    <div id='unsupported' style='display:none;'>
+     <h1>Experimental Features required</h1>
+     <p>
+      In an effort to put this together, it seemed a good idea to use some
+      JavaScript v6 features. Unfortunately, it appears that your browser does
+      not currently support them <strong>by default</strong>
+     </p>
+     <p>
+      Don't Panic!! As of 2018, most browsers don't; however most allow you to
+      turn the features on.
+     </p>
+     <h2>Chrome</h2>
+     <ol>
+      <li>Navigate to <a href='chrome://flags/'>Chrome Experiments</a></li>
+      <li>Activate <a href='chrome://flags/#enable-javascript-harmony'>"Experimental Javascript"</a></li>
+      <li>Activate <a href='chrome://flags/#enable-experimental-web-platform-features'>"Experimental Web Platform Features"</a></li>
+     </ol>
+     <h2>Edge</h2>
+     <ol>
+      <li>Navigate to <a href='about:flags'>Edge Flags</a></li>
+      <li>Activate "Experimental Javascript"</li>
+     </ol>
+    </div>
+   </ps-panel>
+  </ps-tabpanel>
 
  </main>
-
- <div id='unsupported' style='display:none;'>
-  <h1>Experimental Features required</h1>
-  <p>
-   In an effort to put this together, it seemed a good idea to use some
-   JavaScript v6 features. Unfortunately, it appears that your browser does
-   not currently support them <strong>by default</strong>
-  </p>
-  <p>
-   Don't Panic!! As of 2018, most browsers don't; however most allow you to
-   turn the features on.
-  </p>
-  <h2>Chrome</h2>
-  <ol>
-   <li>Navigate to <a href='chrome://flags/'>Chrome Experiments</a></li>
-   <li>Activate <a href='chrome://flags/#enable-javascript-harmony'>"Experimental Javascript"</a></li>
-   <li>Activate <a href='chrome://flags/#enable-experimental-web-platform-features'>"Experimental Web Platform Features"</a></li>
-  </ol>
-  <h2>Edge</h2>
-  <ol>
-   <li>Navigate to <a href='about:flags'>Edge Flags</a></li>
-   <li>Activate "Experimental Javascript"</li>
-  </ol>
- </div>
+ <section style='display:none;'>
+Sidebar 2
+ </section>
+ <footer>
+  <a href='Jeff Cave
+  &mdash; Privacy
+  &mdash; <a href='docs/readme.md'>Purpose</a>
+ </footer>
 
 </body>
 </html>

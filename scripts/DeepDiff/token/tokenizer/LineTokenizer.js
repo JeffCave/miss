@@ -17,7 +17,7 @@ const TOKENTYPE = 'line';
 TokenizerRegistry.processors[TOKENTYPE] = {
 	seperator: '\n',
 	tokentype: TOKENTYPE,
-	split: function(content) {
+	split: function(content, name='') {
 		checkNotNull(content);
 		let tokens = content
 			.split("\n")
@@ -39,6 +39,7 @@ TokenizerRegistry.processors[TOKENTYPE] = {
 			let text = LexemeMap.getTextForLexeme(token.lexeme);
 			pos = content.indexOf(text, pos);
 			token.range.push(pos);
+			token.range.push(name);
 			pos += text.length-1;
 			token.range.push(pos);
 		});

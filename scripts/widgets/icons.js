@@ -13,6 +13,7 @@ export{
 const icons = Object.seal({
 	'bar_chart':'&#128202;',
 	'collections':'&#128218;',
+	'compare':'&#8783;',
 	'delete':'&#128465;',
 	'folder':'&#128447;',
 	'folder_open':'&#128448;',

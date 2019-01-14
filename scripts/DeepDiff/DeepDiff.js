@@ -9,6 +9,7 @@ import './preprocessor/WhitespaceDeduplicationPreprocessor.js';
 import {AlgorithmRegistry} from './algorithm/AlgorithmRegistry.js';
 import * as AlgorithmResults from './algorithm/AlgorithmResults.js';
 import {CommonCodeLineRemovalPreprocessor} from './preprocessor/CommonCodeLineRemovalPreprocessor.js';
+import {ContentHandlers} from './submission/ContentHandlers.js';
 import {Submission} from './submission/Submission.js';
 
 import "https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.4.3/pouchdb.min.js";
@@ -17,8 +18,9 @@ import "./lib/pouchdb.upsert.min.js";
 import * as utils from './util/misc.js';
 
 /*
-global PouchDB
 global emit
+global PouchDB
+global Vue
 global EventTarget
 */
 
@@ -46,18 +48,24 @@ class DeepDiff extends EventTarget{
 				}
 			},
 		});
-		this.Submissions.then(submission=>{
+		this.Submissions
+			.then(submission=>{
 				this.report.submissions = submission.reduce((a,d)=>{
+					d.tokens = Object.entries(d.content).reduce((a,d)=>{
+						let ext = d[0].split('.').pop();
+						let handler = ContentHandlers.lookupHandlerByExt(ext);
+						a[d[0]] = handler.tokenizer.split(d[1],d[0]);
+						return a;
+					},{});
 					a[d.name] = d;
 					return a;
 				},{});
-			}).then(()=>{
-				this.Results.then(results=>{
-						this.report.results = results.reduce((a,d)=>{
-							a[d.name] = d;
-							return a;
-						},{});
-					});
+				return this.Results;
+			}).then(results=>{
+				this.report.results = results.reduce((a,d)=>{
+					a[d.name] = d;
+					return a;
+				},{});
 			});
 		this._events = {
 			'submissions':{},
@@ -201,7 +209,6 @@ class DeepDiff extends EventTarget{
 										if(oldDoc.hash === newDoc.hash){
 											return false;
 										}
-
 										return newDoc;
 									});
 								return upsert;
@@ -288,7 +295,7 @@ class DeepDiff extends EventTarget{
 			.then(function(results){
 				let rows = results.rows.map(d=>{
 					let sub = d.doc;
-					sub =  Submission.fromJSON(sub);
+					//sub = Submission.fromJSON(sub);
 					return sub;
 				});
 				return rows;

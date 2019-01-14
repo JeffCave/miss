@@ -1,0 +1,114 @@
+@charset "utf-8";
+
+@import url('https://fonts.googleapis.com/css?family=Open+Sans');
+@import url('layout.css');
+@import url('header.css');
+@import url('sidebar.css');
+@import url('charts.css');
+
+
+:root{
+	--main-color: rgb(36, 142, 194);
+	--main-color-contrast: white;
+	--main-highlight: var(--notice-info-low);
+	--corners:0.25em;
+
+	--notice-info-off:whitesmoke;
+	--notice-info-low:lightsteelblue;
+	--notice-info-high:steelblue;
+
+	--notice-fail-off:mistyrose;
+	--notice-fail-low:lightsalmon;
+	--notice-fail-high:darkred;
+
+	--notice-warn-off:gold;
+	--notice-warn-low:orange;
+	--notice-warn-high:orangered;
+
+	/*
+	--notice-pass-off:mistyrose;
+	--notice-pass-low:lightsalmon;
+	--notice-pass-high:darkred;
+	*/
+	--notice-pending-off:white;
+	--notice-pending-low:lightgray;
+	--notice-pending-high:darkgray;
+
+	/*
+	 https://www.mulinblog.com/a-color-palette-optimized-for-data-visualization/
+	*/
+	--data-pallette-0: #4d4d4d; /* grey   */
+	--data-pallette-1: #5da5da; /* blue   */
+	--data-pallette-2: #faa43a; /* orange */
+	--data-pallette-3: #60bd68; /* green  */
+	--data-pallette-4: #f17cb0; /* pink   */
+	--data-pallette-5: #b2912f; /* brown  */
+	--data-pallette-6: #b276b2; /* purple */
+	--data-pallette-7: #decf3f; /* yellow */
+	--data-pallette-8: #f15854; /* red    */
+}
+
+
+/**** custom components ***/
+
+.showhide{
+	display:none;
+}
+
+ol#toc{
+	list-style-type: upper-roman;
+}
+
+button.showhide {
+	display:block;
+	position:absolute;
+	right:0px;
+	top:0px;
+	background:transparent;
+	border:0;
+}
+
+.fail{
+	/* border-color:darkred;
+	background-color:darkred;
+	color:white;*/
+	font-weight:bold;
+}
+
+input.fail{
+	border-color:red;
+	box-shadow: 0 0 10px red;
+}
+
+input.warn{
+	border-color:orange;
+	box-shadow: 0 0 10px orange;
+}
+
+input.pass{
+	border-color:green;
+	box-shadow: 0 0 10px green;
+}
+
+@media all and (min-width: 400px) {
+	main {
+		flex: 10 0px;
+		order: 2;
+	}
+	section {
+		flex: 0 auto;
+	}
+	section:last-of-type {
+		order: 3;
+	}
+	section:first-of-type {
+		order: 1;
+	}
+	footer {
+		order: 4;
+	}
+}
+
+
+
+

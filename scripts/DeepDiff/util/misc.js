@@ -90,6 +90,9 @@ JSON.merge = function(a){
 	return obj;
 };
 
+
+Math.PHI = (1 + (5 ** 0.5)) / 2;
+
 export function docsEqual (aDoc,bDoc){
 	if(typeof aDoc === 'string'){
 		aDoc = JSON.parse(aDoc);
@@ -123,4 +126,3 @@ export function UniformDistribution(seed) {
 	seed = seed ? lcg(seed) : lcg(Math.random());
 	return function() {return (seed = lcg(seed)) / 2147483648};
 }
-
