@@ -83,6 +83,7 @@ export default class psPanelElement extends HTMLElement {
 	minimize(){
 		this.classList.add('minimize');
 		this.classList.remove('maximize');
+		this.classList.remove('hide');
 		this.addEventListener('click',psPanelElement.restorePanel);
 		//this.domIcon.addEventListener('click',psPanelElement.restorePanel);
 	}
@@ -95,8 +96,17 @@ export default class psPanelElement extends HTMLElement {
 		this.classList.add('restore');
 		this.classList.remove('minimize');
 		this.classList.remove('maximize');
+		this.classList.remove('hide');
 		this.removeEventListener('click',psPanelElement.restorePanel);
 		//this.domIcon.removeEventListener('click',psPanelElement.restorePanel);
+	}
+
+	hide(){
+		this.classList.add('hide');
+		this.classList.remove('maximize');
+		this.classList.remove('minimize');
+		this.addEventListener('click',psPanelElement.restorePanel);
+		//this.domIcon.addEventListener('click',psPanelElement.restorePanel);
 	}
 
 	maximize(){
@@ -109,7 +119,7 @@ export default class psPanelElement extends HTMLElement {
 	}
 
 	set state(value){
-		const allowed = ['normal','maximize','minimize'];
+		const allowed = ['normal','maximize','minimize','hide'];
 		let orig = this.state;
 
 		value = (value || '');

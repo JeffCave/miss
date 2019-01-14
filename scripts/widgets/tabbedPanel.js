@@ -26,7 +26,7 @@ export default class psTabbedPanelElement extends HTMLElement {
 		this.panels = {};
 		this.keys = [];
 		Array.from(this.children).forEach((d,i)=>{
-			if(!(d instanceof psPanelElement)){
+			if(!(d instanceof psPanelElement) || d.state === 'hide'){
 				d.style.display = 'none';
 				return;
 			}
