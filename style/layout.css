@@ -45,6 +45,7 @@ footer {
 main {
 	text-align: left;
 	background: white;
+	padding:0;
 }
 
 body > section:last-of-type {

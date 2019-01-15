@@ -244,7 +244,7 @@ export default class psPanelElement extends HTMLElement {
 
 
 
-customElements.define('ps-panel',psPanelElement);
+window.customElements.define('ps-panel',psPanelElement);
 /* global Vue */
 if(Vue && !Vue.config.ignoredElements.includes('ps-panel')){
 	Vue.config.ignoredElements.push('ps-panel');

@@ -30,7 +30,7 @@ export default class psTabbedPanelElement extends HTMLElement {
 				d.style.display = 'none';
 				return;
 			}
-			d.restore();
+			d.normal();
 
 			let li = document.createElement('li');
 			li.innerHTML = d.summary;
@@ -63,7 +63,7 @@ export default class psTabbedPanelElement extends HTMLElement {
 				this.panels[p].classList.remove('active');
 				this.tabs[p].classList.remove('active');
 				this.panels[p].style.display = 'none';
-				this.panels[p].restore();
+				this.panels[p].normal();
 			}
 		}
 	}
@@ -81,6 +81,7 @@ export default class psTabbedPanelElement extends HTMLElement {
 	display:block;
 	padding-left:0;
 	margin-top:0;
+	border-bottom:1px solid var(--main-highlight);
 }
 :host > ul > li{
 	display: inline-block;
