@@ -2,6 +2,7 @@
 
 /*
 global Vue
+global JSZip
 */
 
 
@@ -35,6 +36,9 @@ class indexPage {
 		Array.from(document.querySelectorAll('form[is="deepdiff-opts"]')).forEach(opts=>{
 			opts.ddInstance = this.runner;
 		});
+		this.displayResults = document.querySelector('#forcechart');
+		this.displayResults.results = this.runner.report;
+
 		this.displaySubmissions = new Vue({
 			el:'#submissions',
 			data: {
@@ -58,12 +62,6 @@ class indexPage {
 					});
 				}
 			}
-		});
-		this.displayResults = new Vue({
-			el:'#results',
-			data: {
-				report:this.runner.report
-			},
 		});
 		this.displayDiff = new Vue({
 			el:'#compare',

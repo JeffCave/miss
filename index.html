@@ -63,34 +63,6 @@
     </tbody>
    </table>
  </template>
- <template type='text/x-template' id='forcedirected-template'>
-  <svg>
-   <g class='links'>
-    <line
-        v-for='link in links'
-        :stroke='link.complete===1?opts.lineColour:"orange"'
-        :stroke-width='Math.floor((opts.radius+1)*link.value)'
-        :opacity='link.value'
-        :x1='link.points[0].pos.x'
-        :y1='link.points[0].pos.y'
-        :x2='link.points[1].pos.x'
-        :y2='link.points[1].pos.y'
-        />
-   </g>
-   <g class='nodes'>
-    <circle
-        v-for='node in nodes'
-        :cx='node.pos.x'
-        :cy='node.pos.y'
-        :r='opts.radius'
-        :fill='opts.nodeColour[node.group]'
-        @mousedown='MouseDown'
-        >
-     <title>{{node.key}}</title>
-    </circle>
-   </g>
-  </svg>
- </template>
  <template type='text/x-template' id='resultmatrixcell-template'>
   <span :style='style' :title='title'>&#9646;</span>
  </template>
@@ -175,12 +147,12 @@
  <main>
   <ps-tabpanel>
    <ps-panel icon='show_chart'>
+    <h1>Force</h1>
+    <ps-forcedirected id='forcechart'></ps-forcedirected>
+   </ps-panel>
+   <ps-panel icon='show_chart'>
     <h1>Reports</h1>
     <section id='results' class='panel'>
-      <details data-type='force' open>
-       <summary>Force</summary>
-       <forcedirected :width='300' :height="300" :results='report.results'></forcedirected>
-      </details>
      <details data-type='lst' open>
       <summary>Listing</summary>
       <tornadoresult-list class='result' :report="report"></tornadoresult-list>
