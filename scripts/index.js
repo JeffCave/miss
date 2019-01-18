@@ -36,8 +36,10 @@ class indexPage {
 		Array.from(document.querySelectorAll('form[is="deepdiff-opts"]')).forEach(opts=>{
 			opts.ddInstance = this.runner;
 		});
-		this.displayResults = document.querySelector('#forcechart');
-		this.displayResults.results = this.runner.report;
+		let forcechart = document.querySelector('#forcechart');
+		forcechart.results = this.runner.report;
+		let tornadochart = document.querySelector('#tornadochart');
+		tornadochart.report = this.runner.report;
 
 		this.displaySubmissions = new Vue({
 			el:'#submissions',
@@ -62,6 +64,12 @@ class indexPage {
 					});
 				}
 			}
+		});
+		this.displayResults = new Vue({
+			el:'#results',
+			data: {
+				report:this.runner.report
+			},
 		});
 		this.displayDiff = new Vue({
 			el:'#compare',

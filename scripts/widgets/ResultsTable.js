@@ -1,61 +1,252 @@
 'use strict';
 
+/*
+global _
+global HTMLElement
+*/
 
+class psTornadoChart extends HTMLElement {
+	constructor(){
+		super();
 
-// define the item component
-Vue.component('tornadoresult-list', {
-	template: '#tornadoresult-template',
-	props: {
-		report: {
-			type: Object,
-			default: function(){
-				return {
-					results:[],
-					submission:[],
-					archives:[]
-				};
+		this._ = {
+			unwatch:()=>{},
+			results: {
+				results:[],
+				submission:[],
+				archives:[]
 			},
-		},
-	},
-	data: function () {
-		return {};
-	},
-	computed: {
-		ordered : function(){
-			let list = Object.values(this.report.results)
-				.sort((a,b)=>{
-					let order = 0;
-					if(order === 0){
-						let bp = (b.complete === b.totalTokens)?1:0;
-						let ap = (a.complete === a.totalTokens)?1:0;
-						order = bp - ap;
-					}
-					if(order === 0){
-						order = b.percentMatched - a.percentMatched;
-					}
-					if(order === 0){
-						order = a.name.localeCompare(b.name);
-					}
-					return order;
-				});
-			return list;
-		}
-	},
-	methods:{
-		isComplete: function(result){
-			return (result.complete === result.totalTokens);
-		},
-		formatPct(pct){
-			pct = pct * 100;
-			pct = pct.toFixed(0);
-			return pct;
-		},
-		formatTitle(pct){
-			let label = '% similarity';
-			pct = this.formatPct(pct);
-			pct = [pct, label];
-			pct = pct.join('');
-			return pct;
-		}
+			rows:{}
+		};
+
+		let shadow = this.attachShadow({mode: 'open'});
+		shadow.innerHTML = '<style>'+psTornadoChart.DefaultCss+'</style>';
+		let table = document.createElement('table');
+		this._.tbody = document.createElement('tbody');
+		shadow.append(table);
+		table.append(this._.tbody);
 	}
-});
+
+	get report(){
+		return this._.results;
+	}
+	set report(value){
+		this._.unwatch();
+		// Need to do this with a proxy
+		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+		this._.results = value;
+		this._.results.$watch('results',(newval,oldval)=>{
+			this.monitorResults(newval,oldval);
+		},{immediate:true,deep:true});
+	}
+
+
+	monitorResults(newval,oldval){
+		this.ReSync();
+	}
+
+
+	/**
+	 * Syncronizes the objects we are movign around the screen with their
+	 * underlying objects.
+	 */
+	get ReSync(){
+		if(this._ReSync) return this._ReSync;
+
+		let syncer = function(){
+			let results = this.ordered();
+			let body = this._.tbody;
+			let rows = this._.rows;
+
+			let htmlrows = Object.keys(rows);
+			htmlrows = new Set(htmlrows);
+
+			results.forEach((result,r)=>{
+				let row = rows[result.name];
+				htmlrows.delete(result.name);
+				if(!row){
+					row = document.createElement('tr');
+					let cell = "<td><meter min='0' max='1' value='0' title=''></meter><span></span></td>";
+					row.innerHTML = [cell,cell].join('');
+					body.append(row);
+					row.rec = result;
+					rows[result.name] = row;
+					this._.rows[result.name] = row;
+				}
+				if(result.complete === result.totalTokens){
+					row.classList.add('complete');
+					if(this.report.isSignificantResult(result)){
+						row.classList.add('significant');
+					}
+				}
+				if(row.rowIndex > 0){
+					// check sto see if we need to sort the table
+					// we do it as a bubble sort, because they are slow and
+					// look cool visually
+					let prev = row.parentElement.rows[row.rowIndex-1];
+					if(0 > psTornadoChart.compareResults(row.rec, prev.rec)){
+						row.parentElement.insertBefore(row, prev);
+						this.ReSync();
+					}
+				}
+
+				// update the cells
+				result.submissions.forEach((submission,i)=>{
+					let meter=row.cells[i].children[0];
+					let title=row.cells[i].children[1];
+					meter.value = submission.percentMatched;
+					meter.title = psTornadoChart.formatTitle(submission.percentMatched);
+					title.title = meter.title;
+					title.textContent = submission.name;
+				});
+			});
+
+			htmlrows.forEach((row)=>{
+				let dom = this._.rows[row];
+				dom.parentElement.removeChild(dom);
+				delete this._.rows[row];
+			});
+		};
+
+		this._ReSync = _.throttle(syncer,1000);
+		return this._ReSync;
+	}
+
+	static compareResults(a,b){
+		let order = 0;
+		if(order === 0){
+			let bp = (b.complete === b.totalTokens)?1:0;
+			let ap = (a.complete === a.totalTokens)?1:0;
+			order = bp - ap;
+		}
+		if(order === 0){
+			order = b.percentMatched - a.percentMatched;
+		}
+		if(order === 0){
+			order = a.name.localeCompare(b.name);
+		}
+		return order;
+	}
+
+	ordered(){
+		let list = Object.values(this.report.results).sort(psTornadoChart.compareResults);
+		return list;
+	}
+
+	static formatPct(pct){
+		pct = pct * 100;
+		pct = pct.toFixed(0);
+		return pct;
+	}
+
+	static formatTitle(pct){
+		let label = '% similarity';
+		pct = psTornadoChart.formatPct(pct);
+		pct = [pct, label];
+		pct = pct.join('');
+		return pct;
+	}
+
+	static get DefaultCss(){
+		return `
+table{
+	width: calc(100% - 1em);
+	max-width: 300px;
+	border-collapse: collapse;
+	border: 0;
+	margin: 1em;
+}
+thead {
+	display: none;
+}
+tbody {
+	border:0;
+}
+tr {
+}
+td {
+	border: 0;
+	padding: 0;
+	margin: 0;
+	position: relative;
+	width: 50%;
+	font-family: sans-serif;
+	vertical-align: middle;
+}
+
+tr > td > meter {
+	width: 100%;
+	height: 1.25em;
+}
+tr > td > meter::-webkit-meter-bar {
+	background: var(--notice-pending-low);
+	transition: all 0.5s ease-out;
+}
+tr > td > meter::-webkit-meter-optimum-value{
+	background: var(--notice-pending-high);
+	border-top-right-radius: 0.5em;
+	border-bottom-right-radius: 0.5em;
+	transition: all 0.5s ease-out;
+}
+tr > td > span {
+	position: absolute;
+	left: 0.5em;
+	color: white;
+	font-weight: bold;
+	z-index: 10;
+	height: 1.25em;
+	vertical-align: middle;
+	padding: 0.15em;
+}
+
+tr > td:nth-of-type(1) {
+	border-right: 0.1em solid white;
+	border-right-color: var(--notice-pending-high);
+}
+tr > td:nth-of-type(1) > meter {
+	transform: rotate(180deg);
+}
+tr > td:nth-of-type(1) > span {
+	right: 0.5em;
+}
+
+tr.complete > td > meter::-webkit-meter-bar {
+	background: var(--notice-info-low);
+	transition: all 5s ease-out;
+}
+tr.complete > td > meter::-webkit-meter-optimum-value{
+	border: 0;
+	background: var(--notice-info-high);
+	transition: all 5s ease-out;
+}
+tr.complete > td:nth-of-type(1) {
+	border-right-color: var(--notice-info-high);
+	transition: all 5s ease-in-out;
+}
+
+tr.significant > td > meter::-webkit-meter-bar {
+	background: var(--notice-fail-low);
+	transition: all 5s ease-out;
+}
+tr.significant > td > meter::-webkit-meter-optimum-value{
+	border:0;
+	background: var(--notice-fail-high);
+	transition: all 5s ease-out;
+}
+tr.significant > td:nth-of-type(1) {
+	border-right-color: var(--notice-fail-high);
+	transition: all 5s ease-in-out;
+}
+		`;
+	}
+
+
+}
+
+
+window.customElements.define('ps-tornadochart',psTornadoChart);
+/* global Vue */
+if(Vue && !Vue.config.ignoredElements.includes('ps-tornadochart')){
+	Vue.config.ignoredElements.push('ps-tornadochart');
+}
+

@@ -54,15 +54,6 @@
    <submission v-for='(sub,key) in ordered' :key="sub.name" :submission="sub" :remover='remover' ></submission>
   </div>
  </template>
- <template type='text/x-template' id='tornadoresult-template'>
-   <table>
-    <tbody>
-     <tr v-for='(result,key) in ordered' :class="{complete:isComplete(result),significant:isComplete(result) && report.isSignificantResult(result)}" :key="result.name">
-      <td v-for='submission in result.submissions'><meter min='0' max='1' :value='submission.percentMatched' :title='formatTitle(submission.percentMatched)'></meter><span :title='formatTitle(submission.percentMatched)'>{{submission.name}}</span></td>
-     </tr>
-    </tbody>
-   </table>
- </template>
  <template type='text/x-template' id='resultmatrixcell-template'>
   <span :style='style' :title='title'>&#9646;</span>
  </template>
@@ -146,17 +137,17 @@
  </section>
  <main>
   <ps-tabpanel>
-   <ps-panel icon='show_chart'>
+   <ps-panel icon='bar_chart'>
+    <h1>Listing</h1>
+    <ps-tornadochart id='tornadochart'></ps-tornadochart>
+   </ps-panel>
+   <ps-panel icon='bubble_chart'>
     <h1>Force</h1>
     <ps-forcedirected id='forcechart'></ps-forcedirected>
    </ps-panel>
    <ps-panel icon='show_chart'>
     <h1>Reports</h1>
     <section id='results' class='panel'>
-     <details data-type='lst' open>
-      <summary>Listing</summary>
-      <tornadoresult-list class='result' :report="report"></tornadoresult-list>
-     </details>
      <details data-type='html' open>
       <summary>HTML</summary>
       <resultmatrix :report='report'></resultmatrix>
