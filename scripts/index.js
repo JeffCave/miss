@@ -40,6 +40,8 @@ class indexPage {
 		forcechart.results = this.runner.report;
 		let tornadochart = document.querySelector('#tornadochart');
 		tornadochart.report = this.runner.report;
+		let matrixmap = document.querySelector('#matrixmap');
+		matrixmap.report = this.runner.report;
 
 		this.displaySubmissions = new Vue({
 			el:'#submissions',
@@ -64,12 +66,6 @@ class indexPage {
 					});
 				}
 			}
-		});
-		this.displayResults = new Vue({
-			el:'#results',
-			data: {
-				report:this.runner.report
-			},
 		});
 		this.displayDiff = new Vue({
 			el:'#compare',

@@ -54,27 +54,6 @@
    <submission v-for='(sub,key) in ordered' :key="sub.name" :submission="sub" :remover='remover' ></submission>
   </div>
  </template>
- <template type='text/x-template' id='resultmatrixcell-template'>
-  <span :style='style' :title='title'>&#9646;</span>
- </template>
- <template type='text/x-template' id='resultmatrix-template'>
-  <table style='table-layout:fixed;'>
-   <thead>
-    <tr>
-     <th>&nbsp;</th>
-     <th v-for='submission in orderedSubmissions'><span>{{submission.name}}</span></th>
-    </tr>
-   </thead>
-   <tbody>
-    <tr v-for='(row,i) in orderedSubmissions' :key='row.name'>
-     <th>{{row.name}}</th>
-     <td v-for='(col,j) in orderedSubmissions' :key='col.name' style='margin:0;padding:0;background-color:transparent;position:relative;overflow:hidden;width:1em;height:1em;'>
-      <resultmatrixcell :result-submission='getResultSubmission(row,col)' :parent='getResult(row,col)' :is-same='i===j'></resultmatrixcell>
-     </td>
-    </tr>
-   </tbody>
-  </table>
- </template>
  <template type='text/x-template' id='diffview-template'>
   <div>
    <ul>
@@ -137,22 +116,17 @@
  </section>
  <main>
   <ps-tabpanel>
-   <ps-panel icon='bar_chart'>
-    <h1>Listing</h1>
-    <ps-tornadochart id='tornadochart'></ps-tornadochart>
-   </ps-panel>
    <ps-panel icon='bubble_chart'>
     <h1>Force</h1>
     <ps-forcedirected id='forcechart'></ps-forcedirected>
    </ps-panel>
+   <ps-panel icon='bar_chart'>
+    <h1>Listing</h1>
+    <ps-tornadochart id='tornadochart'></ps-tornadochart>
+   </ps-panel>
    <ps-panel icon='show_chart'>
-    <h1>Reports</h1>
-    <section id='results' class='panel'>
-     <details data-type='html' open>
-      <summary>HTML</summary>
-      <resultmatrix :report='report'></resultmatrix>
-     </details>
-    </section>
+    <h1>Table</h1>
+    <ps-matrixmap id='matrixmap'></ps-matrixmap>
    </ps-panel>
    <ps-panel icon='compare' state='hide'>
     <h1>Comparison</h1>
