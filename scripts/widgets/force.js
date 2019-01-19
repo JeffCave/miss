@@ -44,6 +44,7 @@ class psForceDirected extends HTMLElement {
 
 		this.links = {};
 		this.nodes = {};
+		this.centerNode = {};
 
 		let shadow = this.attachShadow({mode: 'open'});
 		shadow.innerHTML = [
@@ -301,7 +302,9 @@ class psForceDirected extends HTMLElement {
 			let results = Object.assign({},this.results.$data.results);
 			results = Object.entries(results);
 			Object.keys(this.links).forEach(name=>{
-				if(!(name in this.results)){
+				if(!this.results.results[name]){
+					let link = this.links[name];
+					link.element.parentElement.removeChild(link.element);
 					delete this.links[name];
 				}
 			});
@@ -309,88 +312,90 @@ class psForceDirected extends HTMLElement {
 				let key = result[0];
 				let val = result[1];
 				let link = this.links[key];
-				if(!link){
-					link = {
-						points : val.submissions.map(d=>{
-							if(!(d.name in this.nodes)){
-								// start from a deterministic position along the outside
-								let initPos = d.name;
-								initPos = initPos.hashCode();
-								initPos = utils.UniformDistribution(initPos);
-								initPos = initPos();
-								initPos = Math.round(initPos * this.svg.clientWidth);
-								initPos = {
-									y: initPos,
-									x: (initPos%2) ? -1 : this.svg.clientWidth+1,
-								};
+				if(link){
+					return link;
+				}
+				link = {
+					points: [],
+					value : 0,
+					key : key,
+					element: null
+				};
+				this.links[key] = link;
+				link.points = val.submissions.map(d=>{
+					let node = this.nodes[d.name];
+					if(node){
+						return node;
+					}
+					node = {
+						key: d.name,
+						pos: {x:0,y:0},
+						velocity: {x:0,y:0},
+						force: {x:0,y:0},
+						links: {},
+						group: 0,
+						complete: 0
+					};
+					this.nodes[d.name] = node;
 
-								// start in the center
-								initPos = {
-									x:145 + Math.round(5*Math.random()),
-									y:145 + Math.round(5*Math.random()),
-								};
-
-								if(!this.nodes[d.name]){
-									let node = {
-										key: d.name,
-										pos:initPos,
-										velocity:{x: 0, y: 0},
-										force:{x: 0, y: 0},
-										links:{},
-										group:0,
-										complete:0
-									};
-
-									node.element = document.createElementNS("http://www.w3.org/2000/svg",'circle');
-									node.element.setAttribute('r',this._.opts.radius);
-									node.element.innerHTML = "<text>"+node.key+"</text>";
-									node.element.addEventListener('mousedown',(e)=>{
-										let node = e.target.firstChild.innerHTML;
-										node = this.nodes[node];
-										let svg = e.target.parentNode.parentNode;
-										let restart = ()=>{
-											this.start();
-										};
-										function mousemove(m){
-											node.velocity.x = 0;
-											node.velocity.y = 0;
-											node.pos.x = m.layerX;
-											node.pos.y = m.layerY;
-											restart();
-										}
-										function remover(m){
-											svg.removeEventListener('mousemove',mousemove);
-											window.removeEventListener('mouseup',remover);
-										}
-										svg.addEventListener('mousemove',mousemove);
-										window.addEventListener('mouseup',remover);
-									});
-
-									this.svg.nodes.append(node.element);
-
-									this.nodes[d.name] = node;
-								}
-							}
-							return this.nodes[d.name];
-						}),
-						value : 0,
-						key : key
+					// start from a deterministic position along the outside
+					let initPos = d.name;
+					initPos = initPos.hashCode();
+					initPos = utils.UniformDistribution(initPos);
+					initPos = initPos();
+					initPos = Math.round(initPos * this.svg.clientWidth);
+					initPos = {
+						y: initPos,
+						x: (initPos%2) ? -1 : this.svg.clientWidth+1,
 					};
 
-					link.points.forEach(node=>{
-						if(!(link.key in node.links)){
-							node.links[link.key] = link;
+					// start in the center
+					initPos = {
+						x:145 + Math.round(10*Math.random()),
+						y:145 + Math.round(10*Math.random()),
+					};
+					node.pos = initPos;
+
+					node.element = document.createElementNS("http://www.w3.org/2000/svg",'circle');
+					node.element.setAttribute('r',this._.opts.radius);
+					node.element.innerHTML = "<text>"+node.key+"</text>";
+					node.element.addEventListener('mousedown',(e)=>{
+						let node = e.target.firstChild.innerHTML;
+						node = this.nodes[node];
+						let svg = e.target.parentNode.parentNode;
+						let restart = ()=>{
+							this.start();
+						};
+						function mousemove(m){
+							node.velocity.x = 0;
+							node.velocity.y = 0;
+							node.pos.x = m.layerX;
+							node.pos.y = m.layerY;
+							restart();
 						}
+						function remover(m){
+							svg.removeEventListener('mousemove',mousemove);
+							window.removeEventListener('mouseup',remover);
+						}
+						svg.addEventListener('mousemove',mousemove);
+						window.addEventListener('mouseup',remover);
 					});
 
-					link.element = document.createElementNS("http://www.w3.org/2000/svg",'line');
-					link.element.setAttribute('opacity',"1");
-					link.element.setAttribute('stroke','black');
-					link.element.setAttribute('stroke-width','3');
-					this.svg.lines.append(link.element);
+					this.svg.nodes.append(node.element);
 
-					this.links[key] = link;
-				}
+					return node;
+				});
+
+				link.points.forEach(node=>{
+					node.links[link.key] = link;
+				});
+
+				link.element = document.createElementNS("http://www.w3.org/2000/svg",'line');
+				link.element.setAttribute('opacity',"1");
+				link.element.setAttribute('stroke','black');
+				link.element.setAttribute('stroke-width','3');
+				this.svg.lines.append(link.element);
+
 			});
 			// search the nodes for items that there is no longer a link for
 			Object.keys(this.nodes).forEach(node=>{
@@ -398,6 +403,8 @@ class psForceDirected extends HTMLElement {
 					return link.points[0].key === node || link.points[1].key === node;
 				});
 				if(!found){
+					let n = this.nodes[node];
+					n.element.parentElement.removeChild(n.element);
 					delete this.nodes[node];
 				}
 			});

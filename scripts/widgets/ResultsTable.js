@@ -56,37 +56,24 @@ class psTornadoChart extends HTMLElement {
 		let syncer = function(){
 			let results = this.ordered();
 			let body = this._.tbody;
-			let rows = this._.rows;
 
-			let htmlrows = Object.keys(rows);
-			htmlrows = new Set(htmlrows);
+			while(body.rows.length < results.length){
+				let row = document.createElement('tr');
+				let cell = "<td><meter min='0' max='1' value='0' title=''></meter><span></span></td>";
+				row.innerHTML = [cell,cell].join('');
+				body.append(row);
+			}
+			while(body.rows.length > results.length){
+				let row = Array.from(body.rows).pop();
+				row.parentElement.removeChild(row);
+			}
 
 			results.forEach((result,r)=>{
-				let row = rows[result.name];
-				htmlrows.delete(result.name);
-				if(!row){
-					row = document.createElement('tr');
-					let cell = "<td><meter min='0' max='1' value='0' title=''></meter><span></span></td>";
-					row.innerHTML = [cell,cell].join('');
-					body.append(row);
-					row.rec = result;
-					rows[result.name] = row;
-					this._.rows[result.name] = row;
-				}
+				let row = body.rows[r];
 				if(result.complete === result.totalTokens){
 					row.classList.add('complete');
 					if(this.report.isSignificantResult(result)){
 						row.classList.add('significant');
-					}
-				}
-				if(row.rowIndex > 0){
-					// check sto see if we need to sort the table
-					// we do it as a bubble sort, because they are slow and
-					// look cool visually
-					let prev = row.parentElement.rows[row.rowIndex-1];
-					if(0 > psTornadoChart.compareResults(row.rec, prev.rec)){
-						row.parentElement.insertBefore(row, prev);
-						this.ReSync();
 					}
 				}
 
@@ -99,12 +86,6 @@ class psTornadoChart extends HTMLElement {
 					title.title = meter.title;
 					title.textContent = submission.name;
 				});
-			});
-
-			htmlrows.forEach((row)=>{
-				let dom = this._.rows[row];
-				dom.parentElement.removeChild(dom);
-				delete this._.rows[row];
 			});
 		};
 
@@ -236,6 +217,20 @@ tr.significant > td > meter::-webkit-meter-optimum-value{
 tr.significant > td:nth-of-type(1) {
 	border-right-color: var(--notice-fail-high);
 	transition: all 5s ease-in-out;
+}
+tr.deleting{
+	opacity:0.1;
+	height:1px;
+	transition:
+		opacity 1s,
+		height:1s;
+}
+tr.deleting > td{
+	position:relative;
+	height:1px;
+	transition:
+		opacity 1s,
+		height:1s;
 }
 		`;
 	}
