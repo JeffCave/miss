@@ -65,34 +65,6 @@ function hashCode(str){
 	//console.debug("Done: "+ hash.toString(2));
 	return hash;
 }
-String.prototype.hashCode = function(){
-	return hashCode(this);
-};
-
-JSON.clone = function(obj){
-	return JSON.parse(JSON.stringify(obj));
-};
-
-JSON.merge = function(a){
-	if(arguments.length > 1){
-		a = Array.from(arguments);
-	}
-	if(!Array.isArray(a)){
-		a = [a];
-	}
-	let obj = a.reduce(function(a,d){
-		Object.entries(d).forEach(function(pair){
-			pair = JSON.clone(pair);
-			a[pair[0]] = pair[1];
-		});
-		return a;
-	},{});
-	return obj;
-};
-
-
-Math.PHI = (1 + (5 ** 0.5)) / 2;
-
 export function docsEqual (aDoc,bDoc){
 	if(typeof aDoc === 'string'){
 		aDoc = JSON.parse(aDoc);
@@ -126,3 +98,49 @@ export function UniformDistribution(seed) {
 	seed = seed ? lcg(seed) : lcg(Math.random());
 	return function() {return (seed = lcg(seed)) / 2147483648};
 }
+
+
+
+
+
+
+
+
+String.prototype.hashCode = function(){
+	return hashCode(this);
+};
+
+JSON.clone = function(obj){
+	return JSON.parse(JSON.stringify(obj));
+};
+
+JSON.merge = function(a){
+	if(arguments.length > 1){
+		a = Array.from(arguments);
+	}
+	if(!Array.isArray(a)){
+		a = [a];
+	}
+	let obj = a.reduce(function(a,d){
+		Object.entries(d).forEach(function(pair){
+			pair = JSON.clone(pair);
+			a[pair[0]] = pair[1];
+		});
+		return a;
+	},{});
+	return obj;
+};
+
+
+if(!('PHI' in Math)){
+	Math.PHI = (1 + (5 ** 0.5)) / 2;
+}
+
+DOMTokenList.prototype.push = function(className){
+	if(Array.from(this).pop() === className){
+		return className;
+	}
+	this.remove(className);
+	this.add(className);
+	return className;
+};
