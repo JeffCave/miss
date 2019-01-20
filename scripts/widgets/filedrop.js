@@ -1,51 +1,134 @@
-'use strict';
-
+/**
+ *
+ * Based on:
+ * https://css-tricks.com/drag-and-drop-file-uploading/
+ *
+ */
 import "https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.0/underscore-min.js";
 
-/*
-global _
-*/
+'use strict';
 
-Vue.component('filedrop',{
-	template:[
-		'<label :for="uuid" class="filedrop">',
-		' <div :class="{dragover:isDragOver}">',
-		'  <slot>Click or drop something here</slot>',
-		' </div>',
-		' <input type="file" :id="uuid" @change="change" @dragenter="dragenter" @dragleave="dragleave" @dragend="dragleave">',
-		'</label>'
-	].join('\n'),
-	props:{
-		onfile:{
-			type:Function,
-			default:function(){}
-		}
-	},
-	data:function(){
-		return {
-			id:null,
-			isDragOver:false,
+/*
+global Vue
+global HTMLElement
+global CustomEvent
+ */
+
+class psFileDrop extends HTMLElement{
+	constructor(){
+		super();
+		psFileDrop.count = (psFileDrop.count||0)+1;
+
+		this._ = {
+			onfile: ()=>{}
 		};
-	},
-	computed:{
-		uuid:function(){
-			if(this.id === null){
-				this.id = _.uniqueId('filedrop_');
-			}
-			return this.id;
-		}
-	},
-	methods:{
-		change: function(e){
+
+		let tmpl = [
+			'<style>',
+			psFileDrop.DefaultCSS,
+			'</style>',
+			'<label>',
+			' <div>',
+			'  <slot>Click or drop something here</slot>',
+			' </div>',
+			' <input type="file">',
+			'</label>'
+		].join('\n');
+
+		let shadow = this.attachShadow({mode:'open'});
+		shadow.innerHTML = tmpl;
+		this._.div = shadow.querySelector('div');
+		let input = shadow.querySelector('input');
+		this._.input = input;
+		input.addEventListener('change',(e)=>{
 			this.isDragOver = false;
-			this.onfile(e);
-		},
-		dragenter:function(){
+			var event = new CustomEvent('change',e);
+			this.dispatchEvent(event);
+		});
+		input.addEventListener('dragenter',()=>{
 			this.isDragOver = true;
-		},
-		'dragleave':function(){
+		});
+		input.addEventListener('dragleave',()=>{
 			this.isDragOver = false;
+		});
+		input.addEventListener('dragend',()=>{
+			this.isDragOver = false;
+		});
+	}
+
+	get isDragOver(){
+		let rtn = this._.div.classList.contains('dragover');
+		return rtn;
+	}
+
+	set isDragOver(value){
+		let dragover = !!value;
+		if(dragover){
+			this._.div.classList.add('dragover');
+		}
+		else{
+			this._.div.classList.remove('dragover');
 		}
 	}
-});
 
+	get files(){
+		return this._.input.files;
+	}
+
+	get onfile(){
+		return this._.onfile;
+	}
+	set onfile(value){
+		if(typeof value !== 'function'){
+			return;
+		}
+		if(this._.onfile === value){
+			return;
+		}
+		this.removeEventListener('change',this._.onfile);
+		this._.onfile = value;
+		this.addEventListener('change',this._.onfile);
+	}
+
+
+	static get DefaultCSS(){
+		return `
+label {
+	display: inline-block;
+	position: relative;
+	padding:0.75em;
+	border:1px solid black;
+}
+
+input[type="file"] {
+	position: absolute;
+	left: 0;
+	opacity: 0;
+	top: 0;
+	bottom: 0;
+	width: 100%;
+}
+
+label div {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+}
+
+label div.dragover {
+	filter: invert(100%);
+	text-shadow: white 1px 0 1px;
+}
+		`;
+	}
+
+}
+
+
+
+window.customElements.define('ps-filedrop',psFileDrop);
+/* global Vue */
+if(Vue && !Vue.config.ignoredElements.includes('ps-filedrop')){
+	Vue.config.ignoredElements.push('ps-filedrop');
+}

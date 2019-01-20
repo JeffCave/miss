@@ -8,6 +8,7 @@ export{
 
 /*
 global jsSHA
+global DOMTokenList
 */
 
 export default function checkNotNull(value = null){
@@ -136,11 +137,15 @@ if(!('PHI' in Math)){
 	Math.PHI = (1 + (5 ** 0.5)) / 2;
 }
 
-DOMTokenList.prototype.push = function(className){
-	if(Array.from(this).pop() === className){
-		return className;
+if(typeof DOMTokenList !== 'undefined'){
+	if(!('push' in DOMTokenList.prototype)){
+		DOMTokenList.prototype.push = function(className){
+			if(Array.from(this).pop() === className){
+				return className;
+			}
+			this.remove(className);
+			this.add(className);
+			return className;
+		};
 	}
-	this.remove(className);
-	this.add(className);
-	return className;
-};
+}

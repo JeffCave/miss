@@ -42,6 +42,18 @@ class indexPage {
 		tornadochart.report = this.runner.report;
 		let matrixmap = document.querySelector('#matrixmap');
 		matrixmap.report = this.runner.report;
+		let filedrop = document.querySelector('#filedrop');
+		filedrop.addEventListener('change', (e)=>{
+			Array.from(e.target.files).forEach((file)=>{
+				if (file.type === 'application/x-zip-compressed' || file.type === 'application/zip'){
+					self.attachSubmissions(file)
+						.then(function(files){
+							console.log('Submissions attached');
+						})
+						;
+				}
+			});
+		});
 
 		this.displaySubmissions = new Vue({
 			el:'#submissions',
@@ -54,17 +66,7 @@ class indexPage {
 			el: '#files',
 			data: {
 				treeData: this.files,
-				onfile: function(e){
-					Array.from(e.target.files).forEach(function(file){
-						if (file.type === 'application/x-zip-compressed' || file.type === 'application/zip'){
-							self.attachSubmissions(file)
-								.then(function(files){
-									console.log('Submissions attached');
-								})
-								;
-						}
-					});
-				}
+				onfile: ()=>{}
 			}
 		});
 		this.displayDiff = new Vue({
