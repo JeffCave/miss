@@ -10,15 +10,16 @@ import {DeepDiff} from './DeepDiff/DeepDiff.js';
 import {Submission} from './DeepDiff/submission/Submission.js';
 
 
+import './widgets/psFileDrop.js';
+import './widgets/psForceDirected.js';
+import './widgets/psMatrixMap.js';
+import './widgets/psPanelElement.js';
+import './widgets/psTabbedPanelElement.js';
+import './widgets/psTornadoChart.js';
+
 import './widgets/diffview.js';
-import './widgets/filedrop.js';
-import './widgets/force.js';
-import './widgets/panel.js';
 import './widgets/submissions.js';
-import './widgets/tabbedPanel.js';
 import './widgets/treeview.js';
-import './widgets/ResultsTable.js';
-import './widgets/ResultsMatrix.js';
 
 
 

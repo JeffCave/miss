@@ -1,4 +1,8 @@
 'use strict';
+
+/*
+global HTMLElement
+*/
 export {
 	psPanelElement
 };

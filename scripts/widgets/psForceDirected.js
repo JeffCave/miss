@@ -7,7 +7,7 @@ global _
 global HTMLElement
 */
 
-class psForceDirected extends HTMLElement {
+export default class psForceDirected extends HTMLElement {
 	constructor(){
 		super();
 

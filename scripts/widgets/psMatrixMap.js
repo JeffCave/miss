@@ -5,7 +5,7 @@ global _
 global HTMLElement
 */
 
-class psMatrixMap extends HTMLElement{
+export default class psMatrixMap extends HTMLElement{
 	constructor(){
 		super();
 

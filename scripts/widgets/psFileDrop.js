@@ -14,7 +14,7 @@ global HTMLElement
 global CustomEvent
  */
 
-class psFileDrop extends HTMLElement{
+export default class psFileDrop extends HTMLElement{
 	constructor(){
 		super();
 		psFileDrop.count = (psFileDrop.count||0)+1;

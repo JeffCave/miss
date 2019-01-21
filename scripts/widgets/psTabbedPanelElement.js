@@ -3,7 +3,11 @@ export {
 	psTabbedPanelElement
 };
 
-import psPanelElement from './panel.js';
+/*
+global HTMLElement
+*/
+
+import psPanelElement from './psPanelElement.js';
 
 export default class psTabbedPanelElement extends HTMLElement {
 	constructor() {

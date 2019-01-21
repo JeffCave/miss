@@ -5,7 +5,7 @@ global _
 global HTMLElement
 */
 
-class psTornadoChart extends HTMLElement {
+export default class psTornadoChart extends HTMLElement {
 	constructor(){
 		super();
 
