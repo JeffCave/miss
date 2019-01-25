@@ -27,7 +27,7 @@ global EventTarget
 /**
  * CLI Entry point and main public API endpoint for DeepDiff.
  */
-class DeepDiff extends EventTarget{
+export default class DeepDiff extends EventTarget{
 
 	constructor() {
 		super();

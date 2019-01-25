@@ -12,7 +12,7 @@ import "https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.0/underscore-mi
 global Vue
 global HTMLElement
 global CustomEvent
- */
+*/
 
 export default class psFileDrop extends HTMLElement{
 	constructor(){
@@ -23,15 +23,17 @@ export default class psFileDrop extends HTMLElement{
 			onfile: ()=>{}
 		};
 
+		let id = 'id-'+window.btoa(Date.now()).replace(/=/g,'');
 		let tmpl = [
 			'<style>',
 			psFileDrop.DefaultCSS,
 			'</style>',
-			'<label>',
+			'<label for="'+id+'">',
 			' <div>',
 			'  <slot>Click or drop something here</slot>',
 			' </div>',
-			' <input type="file">',
+			//' <input id="'+id+'" type="file" multiple webkitdirectory mozdirectory />',
+			' <input id="'+id+'" type="file" multiple />',
 			'</label>'
 		].join('\n');
 
@@ -72,7 +74,8 @@ export default class psFileDrop extends HTMLElement{
 	}
 
 	get files(){
-		return this._.input.files;
+		let f = this._.input.files;
+		return f;
 	}
 
 	get onfile(){

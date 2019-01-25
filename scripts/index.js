@@ -8,6 +8,7 @@ global JSZip
 
 import {DeepDiff} from './DeepDiff/DeepDiff.js';
 import {Submission} from './DeepDiff/submission/Submission.js';
+import * as unpack from './DeepDiff/util/unpack.js';
 
 
 import './widgets/psFileDrop.js';
@@ -43,18 +44,29 @@ class indexPage {
 		tornadochart.report = this.runner.report;
 		let matrixmap = document.querySelector('#matrixmap');
 		matrixmap.report = this.runner.report;
-		let filedrop = document.querySelector('#filedrop');
-		filedrop.addEventListener('change', (e)=>{
-			Array.from(e.target.files).forEach((file)=>{
-				if (file.type === 'application/x-zip-compressed' || file.type === 'application/zip'){
-					self.attachSubmissions(file)
-						.then(function(files){
-							console.log('Submissions attached');
-						})
-						;
-				}
+		let uploadSubmission = document.querySelector('#UploadSubmission');
+		uploadSubmission.addEventListener('change', async (e)=>{
+			let files = uploadSubmission.files;
+			files = await unpack.unPack(files);
+			self.attachSubmissions(files)
+				.then(function(files){
+					console.log('Submissions attached');
+				})
+				;
+		});
+		let uploadSubmissions = document.querySelector('#UploadSubmissions');
+		uploadSubmissions.addEventListener('change', async (e)=>{
+			let files = uploadSubmission.files;
+			files = await unpack.unPack(files);
+			Object.values(files).forEach((file)=>{
+				self.attachSubmissions(file)
+					.then(function(files){
+						console.log('Submissions attached');
+					})
+					;
 			});
 		});
+
 
 		this.displaySubmissions = new Vue({
 			el:'#submissions',
@@ -108,34 +120,15 @@ class indexPage {
 
 	}
 
-	async attachSubmissions(blob){
-		let parent = this;
-		this.submissions = null;
-		// 1) read the Blob
-		let files = await JSZip.loadAsync(blob);
-		files = await Submission.fileListFromZip(files);
-		Object.entries(files).forEach(function(file){
-			parent.files.push({
-				name:file[0],
-				content:file[1],
+	async attachSubmissions(files){
+		for(let f in files){
+			let file = files[f];
+			this.files.push({
+				name: f,
+				content: file,
 			});
-		});
+		}
 		return files;
-	}
-
-	attachArchive(blob){
-		let parent = this;
-		this.archive = null;
-		// 1) read the Blob
-		return JSZip
-			.loadAsync(blob)
-			.then(function(zip) {
-				parent.archive = zip;
-			})
-			.catch(function (e) {
-				console.error("Error reading " + blob.name + ": " + e.message);
-			})
-			;
 	}
 
 	attachCommon(blob){

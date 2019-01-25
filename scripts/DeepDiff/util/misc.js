@@ -7,8 +7,9 @@ export{
 };
 
 /*
-global jsSHA
 global DOMTokenList
+global File
+global jsSHA
 */
 
 export default function checkNotNull(value = null){
@@ -105,7 +106,21 @@ export function UniformDistribution(seed) {
 
 
 
-
+File.prototype.async = function(type='text'){
+	let p = new Promise((resolve)=>{
+		let reader = new FileReader();
+		reader.onload = function(evt) {
+			resolve(evt.target.result);
+		};
+		if(type === 'text'){
+			reader.readAsText(this);
+		}
+		else{
+			reader.readAsBinaryString(this);
+		}
+	});
+	return p;
+};
 
 String.prototype.hashCode = function(){
 	return hashCode(this);
