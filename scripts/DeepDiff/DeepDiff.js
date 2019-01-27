@@ -15,6 +15,7 @@ import {Submission} from './submission/Submission.js';
 import "https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.4.3/pouchdb.min.js";
 import "./lib/pouchdb.upsert.min.js";
 
+import {psObjectMap} from './util/psIterate.js';
 import * as utils from './util/misc.js';
 
 /*
@@ -31,6 +32,8 @@ export default class DeepDiff extends EventTarget{
 
 	constructor() {
 		super();
+
+		this._ = {};
 
 		this.numThreads = 1;
 		this.db = new PouchDB('DeepDiff');
@@ -51,10 +54,13 @@ export default class DeepDiff extends EventTarget{
 		this.Submissions
 			.then(submission=>{
 				this.report.submissions = submission.reduce((a,d)=>{
-					d.tokens = Object.entries(d.content).reduce((a,d)=>{
-						let ext = d[0].split('.').pop();
+					d.tokens = Object.entries(d.content).reduce(async (a,d)=>{
+						let name = d[0];
+						let ext = name.split('.').pop();
 						let handler = ContentHandlers.lookupHandlerByExt(ext);
-						a[d[0]] = handler.tokenizer.split(d[1],d[0]);
+						let content = d[1];
+						content = await content;
+						a[name] = handler.tokenizer.split(content,name);
 						return a;
 					},{});
 					a[d.name] = d;
@@ -135,9 +141,10 @@ export default class DeepDiff extends EventTarget{
 			};
 			self.db
 				.changes(opts)
-				.on('change', function(e) {
+				.on('change', (e) => {
 					//if(e.deleted) return;
 					console.log(eventType[0] + ' change');
+					delete this._.submissions;
 					Object
 						.values(eventType[1])
 						.forEach(function(handler){
@@ -289,18 +296,35 @@ export default class DeepDiff extends EventTarget{
 	 * @return Set of submissions to run on
 	 */
 	get Submissions() {
-		return this.db.query('checksims/submissions',{
-				include_docs: true
+		if(this._.submissions) return this._.submissions;
+
+		this._.submissions =  this.db.query('checksims/submissions',{
+				include_docs: true,
 			})
-			.then(function(results){
+			.then(async (results)=>{
 				let rows = results.rows.map(d=>{
 					let sub = d.doc;
-					//sub = Submission.fromJSON(sub);
-					return sub;
+					sub._attachments = psObjectMap(sub._attachments,async (attach,key)=>{
+						let blob = await this.db.getAttachment(sub._id,key);
+						blob = new File([blob], key, {type:blob.type});
+						attach.data = blob;
+						return attach;
+					});
+					return Promise.all(Object.values(sub._attachments)).then((attach)=>{
+						attach.forEach(a=>{
+							sub._attachments[a.data.name] = a;
+						});
+						sub = Submission.fromJSON(sub);
+						return sub;
+					});
 				});
+				for(let r in rows){
+					rows[r] = await rows[r];
+				}
 				return rows;
 			})
 			;
+		return this._.submissions;
 	}
 
 	/**
@@ -328,7 +352,7 @@ export default class DeepDiff extends EventTarget{
 	 * @param newSubmissions New set of submissions to work on. Must contain at least 1 submission.
 	 * @return This configuration
 	 */
-	async addSubmissions(newSubmissions) {
+	addSubmissions(newSubmissions) {
 		utils.checkNotNull(newSubmissions);
 		if(newSubmissions instanceof Submission){
 			newSubmissions = [newSubmissions];
@@ -336,17 +360,20 @@ export default class DeepDiff extends EventTarget{
 		if(!Array.isArray(newSubmissions)){
 			newSubmissions = Submission.submissionsFromFiles(newSubmissions, this.Filter);
 		}
+		let puts = [];
 		for(let d=0; d<newSubmissions.length; d++){
 			let newSub = newSubmissions[d];
-			let newDoc = await newSub.toJSON();
-			this.db.upsert('submission.'+newSub.name,function(oldDoc){
-				newDoc = JSON.parse(newDoc);
+			let newDoc = newSub.toJSON();
+			let put = this.db.upsert('submission.'+newSub.name,(oldDoc)=>{
 				if(utils.docsEqual(newDoc,oldDoc)){
 					return false;
 				}
 				return newDoc;
 			});
+			puts.push(put);
+
 		}
+		return Promise.all(puts);
 	}
 
 
@@ -497,25 +524,21 @@ export default class DeepDiff extends EventTarget{
 		if(pair.submissions[0].finalList.length === 0){
 			let common = await this.CommonCode;
 			common = CommonCodeLineRemovalPreprocessor(common);
-			let tokens = pair.submissions.map(function(submission){
-				return 'submission.'+submission.submission;
+			let tokens = pair.submissions.map(function(s){
+				return s.submission;
 			});
-			tokens = await this.db
-				.allDocs({keys:tokens,include_docs:true})
-				.then(subs=>{
-					return subs.rows
-						.filter(s=>{
-							return s.doc;
-						})
-						.map(s=>{
-							s = s.doc;
-							s = Submission.fromJSON(s);
-							s.Common = common;
-
-							s = s.ContentAsTokens;
-							return s;
-						});
-				});
+			let submissions = await this.Submissions;
+			tokens = submissions
+				.filter((s)=>{
+					let ismatch = tokens.includes(s.name);
+					return ismatch;
+				})
+				.map((s)=>{
+					s.Common = common;
+					s = s.ContentAsTokens;
+					return s;
+				})
+				;
 			tokens = await Promise.all(tokens);
 
 			if(tokens.length < 2){

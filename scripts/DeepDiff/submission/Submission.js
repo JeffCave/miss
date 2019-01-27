@@ -17,32 +17,16 @@ import {PreprocessorRegistry} from '../preprocessor/PreprocessorRegistry.js';
 import {TokenList} from '../token/TokenList.js';
 import {TokenizerRegistry} from '../token/TokenizerRegistry.js';
 import {checkNotNull, checkArgument, hasher} from '../util/misc.js';
+import {psObjectMap} from '../util/psIterate.js';
 
 
-/**
- * Interface for Submissions.
- *
- * Submissions are considered Comparable so they can be ordered for
- * output. Generally, we only expect that their names, and not their
- * contents, will be compared.
- *
- * Also contains factory methods for submissions
- */
-export default class Submission {
 
-	/**
-	 * Construct a new Concrete Submission with given name and contents.
-	 *
-	 * Token content should be the result of tokenizing the string
-	 * content of the submission with some tokenizer. This invariant is
-	 * maintained throughout the project, but not enforced here for
-	 * performance reasons. It is thus possible to create a
-	 * ConcreteSubmission with Token contents not equal to tokenized
-	 * String contents. This is not recommended and will most likely
-	 * break, at the very least, Preprocessors.
-	 */
+export default class Submission{
+
 	constructor(name, files) {
 		this.common = PreprocessorRegistry.processors.null;
+
+		this._ = {};
 
 		if(name instanceof Submission){
 			this.allContent = name.allContent;
@@ -63,47 +47,17 @@ export default class Submission {
 			delete files[''];
 		}
 
-		// Group the files by the various types we handle
-		let content = Object.entries(files)
-			.filter(function(d){
-				let fname = d[0];
-				let anyIgnores = ContentHandlers.ignores.some(function(e){
-						let isIgnore = e.test(fname);
-						return isIgnore;
-					});
-				return !anyIgnores;
-			})
-			.reduce(function(agg,file){
-				let name = file[0];
-				let content = file[1];
-				let ext = name.split('.').pop();
-				let handler = ContentHandlers.lookupHandlerByExt(ext);
-				if(!agg[handler.type]){
-					agg[handler.type] = {files:{}};
-				}
-				agg[handler.type].files[name] = content;
-				return agg;
-			},{})
-			;
-		// now that they are grouped, create a promise to join them
-		// all together into a single block of content
-		let allContent = [];
-		Object.values(content).forEach(function(d){
-			let c = Object.entries(d.files)
-				.sort((entry)=>{return entry[0];})
-				.map((entry)=>{return entry[1];})
-				;
-			d.content = Promise.all(c)
-				.then(function(content){
-					content = content.join('\n');
-					return content;
-				});
-			allContent.push(d.content);
+		files = psObjectMap(files,(file)=>{
+			if(file instanceof Blob){
+				file = {
+					data: file
+				};
+				file.type = file.data.type;
+			}
+			return file;
 		});
 
-		this.allContent = allContent;
-		this.typedContent = content;
-		this.content = files;
+		this.blobs = files;
 		this.name = name;
 	}
 
@@ -115,6 +69,80 @@ export default class Submission {
 		return this.common;
 	}
 
+	get content(){
+		if(this._.content){
+			return this._.content;
+		}
+		let content = Object.entries(this.blobs)
+			.filter((d)=>{
+				let fname = d[0];
+				let anyIgnores = ContentHandlers.ignores.some(function(e){
+						let isIgnore = e.test(fname);
+						return isIgnore;
+					});
+				return !anyIgnores;
+			})
+			.reduce((agg,file,f,files)=>{
+				let name = file[0];
+				file = file[1];
+				agg[name] = file.data.async('text');
+				return agg;
+			},{})
+			;
+		this._.content = content;
+		return this._.content;
+	}
+
+	get typedContent(){
+		if(this._.typedContent){
+			return this._.typedContent;
+		}
+		// Group the files by the various types we handle
+		let typedContent = Object.entries(this.content).reduce((agg,file)=>{
+				let name = file[0];
+				file = file[1];
+
+				let ext = name.split('.').pop();
+				let handler = ContentHandlers.lookupHandlerByExt(ext);
+				if(!agg[handler.type]){
+					agg[handler.type] = {files:{}};
+				}
+				agg[handler.type].files[name] = file;
+				return agg;
+			},{})
+			;
+		this._.typedContent = typedContent;
+		return this._.typedContent;
+	}
+
+
+	/**
+	 * join them all together into a single block of content
+	 */
+	get allContent(){
+		if(this._.allContent){
+			return this._.allContent;
+		}
+		let allContent = [];
+		Object.values(this.typedContent).forEach((d)=>{
+			let c = Object.entries(d.files)
+				.sort((entry)=>{return entry[0];})
+				.map((entry)=>{return entry[1];})
+				;
+			d.content = Promise.all(c)
+				.then((content)=>{
+					content = content.join('\n');
+					return content;
+				});
+			allContent.push(d.content);
+		});
+
+		allContent = Promise.all(allContent).then((allContent)=>{
+			return allContent.join('\n\n');
+		});
+		this._.allContent = allContent;
+		return this._.allContent;
+	}
 
 	get ContentAsTokens() {
 		if(!('_tokenList' in this)){
@@ -185,9 +213,9 @@ export default class Submission {
 	}
 
 	get hash(){
-		if(!('_hash' in this)){
+		if(!('hash' in this._)){
 			let self = this;
-			this._hash= new Promise(function(r){
+			this._.hash= new Promise(function(r){
 					let content = self.content;
 					r(content);
 				})
@@ -198,7 +226,7 @@ export default class Submission {
 					return hash;
 				});
 		}
-		return this._hash;
+		return this._.hash;
 	}
 
 	get totalTokens(){
@@ -210,26 +238,25 @@ export default class Submission {
 			type : 'Submission',
 			name : this.name,
 			content : this.content,
-			hash : this.hash
+			//hash : this.hash
 		};
 		return JSON.stringify(json);
 	}
 
-	async toJSON() {
+	toJSON(attachments = true) {
 		let json = {
 			type : 'Submission',
 			name : this.name,
-			content : {},
-			hash : await this.hash,
-			totalTokens : await this.totalTokens,
+			//hash : await this.hash,
+			//totalTokens : await this.totalTokens,
 		};
-		for(let key in this.content){
-			json.content[key] = await this.content[key];
+		if(attachments){
+			json._attachments = this.blobs;
 		}
 		if(this.visibility === false){
 			json.visibility = false;
 		}
-		return JSON.stringify(json);
+		return json;
 	}
 
 
@@ -271,8 +298,11 @@ export default class Submission {
 	 * Parses Submission from string
 	 */
 	static fromJSON(json){
-		let sub = new Submission(json.name, json.content);
-		sub._hash = json.hash;
+		let attachments = psObjectMap(json._attachments,(attach)=>{
+			return attach.data;
+		});
+		let sub = new Submission(json.name, attachments);
+		//sub._hash = json.hash;
 		return sub;
 	}
 
@@ -295,10 +325,8 @@ export default class Submission {
 	 */
 	static get NullSubmission(){
 		if(!('_NullSubmission' in Submission)){
-			let content = {
-				'NullContent.txt':Promise.resolve('')
-			};
-			Submission._NullSubmission = new Submission(' ',content);
+			let content = new File([''],'',{type:'text/plain',lastModified:0});
+			Submission._NullSubmission = new Submission(' ',{' ':content});
 		}
 		return Submission._NullSubmission;
 	}

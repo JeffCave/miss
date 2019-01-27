@@ -48,11 +48,43 @@ class indexPage {
 		uploadSubmission.addEventListener('change', async (e)=>{
 			let files = uploadSubmission.files;
 			files = await unpack.unPack(files);
-			self.attachSubmissions(files)
-				.then(function(files){
-					console.log('Submissions attached');
+
+			let maxlen = Number.MAX_VALUE;
+			let names = Object.values(files)
+				.map((file)=>{
+					let path = file.relativePath.split('/');
+					maxlen = Math.min(maxlen,path.length);
+					return path;
+				})
+				.map(path=>{
+					path = path.slice(0,maxlen);
+					return path;
 				})
 				;
+
+			for(let allsame = false; !allsame && maxlen > 0; maxlen--){
+				allsame = names
+					.map(name=>{
+						return name.join();
+					})
+					.every((name,i,names)=>{
+						if(i === 0){
+							return true;
+						}
+						let rtn = name === names[i-1];
+						return rtn;
+					})
+					;
+				if(!allsame){
+					names.forEach((name)=>{
+						name.pop();
+					});
+				}
+			}
+			let name = names[0].join('/');
+
+			let submission = new Submission(name,files);
+			this.runner.addSubmissions(submission);
 		});
 		let uploadSubmissions = document.querySelector('#UploadSubmissions');
 		uploadSubmissions.addEventListener('change', async (e)=>{
@@ -75,13 +107,6 @@ class indexPage {
 				filter: 'checksims/submissions',
 			},
 		});
-		this.displayFiles = new Vue({
-			el: '#files',
-			data: {
-				treeData: this.files,
-				onfile: ()=>{}
-			}
-		});
 		this.displayDiff = new Vue({
 			el:'#compare',
 			data: {
@@ -97,11 +122,11 @@ class indexPage {
 		adder.addEventListener('dragleave',function(event){
 			event.target.style.backgroundColor="transparent";
 		});
-		adder.addEventListener('drop',function(event){
+		adder.addEventListener('drop',(event)=>{
 			event.target.style.backgroundColor="blue";
 			let path = event.dataTransfer.getData("text/plain");
 			path = new RegExp("^" + path);
-			let files = self.files
+			let files = this.files
 				.filter(function(d){
 					let isMatch = path.test(d.name);
 					return isMatch;

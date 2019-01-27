@@ -2,7 +2,8 @@
 
 import {Submission} from '../DeepDiff/submission/Submission.js';
 import {DeepDiff} from '../DeepDiff/DeepDiff.js';
-import {icons} from './icons.js'
+import {icons} from './icons.js';
+import {psObjectMap} from '../DeepDiff/util/psIterate.js';
 
 // define the item component
 Vue.component('submission', {
@@ -80,8 +81,23 @@ Vue.component('submission-list', {
 				Vue.delete(this.submissions, e.id);
 			}
 			else{
-				let doc = Submission.fromJSON(e.doc);
-				Vue.set(this.submissions, e.id, doc);
+				let doc = e.doc;
+				doc._attachments = psObjectMap(doc._attachments,async (attach,key)=>{
+					let blob = await this.pouchdb.getAttachment(doc._id,key);
+					blob = new File([blob], key,{type:blob.type});
+					blob = {
+						type: blob.type,
+						data: blob,
+					};
+					return blob;
+				});
+				Promise.all(Object.values(doc._attachments)).then((attach)=>{
+					attach.forEach(a=>{
+						doc._attachments[a.data.name] = a;
+					});
+					doc = Submission.fromJSON(doc);
+					Vue.set(this.submissions, e.id, doc);
+				});
 			}
 		});
 	},
