@@ -493,12 +493,18 @@ export default class DeepDiff extends EventTarget{
 			})
 			.filter(r=>{ return r; })
 			;
+		// put a dummy value in to handle empty arrays
+		diffs.push({diff:Number.MIN_VALUE});
+		// pick the largest value from the array
 		let max = diffs.reduce((a,d)=>{
 				if(a.diff < d.diff){
 					return d;
 				}
 				return a;
 			},diffs[0]);
+		// if the biggest difference is really small, set the value such that
+		// nothing is considered significant (make the significant value
+		// arbitrarily larger than any of the values)
 		if(max.diff < 0.1){
 			max.pct = 2;
 		}
@@ -524,10 +530,10 @@ export default class DeepDiff extends EventTarget{
 		if(pair.submissions[0].finalList.length === 0){
 			let common = await this.CommonCode;
 			common = CommonCodeLineRemovalPreprocessor(common);
+			let submissions = await this.Submissions;
 			let tokens = pair.submissions.map(function(s){
 				return s.submission;
 			});
-			let submissions = await this.Submissions;
 			tokens = submissions
 				.filter((s)=>{
 					let ismatch = tokens.includes(s.name);
@@ -535,7 +541,7 @@ export default class DeepDiff extends EventTarget{
 				})
 				.map((s)=>{
 					s.Common = common;
-					s = s.ContentAsTokens;
+					s = s.getContentAsTokens();
 					return s;
 				})
 				;

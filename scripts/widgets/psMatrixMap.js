@@ -16,7 +16,7 @@ export default class psMatrixMap extends HTMLElement{
 				submissions:{},
 				archives:[],
 			},
-			delay:1000,
+			delay:2000,
 		};
 
 		let shadow = this.attachShadow({mode: 'open'});
@@ -108,10 +108,10 @@ export default class psMatrixMap extends HTMLElement{
 					}
 					else if(result){
 						settings.title = (result.percentMatched * 100).toFixed(1) + '% ';
-						if(result.complete !== result.totalTokens){
+						if(result.complete !== result.totalTokens && result.totalTokens > 0){
 							settings.style = 'active';
 							settings.title += ' complete';
-							setTimeout(()=>{this.Render();},this._.delay);
+							this.Render();
 						}
 						else{
 							settings.opacity = result.percentMatched;

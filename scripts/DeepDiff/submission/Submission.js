@@ -52,7 +52,7 @@ export default class Submission{
 				file = {
 					data: file
 				};
-				file.type = file.data.type;
+				file.content_type = file.data.type;
 			}
 			return file;
 		});
@@ -73,23 +73,20 @@ export default class Submission{
 		if(this._.content){
 			return this._.content;
 		}
-		let content = Object.entries(this.blobs)
-			.filter((d)=>{
-				let fname = d[0];
-				let anyIgnores = ContentHandlers.ignores.some(function(e){
-						let isIgnore = e.test(fname);
-						return isIgnore;
-					});
-				return !anyIgnores;
-			})
-			.reduce((agg,file,f,files)=>{
-				let name = file[0];
-				file = file[1];
-				agg[name] = file.data.async('text');
-				return agg;
-			},{})
-			;
-		this._.content = content;
+		let agg = {};
+		for(let name in this.blobs){
+			let anyIgnores = ContentHandlers.ignores.some(function(e){
+					let isIgnore = e.test(name);
+					return isIgnore;
+				});
+			if(anyIgnores){
+				continue;
+			}
+			let file = this.blobs[name];
+			file = file.data.async('text');
+			agg[name] = file;
+		}
+		this._.content = agg;
 		return this._.content;
 	}
 
@@ -98,20 +95,19 @@ export default class Submission{
 			return this._.typedContent;
 		}
 		// Group the files by the various types we handle
-		let typedContent = Object.entries(this.content).reduce((agg,file)=>{
-				let name = file[0];
-				file = file[1];
+		let agg = {};
+		for(let name in this.content){
+			let file = this.content[name];
 
-				let ext = name.split('.').pop();
-				let handler = ContentHandlers.lookupHandlerByExt(ext);
-				if(!agg[handler.type]){
-					agg[handler.type] = {files:{}};
-				}
-				agg[handler.type].files[name] = file;
-				return agg;
-			},{})
-			;
-		this._.typedContent = typedContent;
+			let ext = name.split('.').pop();
+			let handler = ContentHandlers.lookupHandlerByExt(ext);
+			if(!agg[handler.type]){
+				agg[handler.type] = {files:{}};
+			}
+
+			agg[handler.type].files[name] = file;
+		}
+		this._.typedContent = agg;
 		return this._.typedContent;
 	}
 
@@ -144,68 +140,53 @@ export default class Submission{
 		return this._.allContent;
 	}
 
-	get ContentAsTokens() {
-		if(!('_tokenList' in this)){
-			let self = this;
-			let tokenlists = {};
-			Object.entries(this.typedContent).forEach(function(d){
-				let handler = ContentHandlers.handlers[d[0]];
-				let tokenizer = handler.tokenizer;
-				let preprocessors = handler.preprocessors.map(function(p){
-						let proc = PreprocessorRegistry.processors[p];
-						return proc;
-					})
-					;
-				preprocessors.unshift(self.Common);
-				let content = d[1];
-				content = Object.values(content.files);
-				tokenlists[tokenizer.tokentype] = Promise.all(content)
-					.then(function(contentString){
-						contentString = contentString.join('\n');
-						return (async function(){
-							let cString = contentString;
-							for(let p=0; p<preprocessors.length; p++){
-								let processor = preprocessors[p];
-								cString = await processor(cString);
-							}
-							return cString;
-						})();
-					})
-					.then(function(contentString){
-						let tokens = tokenizer.split(contentString);
-						if(tokens.length > 7500) {
-							console.warn("Warning: Submission " + self.name + " has very large token count (" + tokens.length + ")");
-						}
-						return tokens;
-					});
-			});
-			tokenlists = Object.values(tokenlists);
-			this._tokenList = Promise.all(tokenlists)
-				.then(function(tokens){
-					let tokenlist = new TokenList('mixed',[]);
-					tokens.forEach(function(t){
-						t.forEach(function(d){
-							tokenlist.push(d);
-						});
-					});
-					return tokenlist;
-				});
-
+	async getContentAsTokens() {
+		if('tokenList' in this._){
+			return this._.tokenList;
 		}
-		return this._tokenList;
+		let tokenlist = new TokenList('mixed',[]);
+		for(let type in this.typedContent){
+			let handler = ContentHandlers.handlers[type];
+			let tokenizer = handler.tokenizer;
+			let preprocessors = handler.preprocessors.map((p)=>{
+				let proc = PreprocessorRegistry.processors[p];
+				return proc;
+			});
+			preprocessors.unshift(this.Common);
+
+			let content = this.typedContent[type];
+			content = Object.values(content.files);
+			while(content.length > 0){
+				let contentString = content.pop();
+				for(let p=0; p<preprocessors.length; p++){
+					let processor = preprocessors[p];
+					contentString = await processor(contentString);
+				}
+				let tokens = tokenizer.split(contentString);
+				if(tokens.length > 7500) {
+					console.warn("Warning: Submission " + this.name + " has very large token count (" + tokens.length + ")");
+				}
+
+				for(let t=0; t<tokens.length; t++){
+					let token = tokens[t];
+					tokenlist.push(token);
+				}
+			}
+		}
+
+		this._.tokenList = tokenlist;
+		return this._.tokenList;
 	}
 
 	get ContentAsString() {
-		if(!('_content' in this)){
-			let self = this;
-			this._content = Promise.all(self.allContent)
-				.then(function(fileContent){
-					let contentString = fileContent.join('\n');
-					return contentString;
-				})
-				;
+		if('content' in this._){
+			return this._.content;
 		}
-		return this._content;
+		this._.content = Promise.all(this.allContent).then((fileContent)=>{
+			let contentString = fileContent.join('\n');
+			return contentString;
+		});
+		return this._.content;
 	}
 
 	get Name(){
@@ -214,13 +195,12 @@ export default class Submission{
 
 	get hash(){
 		if(!('hash' in this._)){
-			let self = this;
-			this._.hash= new Promise(function(r){
-					let content = self.content;
+			this._.hash= new Promise((r)=>{
+					let content = this.content;
 					r(content);
 				})
 				.then(function(content){
-					//let name = self.name;
+					//let name = this.name;
 					//let hash = hasher(name + content);
 					let hash = hasher(content);
 					return hash;
