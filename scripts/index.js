@@ -44,27 +44,27 @@ class indexPage {
 		tornadochart.report = this.runner.report;
 		let matrixmap = document.querySelector('#matrixmap');
 		matrixmap.report = this.runner.report;
+
 		let uploadSubmission = document.querySelector('#UploadSubmission');
 		uploadSubmission.addEventListener('change', async (e)=>{
-			let files = uploadSubmission.files;
-			files = await unpack.unPack(files);
-			self.attachSubmissions(files)
-				.then(function(files){
-					console.log('Submissions attached');
-				})
-				;
+			let files = e.target.files;
+			let folder = await this.FindFolderStart(files);
+			let submission = new Submission(folder.name,folder.files);
+			this.runner.addSubmissions(submission);
 		});
+
 		let uploadSubmissions = document.querySelector('#UploadSubmissions');
 		uploadSubmissions.addEventListener('change', async (e)=>{
-			let files = uploadSubmission.files;
-			files = await unpack.unPack(files);
-			Object.values(files).forEach((file)=>{
-				self.attachSubmissions(file)
-					.then(function(files){
-						console.log('Submissions attached');
-					})
-					;
+			let files = e.target.files;
+			let folder = await this.FindFolderStart(files);
+			folder.files = this.GroupFolders(folder.files, folder.name);
+			let submissions = Object.entries(folder.files).map((folder)=>{
+				let key = folder[0];
+				let values = folder[1];
+				let submission = new Submission(key,values);
+				return submission;
 			});
+			this.runner.addSubmissions(submissions);
 		});
 
 
@@ -120,16 +120,76 @@ class indexPage {
 
 	}
 
-	async attachSubmissions(files){
-		for(let f in files){
-			let file = files[f];
-			this.files.push({
-				name: f,
-				content: file,
-			});
-		}
-		return files;
+
+
+	GroupFolders(files,prefix='.'){
+		prefix = prefix.split('/').join('/');
+		let groups = {};
+		Object.entries(files).forEach((file)=>{
+			let name = file[0].split('/');
+			file = file[1];
+			let group = name.shift();
+			group = [prefix,group].join('/');
+			name = name.join('/');
+
+			groups[group] = groups[group] || {};
+			groups[group][name] = file;
+		});
+		return groups;
 	}
+
+
+	async FindFolderStart(files){
+		files = await unpack.unPack(files);
+
+		let maxlen = Number.MAX_VALUE;
+		let names = Object.values(files)
+			.map((file)=>{
+				let path = file.relativePath.split('/');
+				maxlen = Math.min(maxlen,path.length);
+				return path;
+			})
+			.map(path=>{
+				path = path.slice(0,maxlen);
+				return path;
+			})
+			;
+
+		for(let allsame = false; !allsame && maxlen > 0; maxlen--){
+			allsame = names
+				.map(name=>{
+					return name.join();
+				})
+				.every((name,i,names)=>{
+					if(i === 0){
+						return true;
+					}
+					let rtn = name === names[i-1];
+					return rtn;
+				})
+				;
+			if(!allsame){
+				names.forEach((name)=>{
+					name.pop();
+				});
+			}
+		}
+		let name = names[0];
+		name = name.join('/');
+
+		files = Object.entries(files).reduce((a,d)=>{
+			let key = d[0].substr(name.length+1);
+			let value = d[1];
+			a[key] = value;
+			return a;
+		},{});
+
+		return {
+			name: name,
+			files: files
+		};
+	}
+
 
 	attachCommon(blob){
 		let parent = this;
