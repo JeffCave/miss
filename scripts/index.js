@@ -63,24 +63,6 @@ class indexPage {
 			let submissions = [];
 			for(let key in folder.files){
 				let values = folder.files[key];
-				for(let f in values){
-					let file = values[f];
-					let type = file.type;
-					if(type === 'application/octet-stream'){
-						let ext = file.name.split('.').pop();
-						let handler = ContentHandlers.lookupHandlerByExt(ext);
-						type = handler.mimetype;
-						if(!type){
-							type = 'text/plain';
-							if(ContentHandlers.ignores.includes(ext)){
-								type = 'application/octet';
-							}
-						}
-					}
-					file = new psFile(file, file.name, {type:type});
-					file = await file.toJSON();
-					values[f] = file;
-				}
 				let submission = new Submission(key,values);
 				submissions.push(submission);
 			}
@@ -161,6 +143,32 @@ class indexPage {
 
 	async FindFolderStart(files){
 		files = await unpack.unPack(files);
+
+
+
+		let values = files;
+		for(let f in values){
+			let file = values[f];
+			let type = file.type;
+			if(type === 'application/octet-stream'){
+				let ext = file.name.split('.').pop();
+				let handler = ContentHandlers.lookupHandlerByExt(ext);
+				type = handler.mime;
+				if(!type){
+					type = 'text/plain';
+					if(ContentHandlers.ignores.includes(ext)){
+						type = 'application/octet';
+					}
+				}
+			}
+			let path = f.split('/'); path.pop(); path = path.join('/');
+			file = new psFile(file, file.name, {type:type,relativePath:path});
+			file = await file.toJSON();
+			values[f] = file;
+		}
+		files = values;
+
+
 
 		let maxlen = Number.MAX_VALUE;
 		let names = Object.values(files)

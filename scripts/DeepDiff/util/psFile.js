@@ -23,7 +23,7 @@ class psFile extends File{
 		super(blob, name, options);
 
 		this._ = {};
-		this.relativePath = blob.relativePath || this.webkitRelativePath || '';
+		this.relativePath = blob.relativePath || this.webkitRelativePath || options.relativePath || '';
 
 		let path = this.fullPath;
 		path = path.split('/').filter(p=>{return p!=='';});
@@ -73,10 +73,10 @@ class psFile extends File{
 			'fullPath': this.fullPath,
 		};
 		json.type = this.type || json.type;
+		json.blob = await this.read('text');
 		let name = json.type.split('/').shift();
-		json.blob = await this.read(name);
 		if(name !== 'text'){
-			json.blob = window.atob(json.blob);
+			json.blob = window.btoa(json.blob);
 		}
 		return json;
 	}
