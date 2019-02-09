@@ -15,7 +15,6 @@ import {Submission} from './submission/Submission.js';
 import "https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.4.3/pouchdb.min.js";
 import "./lib/pouchdb.upsert.min.js";
 
-import {psObjectMap} from './util/psIterate.js';
 import * as utils from './util/misc.js';
 
 /*
@@ -32,8 +31,6 @@ export default class DeepDiff extends EventTarget{
 
 	constructor() {
 		super();
-
-		this._ = {};
 
 		this.numThreads = 1;
 		this.db = new PouchDB('DeepDiff');
@@ -54,13 +51,10 @@ export default class DeepDiff extends EventTarget{
 		this.Submissions
 			.then(submission=>{
 				this.report.submissions = submission.reduce((a,d)=>{
-					d.tokens = Object.entries(d.content).reduce(async (a,d)=>{
-						let name = d[0];
-						let ext = name.split('.').pop();
+					d.tokens = Object.entries(d.content).reduce((a,d)=>{
+						let ext = d[0].split('.').pop();
 						let handler = ContentHandlers.lookupHandlerByExt(ext);
-						let content = d[1];
-						content = await content;
-						a[name] = handler.tokenizer.split(content,name);
+						a[d[0]] = handler.tokenizer.split(d[1],d[0]);
 						return a;
 					},{});
 					a[d.name] = d;
@@ -141,10 +135,9 @@ export default class DeepDiff extends EventTarget{
 			};
 			self.db
 				.changes(opts)
-				.on('change', (e) => {
+				.on('change', function(e) {
 					//if(e.deleted) return;
 					console.log(eventType[0] + ' change');
-					delete this._.submissions;
 					Object
 						.values(eventType[1])
 						.forEach(function(handler){
@@ -296,35 +289,18 @@ export default class DeepDiff extends EventTarget{
 	 * @return Set of submissions to run on
 	 */
 	get Submissions() {
-		if(this._.submissions) return this._.submissions;
-
-		this._.submissions =  this.db.query('checksims/submissions',{
-				include_docs: true,
+		return this.db.query('checksims/submissions',{
+				include_docs: true
 			})
-			.then(async (results)=>{
+			.then(function(results){
 				let rows = results.rows.map(d=>{
 					let sub = d.doc;
-					sub._attachments = psObjectMap(sub._attachments,async (attach,key)=>{
-						let blob = await this.db.getAttachment(sub._id,key);
-						blob = new File([blob], key, {type:blob.type});
-						attach.data = blob;
-						return attach;
-					});
-					return Promise.all(Object.values(sub._attachments)).then((attach)=>{
-						attach.forEach(a=>{
-							sub._attachments[a.data.name] = a;
-						});
-						sub = Submission.fromJSON(sub);
-						return sub;
-					});
+					//sub = Submission.fromJSON(sub);
+					return sub;
 				});
-				for(let r in rows){
-					rows[r] = await rows[r];
-				}
 				return rows;
 			})
 			;
-		return this._.submissions;
 	}
 
 	/**
@@ -352,7 +328,7 @@ export default class DeepDiff extends EventTarget{
 	 * @param newSubmissions New set of submissions to work on. Must contain at least 1 submission.
 	 * @return This configuration
 	 */
-	addSubmissions(newSubmissions) {
+	async addSubmissions(newSubmissions) {
 		utils.checkNotNull(newSubmissions);
 		if(newSubmissions instanceof Submission){
 			newSubmissions = [newSubmissions];
@@ -360,20 +336,17 @@ export default class DeepDiff extends EventTarget{
 		if(!Array.isArray(newSubmissions)){
 			newSubmissions = Submission.submissionsFromFiles(newSubmissions, this.Filter);
 		}
-		let puts = [];
 		for(let d=0; d<newSubmissions.length; d++){
 			let newSub = newSubmissions[d];
-			let newDoc = newSub.toJSON();
-			let put = this.db.upsert('submission.'+newSub.name,(oldDoc)=>{
+			let newDoc = await newSub.toJSON();
+			this.db.upsert('submission.'+newSub.name,function(oldDoc){
+				newDoc = JSON.parse(newDoc);
 				if(utils.docsEqual(newDoc,oldDoc)){
 					return false;
 				}
 				return newDoc;
 			});
-			puts.push(put);
-
 		}
-		return Promise.all(puts);
 	}
 
 
@@ -493,18 +466,12 @@ export default class DeepDiff extends EventTarget{
 			})
 			.filter(r=>{ return r; })
 			;
-		// put a dummy value in to handle empty arrays
-		diffs.push({diff:Number.MIN_VALUE});
-		// pick the largest value from the array
 		let max = diffs.reduce((a,d)=>{
 				if(a.diff < d.diff){
 					return d;
 				}
 				return a;
 			},diffs[0]);
-		// if the biggest difference is really small, set the value such that
-		// nothing is considered significant (make the significant value
-		// arbitrarily larger than any of the values)
 		if(max.diff < 0.1){
 			max.pct = 2;
 		}
@@ -530,21 +497,25 @@ export default class DeepDiff extends EventTarget{
 		if(pair.submissions[0].finalList.length === 0){
 			let common = await this.CommonCode;
 			common = CommonCodeLineRemovalPreprocessor(common);
-			let submissions = await this.Submissions;
-			let tokens = pair.submissions.map(function(s){
-				return s.submission;
+			let tokens = pair.submissions.map(function(submission){
+				return 'submission.'+submission.submission;
 			});
-			tokens = submissions
-				.filter((s)=>{
-					let ismatch = tokens.includes(s.name);
-					return ismatch;
-				})
-				.map((s)=>{
-					s.Common = common;
-					s = s.getContentAsTokens();
-					return s;
-				})
-				;
+			tokens = await this.db
+				.allDocs({keys:tokens,include_docs:true})
+				.then(subs=>{
+					return subs.rows
+						.filter(s=>{
+							return s.doc;
+						})
+						.map(s=>{
+							s = s.doc;
+							s = Submission.fromJSON(s);
+							s.Common = common;
+
+							s = s.ContentAsTokens;
+							return s;
+						});
+				});
 			tokens = await Promise.all(tokens);
 
 			if(tokens.length < 2){

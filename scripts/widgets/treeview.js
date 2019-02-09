@@ -17,16 +17,14 @@ Vue.component('treeview', {
 		filecollection:function(){
 			let data = this.files;
 			if(data){
-				if('name' in data){
+				if(data.name){
 					return data;
 				}
 				else{
 					data = Object.entries(data)
 						.map((d)=>{
-							let name = d[0].split('');
-							while(name[0] === '/') name.shift();
 							return {
-								'name':name.join(''),
+								'name':d[0].replace(/^\//,''),
 								'content':d[1]
 							};
 						});

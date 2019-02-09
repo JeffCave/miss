@@ -103,10 +103,10 @@ export function UniformDistribution(seed) {
 
 
 
-File.prototype.async = function(type='buffer'){
-	if(this._content){
-		return this._content;
-	}
+
+
+
+File.prototype.async = function(type='text'){
 	let p = new Promise((resolve)=>{
 		let reader = new FileReader();
 		reader.onload = function(evt) {
@@ -116,11 +116,10 @@ File.prototype.async = function(type='buffer'){
 			reader.readAsText(this);
 		}
 		else{
-			reader.readAsArrayBuffer(this);
+			reader.readAsBinaryString(this);
 		}
 	});
-	this._content = p;
-	return this._content;
+	return p;
 };
 
 String.prototype.hashCode = function(){
