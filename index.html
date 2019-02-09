@@ -101,16 +101,12 @@
   </ps-panel>
   <ps-panel icon='folder'>
    <h1>Files</h1>
-   <ps-filedrop id='UploadSubmission'  title='Upload A Single Submission' >&#128462;</ps-filedrop>
-   <ps-filedrop id='UploadSubmissions' title='Upload Multiple Submissions'>&#128464;</ps-filedrop>
-   <div id='files'>
-    <treeview :filelist="treeData"></treeview>
-   </div>
+   <ps-filedrop id='UploadSubmission'  title='Upload A Single Submission' >&#128462; Create Submission</ps-filedrop>
+   <ps-filedrop id='UploadSubmissions' title='Upload Multiple Submissions'>&#128464; Upload a Bundle</ps-filedrop>
   </ps-panel>
   <ps-panel icon='collections'>
    <h1>Submissions</h1>
    <div id='submissions'>
-    <span id='submissionMaker'>&#10133;</span>
     <submission-list :pouchdb='db' :filter='filter'></submission-list>
    </div>
   </ps-panel>

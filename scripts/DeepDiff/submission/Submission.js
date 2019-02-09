@@ -5,6 +5,7 @@ export{
 
 /*
 global Blob
+global EventTarget
 global JSZip
 */
 
@@ -29,7 +30,7 @@ import {psFile} from '../util/psFile.js';
  *
  * Also contains factory methods for submissions
  */
-export default class Submission {
+export default class Submission extends EventTarget{
 
 	/**
 	 * Construct a new Concrete Submission with given name and contents.
@@ -43,6 +44,8 @@ export default class Submission {
 	 * break, at the very least, Preprocessors.
 	 */
 	constructor(name, files) {
+		super();
+		this._ = {};
 		this.common = PreprocessorRegistry.processors.null;
 
 		if(name instanceof Submission){
@@ -179,20 +182,18 @@ export default class Submission {
 	}
 
 	get hash(){
-		if(!('_hash' in this)){
-			let self = this;
-			this._hash= new Promise(function(r){
-					let content = self.content;
-					r(content);
-				})
-				.then(function(content){
-					//let name = self.name;
-					//let hash = hasher(name + content);
-					let hash = hasher(content);
-					return hash;
-				});
+		return this.getHash();
+	}
+
+	async getHash(){
+		if(this._.hash){
+			return this._.hash;
 		}
-		return this._hash;
+		let content = await this.content;
+		let hash = await hasher(content);
+
+		this._.hash = hash;
+		return this._.hash;
 	}
 
 	get totalTokens(){

@@ -77,47 +77,11 @@ class indexPage {
 				filter: 'checksims/submissions',
 			},
 		});
-		this.displayFiles = new Vue({
-			el: '#files',
-			data: {
-				treeData: this.files,
-				onfile: ()=>{}
-			}
-		});
 		this.displayDiff = new Vue({
 			el:'#compare',
 			data: {
 				report:this.runner.report
 			},
-		});
-
-		let adder = document.querySelector('#submissionMaker');
-		adder.addEventListener('dragover',function(event){
-			event.preventDefault();
-			event.target.style.backgroundColor="green";
-		});
-		adder.addEventListener('dragleave',function(event){
-			event.target.style.backgroundColor="transparent";
-		});
-		adder.addEventListener('drop',function(event){
-			event.target.style.backgroundColor="blue";
-			let path = event.dataTransfer.getData("text/plain");
-			path = new RegExp("^" + path);
-			let files = self.files
-				.filter(function(d){
-					let isMatch = path.test(d.name);
-					return isMatch;
-				})
-				.reduce(function(a,d){
-					let p = d.name.replace(path,'');
-					a[p] = d.content;
-					return a;
-				},{})
-				;
-			path = event.dataTransfer.getData("text/plain");
-			path = path.split('/').pop();
-			let submission = new Submission(path,files);
-			self.runner.addSubmissions(submission);
 		});
 
 	}
@@ -202,7 +166,7 @@ class indexPage {
 				});
 			}
 		}
-		let name = names[0];
+		let name = names[0] || [];
 		name = name.join('/');
 
 		files = Object.entries(files).reduce((a,d)=>{
