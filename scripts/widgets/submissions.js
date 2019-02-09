@@ -75,22 +75,24 @@ Vue.component('submission-list', {
 	created: function () {
 		let opts = this.opts;
 		opts.filter = this.filter;
-		this.pouchdb.changes(opts).on('change',(e)=>{
+		this.pouchdb.changes(opts).on('change',async (e)=>{
 			if(e.deleted){
 				Vue.delete(this.submissions, e.id);
 			}
 			else{
-				let doc = Submission.fromJSON(e.doc);
+				let doc = await Submission.fromJSON(e.doc);
 				Vue.set(this.submissions, e.id, doc);
 			}
 		});
 	},
 	computed: {
 		ordered : function(){
-			return Object.values(this.submissions)
-				.sort((a,b)=>{
-					return a.name.localeCompare(b.name);
-				});
+			let values = Object.values(this.submissions);
+			values = values.sort((a,b)=>{
+				let ord = a.name.localeCompare(b.name);
+				return ord;
+			});
+			return values;
 		}
 	},
 	methods:{

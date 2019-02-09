@@ -16,6 +16,7 @@ import "https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.4.3/pouchdb.min.js";
 import "./lib/pouchdb.upsert.min.js";
 
 import * as utils from './util/misc.js';
+import {psFile} from './util/psFile.js';
 
 /*
 global emit
@@ -52,9 +53,11 @@ export default class DeepDiff extends EventTarget{
 			.then(submission=>{
 				this.report.submissions = submission.reduce((a,d)=>{
 					d.tokens = Object.entries(d.content).reduce((a,d)=>{
-						let ext = d[0].split('.').pop();
+						let key = d[0];
+						let content = d[1];
+						let ext = key.split('.').pop();
 						let handler = ContentHandlers.lookupHandlerByExt(ext);
-						a[d[0]] = handler.tokenizer.split(d[1],d[0]);
+						a[key] = handler.tokenizer.split(content.blob,key);
 						return a;
 					},{});
 					a[d.name] = d;
@@ -289,18 +292,20 @@ export default class DeepDiff extends EventTarget{
 	 * @return Set of submissions to run on
 	 */
 	get Submissions() {
-		return this.db.query('checksims/submissions',{
+		let subs = this.db.query('checksims/submissions',{
 				include_docs: true
 			})
 			.then(function(results){
-				let rows = results.rows.map(d=>{
+				let rows = results.rows.map(async (d)=>{
 					let sub = d.doc;
-					//sub = Submission.fromJSON(sub);
+					sub = await Submission.fromJSON(sub);
 					return sub;
 				});
+				rows = Promise.all(rows);
 				return rows;
 			})
 			;
+		return subs;
 	}
 
 	/**
@@ -336,17 +341,20 @@ export default class DeepDiff extends EventTarget{
 		if(!Array.isArray(newSubmissions)){
 			newSubmissions = Submission.submissionsFromFiles(newSubmissions, this.Filter);
 		}
+		let puts = [];
 		for(let d=0; d<newSubmissions.length; d++){
 			let newSub = newSubmissions[d];
 			let newDoc = await newSub.toJSON();
-			this.db.upsert('submission.'+newSub.name,function(oldDoc){
-				newDoc = JSON.parse(newDoc);
+			let put = this.db.upsert('submission.'+newSub.name,function(oldDoc){
 				if(utils.docsEqual(newDoc,oldDoc)){
 					return false;
 				}
 				return newDoc;
 			});
+			puts.push(put);
 		}
+		puts = await Promise.all(puts);
+		return puts;
 	}
 
 
@@ -507,12 +515,12 @@ export default class DeepDiff extends EventTarget{
 						.filter(s=>{
 							return s.doc;
 						})
-						.map(s=>{
+						.map(async s=>{
 							s = s.doc;
-							s = Submission.fromJSON(s);
+							s = await Submission.fromJSON(s);
 							s.Common = common;
 
-							s = s.ContentAsTokens;
+							s = await s.ContentAsTokens;
 							return s;
 						});
 				});

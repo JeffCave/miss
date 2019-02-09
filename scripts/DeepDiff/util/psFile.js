@@ -45,7 +45,7 @@ class psFile extends File{
 		return n;
 	}
 
-	async(type='buffer'){
+	async read(type='buffer'){
 		if(this._content){
 			return this._content;
 		}
@@ -61,10 +61,30 @@ class psFile extends File{
 				reader.readAsArrayBuffer(this);
 			}
 		});
-		this._content = p;
+		this._content = await p;
 		return this._content;
 	}
 
+	async toJSON(){
+		let json = {
+			'type': 'application/octet',
+			'name': this.name,
+			'relativePath': this.relativePath,
+			'fullPath': this.fullPath,
+		};
+		json.type = this.type || json.type;
+		let name = json.type.split('/').shift();
+		json.blob = await this.read(name);
+		if(name !== 'text'){
+			json.blob = window.atob(json.blob);
+		}
+		return json;
+	}
 
+	static async toJSON(file){
+		let blob = new psFile(file);
+		let json = await blob.toJSON();
+		return json;
+	}
 
 }

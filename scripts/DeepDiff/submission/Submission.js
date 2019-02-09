@@ -4,6 +4,7 @@ export{
 };
 
 /*
+global Blob
 global JSZip
 */
 
@@ -15,8 +16,8 @@ import '../token/tokenizer/PyTokenizer.js';
 import {ContentHandlers} from '../submission/ContentHandlers.js';
 import {PreprocessorRegistry} from '../preprocessor/PreprocessorRegistry.js';
 import {TokenList} from '../token/TokenList.js';
-import {TokenizerRegistry} from '../token/TokenizerRegistry.js';
 import {checkNotNull, checkArgument, hasher} from '../util/misc.js';
+import {psFile} from '../util/psFile.js';
 
 
 /**
@@ -88,16 +89,14 @@ export default class Submission {
 		// now that they are grouped, create a promise to join them
 		// all together into a single block of content
 		let allContent = [];
-		Object.values(content).forEach(function(d){
-			let c = Object.entries(d.files)
+		Object.values(content).forEach((d)=>{
+			d.content = Object.entries(d.files)
 				.sort((entry)=>{return entry[0];})
-				.map((entry)=>{return entry[1];})
+				.map((entry)=>{
+					return entry[1].blob;
+				})
+				.join('\n')
 				;
-			d.content = Promise.all(c)
-				.then(function(content){
-					content = content.join('\n');
-					return content;
-				});
 			allContent.push(d.content);
 		});
 
@@ -129,19 +128,14 @@ export default class Submission {
 					})
 					;
 				preprocessors.unshift(self.Common);
-				let content = d[1];
-				content = Object.values(content.files);
-				tokenlists[tokenizer.tokentype] = Promise.all(content)
-					.then(function(contentString){
-						contentString = contentString.join('\n');
-						return (async function(){
-							let cString = contentString;
-							for(let p=0; p<preprocessors.length; p++){
-								let processor = preprocessors[p];
-								cString = await processor(cString);
-							}
-							return cString;
-						})();
+				let content = d[1].content;
+				tokenlists[tokenizer.tokentype] = Promise.resolve(content)
+					.then(async (contentString)=>{
+						for(let p=0; p<preprocessors.length; p++){
+							let processor = preprocessors[p];
+							contentString = await processor(contentString);
+						}
+						return contentString;
 					})
 					.then(function(contentString){
 						let tokens = tokenizer.split(contentString);
@@ -155,8 +149,8 @@ export default class Submission {
 			this._tokenList = Promise.all(tokenlists)
 				.then(function(tokens){
 					let tokenlist = new TokenList('mixed',[]);
-					tokens.forEach(function(t){
-						t.forEach(function(d){
+					tokens.forEach((t)=>{
+						t.forEach((d)=>{
 							tokenlist.push(d);
 						});
 					});
@@ -223,13 +217,14 @@ export default class Submission {
 			hash : await this.hash,
 			totalTokens : await this.totalTokens,
 		};
+		json = JSON.parse(JSON.stringify(json));
 		for(let key in this.content){
 			json.content[key] = await this.content[key];
 		}
 		if(this.visibility === false){
 			json.visibility = false;
 		}
-		return JSON.stringify(json);
+		return json;
 	}
 
 
@@ -270,8 +265,17 @@ export default class Submission {
 	/**
 	 * Parses Submission from string
 	 */
-	static fromJSON(json){
-		let sub = new Submission(json.name, json.content);
+	static async fromJSON(json){
+		let content = {};
+		for(let key in json.content){
+			let val = json.content[key];
+			if(val instanceof Blob){
+				val = new psFile(val,key);
+				val = await val.toJSON();
+			}
+			content[key] = val;
+		}
+		let sub = new Submission(json.name, content);
 		sub._hash = json.hash;
 		return sub;
 	}

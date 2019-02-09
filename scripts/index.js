@@ -9,6 +9,8 @@ global JSZip
 import {DeepDiff} from './DeepDiff/DeepDiff.js';
 import {Submission} from './DeepDiff/submission/Submission.js';
 import * as unpack from './DeepDiff/util/unpack.js';
+import {psFile} from './DeepDiff/util/psFile.js';
+import {ContentHandlers} from './DeepDiff/submission/ContentHandlers.js';
 
 
 import './widgets/psFileDrop.js';
@@ -58,12 +60,30 @@ class indexPage {
 			let files = e.target.files;
 			let folder = await this.FindFolderStart(files);
 			folder.files = this.GroupFolders(folder.files, folder.name);
-			let submissions = Object.entries(folder.files).map((folder)=>{
-				let key = folder[0];
-				let values = folder[1];
+			let submissions = [];
+			for(let key in folder.files){
+				let values = folder.files[key];
+				for(let f in values){
+					let file = values[f];
+					let type = file.type;
+					if(type === 'application/octet-stream'){
+						let ext = file.name.split('.').pop();
+						let handler = ContentHandlers.lookupHandlerByExt(ext);
+						type = handler.mimetype;
+						if(!type){
+							type = 'text/plain';
+							if(ContentHandlers.ignores.includes(ext)){
+								type = 'application/octet';
+							}
+						}
+					}
+					file = new psFile(file, file.name, {type:type});
+					file = await file.toJSON();
+					values[f] = file;
+				}
 				let submission = new Submission(key,values);
-				return submission;
-			});
+				submissions.push(submission);
+			}
 			this.runner.addSubmissions(submissions);
 		});
 
