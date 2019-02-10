@@ -20,7 +20,6 @@ import './widgets/psPanelElement.js';
 import './widgets/psTabbedPanelElement.js';
 import './widgets/psTornadoChart.js';
 
-import './widgets/diffview.js';
 import './widgets/submissions.js';
 import './widgets/treeview.js';
 

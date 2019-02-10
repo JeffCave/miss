@@ -105,6 +105,7 @@ ul > li > h1{
 	font-size: 50%;
 }
 ul > li.active{
+	display: inline-block;
 	border-bottom-color: orange;
 	border-bottom-color: var(--main-highlight);
 }

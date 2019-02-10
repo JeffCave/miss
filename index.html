@@ -54,31 +54,6 @@
    <submission v-for='(sub,key) in ordered' :key="sub.name" :submission="sub" :remover='remover' ></submission>
   </div>
  </template>
- <template type='text/x-template' id='diffview-template'>
-  <div>
-   <ul>
-    <li>Group 1</li>
-    <li>Group 2</li>
-    <li>Group 3</li>
-    <li>Group 4</li>
-   </ul>
-
-   <section style='display:inline-block;width:48%;border:1px solid darkgrey;overflow:scroll;vertical-align: text-top;'>
-    <input style='max-width:100%;' list="submissions-asdf" v-model='left' />
-    <datalist id="submissions-asdf">
-     <option v-for='sub in report.submissions' :value="sub.name" />
-    </datalist>
-    <pre style='height:20em;'><span v-html="textLeft"></span></pre>
-   </section>
-   <section style='display:inline-block;width:48%;border:1px solid darkgrey;overflow:scroll;vertical-align: text-top;'>
-    <input style='max-width:100%;' list="submissions-fdsa" v-model='right' />
-    <datalist id="submissions-fdsa">
-     <option v-for='sub in report.submissions' :value="sub.name" />
-    </datalist>
-    <pre style='height:20em;'><span v-html="textRight"></span></pre>
-   </section>
-  </div>
- </template>
 
 
  <link rel='stylesheet' href='index.css' />
@@ -99,13 +74,10 @@
     </select>
    </form>
   </ps-panel>
-  <ps-panel icon='folder'>
-   <h1>Files</h1>
-   <ps-filedrop id='UploadSubmission'  title='Upload A Single Submission' >&#128462; Create Submission</ps-filedrop>
-   <ps-filedrop id='UploadSubmissions' title='Upload Multiple Submissions'>&#128464; Upload a Bundle</ps-filedrop>
-  </ps-panel>
   <ps-panel icon='collections'>
    <h1>Submissions</h1>
+   <ps-filedrop id='UploadSubmission'  title='Upload A Single Submission' >&#128462; Create Submission</ps-filedrop>
+   <ps-filedrop id='UploadSubmissions' title='Upload Multiple Submissions'>&#128464; Upload a Bundle</ps-filedrop>
    <div id='submissions'>
     <submission-list :pouchdb='db' :filter='filter'></submission-list>
    </div>
@@ -128,7 +100,7 @@
    <ps-panel icon='compare' state='hide'>
     <h1>Comparison</h1>
     <section id='compare'>
-     <diffview :report='report'></diffview>
+     <h1>TODO</h1>
     </section>
    </ps-panel>
    <ps-panel id='help' icon='help'>
