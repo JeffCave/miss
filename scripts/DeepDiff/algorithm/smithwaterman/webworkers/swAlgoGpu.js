@@ -137,7 +137,7 @@ class swAlgoGpu extends SmithWatermanBase{
 	calc(){
 		let timeLimit = Date.now() + 100;
 		while(timeLimit > Date.now()){
-			for(let limit = 100; limit>=0 && this.cycles > 0; this.remaining--, limit--, this.cycles--){
+			for(let limit = 100; limit >= 0 && this.cycles > 0; limit--, this.cycles--){
 				//this.postMessage({type:'progress', data:this.toJSON()});
 				this.gpu.run('smithwaterman');
 				//this.postMessage({type:'progress', data:this.toJSON()});

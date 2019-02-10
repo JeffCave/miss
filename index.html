@@ -6,8 +6,6 @@
 
  <script async src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js'></script>
  <script async src='https://cdnjs.cloudflare.com/ajax/libs/jsSHA/2.3.1/sha.js'></script>
- <script async src='https://cdnjs.cloudflare.com/ajax/libs/mustache.js/2.3.0/mustache.min.js'></script>
- <script async src='https://cdnjs.cloudflare.com/ajax/libs/d3/4.13.0/d3.min.js'></script>
  <script async src="https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.4.3/pouchdb.min.js" integrity="sha256-KCHhiEhNiEbEd8h607QOlmc3LkpQ/En/mS302LGjnLY=" crossorigin="anonymous"></script>
  <script async src="https://unpkg.com/esprima@~4.0/dist/esprima.js"></script>
  <script async src="https://unpkg.com/filbert@0.1.20/filbert.js"></script>
@@ -56,64 +54,6 @@
    <submission v-for='(sub,key) in ordered' :key="sub.name" :submission="sub" :remover='remover' ></submission>
   </div>
  </template>
- <template type='text/x-template' id='tornadoresult-template'>
-   <table>
-    <tbody>
-     <tr v-for='(result,key) in ordered' :class="{complete:isComplete(result),significant:isComplete(result) && report.isSignificantResult(result)}" :key="result.name">
-      <td v-for='submission in result.submissions'><meter min='0' max='1' :value='submission.percentMatched' :title='formatTitle(submission.percentMatched)'></meter><span :title='formatTitle(submission.percentMatched)'>{{submission.name}}</span></td>
-     </tr>
-    </tbody>
-   </table>
- </template>
- <template type='text/x-template' id='forcedirected-template'>
-  <svg>
-   <g class='links'>
-    <line
-        v-for='link in links'
-        :stroke='link.complete===1?opts.lineColour:"orange"'
-        :stroke-width='Math.floor((opts.radius+1)*link.value)'
-        :opacity='link.value'
-        :x1='link.points[0].pos.x'
-        :y1='link.points[0].pos.y'
-        :x2='link.points[1].pos.x'
-        :y2='link.points[1].pos.y'
-        />
-   </g>
-   <g class='nodes'>
-    <circle
-        v-for='node in nodes'
-        :cx='node.pos.x'
-        :cy='node.pos.y'
-        :r='opts.radius'
-        :fill='opts.nodeColour[node.group]'
-        @mousedown='MouseDown'
-        >
-     <title>{{node.key}}</title>
-    </circle>
-   </g>
-  </svg>
- </template>
- <template type='text/x-template' id='resultmatrixcell-template'>
-  <span :style='style' :title='title'>&#9646;</span>
- </template>
- <template type='text/x-template' id='resultmatrix-template'>
-  <table style='table-layout:fixed;'>
-   <thead>
-    <tr>
-     <th>&nbsp;</th>
-     <th v-for='submission in orderedSubmissions'><span>{{submission.name}}</span></th>
-    </tr>
-   </thead>
-   <tbody>
-    <tr v-for='(row,i) in orderedSubmissions' :key='row.name'>
-     <th>{{row.name}}</th>
-     <td v-for='(col,j) in orderedSubmissions' :key='col.name' style='margin:0;padding:0;background-color:transparent;position:relative;overflow:hidden;width:1em;height:1em;'>
-      <resultmatrixcell :result-submission='getResultSubmission(row,col)' :parent='getResult(row,col)' :is-same='i===j'></resultmatrixcell>
-     </td>
-    </tr>
-   </tbody>
-  </table>
- </template>
  <template type='text/x-template' id='diffview-template'>
   <div>
    <ul>
@@ -148,7 +88,7 @@
 <body>
  <pre style='display:none;'></pre>
  <header>
-  <h1>Checksims</h1>
+  <h1>Deep Diff</h1>
  </header>
  <section>
   <ps-panel icon='settings' state='minimize'>
@@ -161,37 +101,29 @@
   </ps-panel>
   <ps-panel icon='folder'>
    <h1>Files</h1>
-   <div id='files'>
-    <filedrop :onfile="onfile">&#128476; Upload a Zip</filedrop>
-    <treeview :filelist="treeData"></treeview>
-   </div>
+   <ps-filedrop id='UploadSubmission'  title='Upload A Single Submission' >&#128462; Create Submission</ps-filedrop>
+   <ps-filedrop id='UploadSubmissions' title='Upload Multiple Submissions'>&#128464; Upload a Bundle</ps-filedrop>
   </ps-panel>
   <ps-panel icon='collections'>
    <h1>Submissions</h1>
    <div id='submissions'>
-    <span id='submissionMaker'>&#10133;</span>
     <submission-list :pouchdb='db' :filter='filter'></submission-list>
    </div>
   </ps-panel>
  </section>
  <main>
   <ps-tabpanel>
+   <ps-panel icon='bubble_chart'>
+    <h1>Force</h1>
+    <ps-forcedirected id='forcechart'></ps-forcedirected>
+   </ps-panel>
+   <ps-panel icon='bar_chart'>
+    <h1>Listing</h1>
+    <ps-tornadochart id='tornadochart'></ps-tornadochart>
+   </ps-panel>
    <ps-panel icon='show_chart'>
-    <h1>Reports</h1>
-    <section id='results' class='panel'>
-     <details data-type='force' open>
-      <summary>Force</summary>
-      <forcedirected :width='300' :height="300" :results='report.results'></forcedirected>
-     </details>
-     <details data-type='lst' open>
-      <summary>Listing</summary>
-      <tornadoresult-list class='result' :report="report"></tornadoresult-list>
-     </details>
-     <details data-type='html' open>
-      <summary>HTML</summary>
-      <resultmatrix :report='report'></resultmatrix>
-     </details>
-    </section>
+    <h1>Table</h1>
+    <ps-matrixmap id='matrixmap'></ps-matrixmap>
    </ps-panel>
    <ps-panel icon='compare' state='hide'>
     <h1>Comparison</h1>
@@ -264,7 +196,7 @@
 Sidebar 2
  </section>
  <footer>
-  <a href='Jeff Cave
+  <a href=''>Jeff Cave</a>
   &mdash; Privacy
   &mdash; <a href='docs/readme.md'>Purpose</a>
  </footer>

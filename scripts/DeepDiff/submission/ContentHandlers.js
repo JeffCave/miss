@@ -11,26 +11,28 @@ export const ContentHandlers = {
 	handlers:[
 		{
 			'type' : 'c',
+			'mime' : 'text/x-c',
 			'ext' : ['c','h','cpp','hpp'],
 			'tokenizer' : TokenizerRegistry.processors.line,
 			'preprocessors': ['lowercase','deduplicate']
 		},
 		{
 			'type' : 'dna',
+			'mime' : 'text/x-dna',
 			'ext' : ['fasta','dna'],
 			'tokenizer' : TokenizerRegistry.processors.character,
 			'preprocessors': ['lowercase','deduplicate']
 		},
 		{
 			'type' : 'js',
-			'mime' : 'text/javascript',
+			'mime' : 'text/x-javascript',
 			'ext' : ['js'],
 			'tokenizer' : TokenizerRegistry.processors.ecmascript,
 			'preprocessors': []
 		},
 		{
 			'type' : 'python',
-			'mime' : 'text/python',
+			'mime' : 'text/x-python',
 			'ext' : ['py'],
 			'tokenizer' : TokenizerRegistry.processors.python,
 			'preprocessors': []
