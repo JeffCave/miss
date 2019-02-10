@@ -262,10 +262,10 @@ export default class psPanelElement extends HTMLElement {
 	display:inline;
 }
 
-:host(.minimize) > *{
+:host(.minimize) > *, :host(.minimize) > ::slotted(*) {
 	visibility: hidden;
 	opacity: 0;
-	transition: opacity 1s, visibility 0.9s;
+	transition: opacity 0.5s, visibility 0.9s;
 }
 
 

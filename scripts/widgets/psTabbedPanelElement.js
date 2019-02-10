@@ -75,19 +75,19 @@ export default class psTabbedPanelElement extends HTMLElement {
 	get initialCSS(){
 		return `
 @charset 'utf-8';
-:host > * {
+* {
 	/* display:none; */
 }
-:host > .active{
+.active{
 	display:block;
 }
-:host > ul {
+ul {
 	display:block;
 	padding-left:0;
 	margin-top:0;
 	border-bottom:1px solid var(--main-highlight);
 }
-:host > ul > li{
+ul > li{
 	display: inline-block;
 	text-align: center;
 	padding-left:0.5em;
@@ -98,13 +98,13 @@ export default class psTabbedPanelElement extends HTMLElement {
 	*/
 	width:1cm;
 }
-:host > ul > li > span{
+ul > li > span{
 	font-size: 2em;
 }
-:host > ul > li > h1{
+ul > li > h1{
 	font-size: 50%;
 }
-:host > ul > li.active{
+ul > li.active{
 	border-bottom-color: orange;
 	border-bottom-color: var(--main-highlight);
 }

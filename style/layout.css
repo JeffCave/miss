@@ -54,6 +54,8 @@ body > section:last-of-type {
 
 body > section:first-of-type {
 	/*background: gold;*/
+	max-width:500px;
+	overflow: hidden;
 }
 
 
@@ -74,6 +76,7 @@ button:hover, input:hover,input:focus, select:hover, select:focus{
 }
 
 button {
+	background:#FFFFFF;
 	background:rgba(255,255,255,0.75);
 }
 
