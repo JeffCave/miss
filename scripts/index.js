@@ -17,10 +17,10 @@ import './widgets/psFileDrop.js';
 import './widgets/psForceDirected.js';
 import './widgets/psMatrixMap.js';
 import './widgets/psPanelElement.js';
+import './widgets/psSubmissions.js';
 import './widgets/psTabbedPanelElement.js';
 import './widgets/psTornadoChart.js';
 
-import './widgets/submissions.js';
 import './widgets/treeview.js';
 
 
@@ -69,20 +69,9 @@ class indexPage {
 		});
 
 
-		this.displaySubmissions = new Vue({
-			el:'#submissions',
-			data: {
-				db: this.runner.db,
-				filter: 'checksims/submissions',
-			},
-		});
-		this.displayDiff = new Vue({
-			el:'#compare',
-			data: {
-				report:this.runner.report
-			},
-		});
-
+		let submissions = document.querySelector('#submissions');
+		submissions.pouchdb = this.runner.db;
+		submissions.filter = 'checksims/submissions';
 	}
 
 
