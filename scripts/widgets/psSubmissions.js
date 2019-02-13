@@ -3,12 +3,13 @@
 export{
 	psSubmission,
 	psSubmissionList
-}
+};
 
 /*
 global HTMLElement
 */
 
+import {psTreeView} from './psTreeView.js';
 import {Submission} from '../DeepDiff/submission/Submission.js';
 import {icons} from './icons.js';
 
@@ -83,7 +84,6 @@ class psSubmissionList extends HTMLElement {
 			submissions[d[0]] = d[1];
 		});
 		let keys = Object.keys(submissions);
-		let rems = [];
 		Array.from(parent.children).forEach((elem)=>{
 			// get the name of the current element
 			let name = 'submission.'+elem.Submission.name;
@@ -121,7 +121,6 @@ class psSubmission extends HTMLElement {
 		this._ = {
 			remover: null
 		};
-
 		this._.panel = this.attachShadow({mode: 'open'});
 	}
 
@@ -178,6 +177,9 @@ class psSubmission extends HTMLElement {
 
 		let name = panel.querySelector("output[name='name']");
 		name.value = this.Submission.name;
+
+		let tree = panel.querySelector('ps-treeview');
+		tree.files = this.Submission.content;
 	}
 
 	get Template(){
@@ -190,7 +192,7 @@ class psSubmission extends HTMLElement {
     <button name='remove' title='Delete'>&#128465;</button>
     <output name='name'></output>
    </summary>
-   <treeview :files="submission.content"></treeview>
+   <ps-treeview />
   </details>
 		`;
 	}

@@ -32,12 +32,6 @@
     instructions.style.display = 'block';
  </script>
 
- <template type="text/x-template" id="treeview-template">
-  <details style='margin-left:1em;' draggable='true' @dragstart='dragstart' :data-path='filecollection.path' open>
-   <summary> {{ filecollection.name }} </summary>
-   <treeview v-for="(filecollection, index) in filecollection.children" :key="index" :files="filecollection"></item>
-  </details>
- </template>
 
 
  <link rel='stylesheet' href='main.css' />

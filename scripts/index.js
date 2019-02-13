@@ -21,9 +21,6 @@ import './widgets/psSubmissions.js';
 import './widgets/psTabbedPanelElement.js';
 import './widgets/psTornadoChart.js';
 
-import './widgets/treeview.js';
-
-
 
 /**
  * Parses DeepDiff' command-line options.
