@@ -30,8 +30,6 @@ import './widgets/psTornadoChart.js';
 class indexPage {
 	constructor() {
 		this.runner = new DeepDiff();
-		this.files = [];
-		let self = this;
 
 		Array.from(document.querySelectorAll('form[is="deepdiff-opts"]')).forEach(opts=>{
 			opts.ddInstance = this.runner;
@@ -39,9 +37,9 @@ class indexPage {
 		let forcechart = document.querySelector('#forcechart');
 		forcechart.results = this.runner.report;
 		let tornadochart = document.querySelector('#tornadochart');
-		tornadochart.report = this.runner.report;
+		tornadochart.DeepDiff = this.runner;
 		let matrixmap = document.querySelector('#matrixmap');
-		matrixmap.report = this.runner.report;
+		matrixmap.report = this.runner;
 
 		let uploadSubmission = document.querySelector('#UploadSubmission');
 		uploadSubmission.addEventListener('change', async (e)=>{
@@ -64,7 +62,6 @@ class indexPage {
 			}
 			this.runner.addSubmissions(submissions);
 		});
-
 
 		let submissions = document.querySelector('#submissions');
 		submissions.pouchdb = this.runner.db;

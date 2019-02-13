@@ -40,9 +40,16 @@ export default class psMatrixMap extends HTMLElement{
 		// Need to do this with a proxy
 		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
 		this._.results = value;
-		this._.results.$watch('results',(newval,oldval)=>{
+		this._.unwatch = value.report.$watch('results',(newval,oldval)=>{
 			this.monitorResults(newval,oldval);
 		},{immediate:true,deep:true});
+
+		if(!this._.handler){
+			this._.handler = (e)=>{
+				this.monitorResults(e.doc,null);
+			};
+		}
+		value.addEventListener('results',this._.handler);
 	}
 
 
@@ -136,7 +143,7 @@ export default class psMatrixMap extends HTMLElement{
 	}
 
 	orderedSubmissions(){
-		let submissions = Object.values(this.report.submissions);
+		let submissions = Object.values(this.report.report.submissions);
 		submissions.sort((a,b)=>{ return a.name.localeCompare(b.name); });
 		return submissions;
 	}
@@ -153,7 +160,7 @@ export default class psMatrixMap extends HTMLElement{
 
 	getResult(subA,subB){
 		let key = [subA.name,subB.name].sort().join('.');
-		let result = this.report.results[key];
+		let result = this.report.report.results[key];
 		return result;
 	}
 

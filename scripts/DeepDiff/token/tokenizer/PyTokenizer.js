@@ -1,7 +1,5 @@
 'use strict';
 
-//import * as py from 'https://unpkg.com/filbert@0.1.20/filbert.js';
-
 import {LexemeMap} from '../../token/LexemeMap.js';
 import {TokenizerRegistry} from '../../token/TokenizerRegistry.js';
 import {TokenList} from '../../token/TokenList.js';

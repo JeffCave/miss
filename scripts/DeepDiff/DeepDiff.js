@@ -3,6 +3,8 @@ export {
 	DeepDiff
 };
 
+import "https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.4.3/pouchdb.min.js";
+import "./lib/pouchdb.upsert.min.js";
 import 'https://unpkg.com/vue/dist/vue.js';
 
 import './algorithm/smithwaterman/SmithWaterman.js';
@@ -14,15 +16,12 @@ import {CommonCodeLineRemovalPreprocessor} from './preprocessor/CommonCodeLineRe
 import {ContentHandlers} from './submission/ContentHandlers.js';
 import {Submission} from './submission/Submission.js';
 
-import "https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.4.3/pouchdb.min.js";
-import "./lib/pouchdb.upsert.min.js";
-
 import * as utils from './util/misc.js';
 
 /*
+global CustomEvent
 global emit
 global PouchDB
-global Vue
 global EventTarget
 */
 
@@ -41,13 +40,6 @@ export default class DeepDiff extends EventTarget{
 				results:{},
 				submissions:{},
 				archives:[],
-			},
-			methods:{
-				isSignificantResult:(result)=>{
-					console.warn("Deprecated: use 'DeepDiff.isSignificantResult' instead ");
-					let significant = this.isSignificantResult(result);
-					return significant;
-				}
 			},
 		});
 		this.Submissions
@@ -71,16 +63,11 @@ export default class DeepDiff extends EventTarget{
 					return a;
 				},{});
 			});
-		this._events = {
-			'submissions':{},
-			'results':{},
-		};
 		this.dbInit();
 	}
 
 	async dbInit(){
-		let self = this;
-		await this.db.upsert('_design/checksims',function(doc){
+		await this.db.upsert('_design/checksims',(doc)=>{
 			let designDoc = {
 				views:{
 					submissions:{
@@ -128,27 +115,23 @@ export default class DeepDiff extends EventTarget{
 			console.log('DB version: updating');
 			return designDoc;
 		});
-		self.runAllCompares();
-		Object.entries(this._events).forEach((eventType)=>{
-			let opts = ['checksims',eventType[0]].join('/');
+		this.runAllCompares();
+		['submissions','results'].forEach((eventType)=>{
+			let opts = ['checksims',eventType].join('/');
 			opts = {
 				filter:opts,
 				since:'now',
 				live:true,
 				include_docs:true,
 			};
-			self.db
+			this.db
 				.changes(opts)
-				.on('change', function(e) {
+				.on('change', (e)=>{
 					//if(e.deleted) return;
-					console.log(eventType[0] + ' change');
-					Object
-						.values(eventType[1])
-						.forEach(function(handler){
-							setTimeout(handler,20,e);
-						});
+					console.log(eventType + ' change');
+					this.dispatchEvent(new CustomEvent(eventType,{ detail: e }));
 					if(e.seq % 1000 === 0){
-						self.db.compact();
+						this.db.compact();
 					}
 				});
 		});
@@ -156,60 +139,66 @@ export default class DeepDiff extends EventTarget{
 
 		this.addEventListener('results',async (e)=>{
 			this._significantSimilarity = null;
-			if(e.deleted){
-				let id = e.id.split('.');
+			if(e.detail.deleted){
+				let id = e.detail.id.split('.');
 				id.shift();
 				id = id.join('.');
 				Vue.delete(this.report.results,id);
 				this.Algorithm({name:id,action:'stop'});
-				console.log("removed result: " + e.id);
+				console.log("removed result: " + e.detail.id);
 			}
 			else{
-				let summary = JSON.parse(JSON.stringify(e.doc));
+				let summary = JSON.parse(JSON.stringify(e.detail.doc));
 				summary.submissions.forEach((d)=>{
 					delete d.finalList;
 				});
-				Vue.set(this.report.results,e.doc.name,summary);
+				Vue.set(this.report.results,e.detail.doc.name,summary);
 
 				this.runAllCompares();
 			}
 		});
 
 		this.addEventListener('submissions',async (e)=>{
-			if(e.deleted){
-				let id = e.id.split('.');
+			if(e.detail.deleted){
+				let id = e.detail.id.split('.');
 				id.shift();
 				id = id.join('.');
 				Vue.delete(this.report.submissions,id);
 
-				let results = await self.db.allDocs({startkey:'result.',endkey:'result.\ufff0',include_docs:true});
-				let deletes = results.rows.map(function(d){
-					let match = d.doc.submissions.some((s)=>{
-						return s.name === id;
-					});
-					if(!match){
-						return false;
-					}
-					return self.db.upsert(d.id,()=>({_deleted:true}));
-				});
-				Promise.all(deletes);
+				let results = await this.db.allDocs({startkey:'result.',endkey:'result.\ufff0',include_docs:true});
+				let deletes = results.rows
+					.map((d)=>{
+						let match = d.doc.submissions.some((s)=>{
+							return s.name === id;
+						});
+						if(!match){
+							return false;
+						}
+						return this.db.upsert(d.id,()=>({_deleted:true}));
+					})
+					.filter(d=>{
+						return d !== false;
+					})
+					;
+				deletes = await Promise.all(deletes);
+				return deletes;
 			}
 			else{
-				let summary = JSON.parse(JSON.stringify(e.doc));
+				let summary = JSON.parse(JSON.stringify(e.detail.doc));
 				delete summary.content;
-				Vue.set(this.report.submissions,e.doc.name,summary);
+				Vue.set(this.report.submissions,e.detail.doc.name,summary);
 
 				//let results = await self.Submissions;
-				let results = await self.db.allDocs({startkey:'submission.',endkey:'submission.\ufff0', include_docs:true});
+				let results = await this.db.allDocs({startkey:'submission.',endkey:'submission.\ufff0', include_docs:true});
 				results = results.rows
 					.filter((d)=>{
 						return d.id !== e.id;
 					})
 					.map(d=>{
-						let result = AlgorithmResults.Create(e.doc,d.doc)
-							.then(function(result){
+						let result = AlgorithmResults.Create(e.detail.doc,d.doc)
+							.then((result)=>{
 								let newDoc = AlgorithmResults.toJSON(result);
-								let upsert = self.db.upsert('result.'+result.name,function(oldDoc){
+								let upsert = this.db.upsert('result.'+result.name,(oldDoc)=>{
 										if(oldDoc.hash === newDoc.hash){
 											return false;
 										}
@@ -220,35 +209,10 @@ export default class DeepDiff extends EventTarget{
 						return result;
 					})
 					;
-				Promise.all(results);
+				results = await Promise.all(results);
+				return results;
 			}
 		});
-	}
-
-	removeEventListener(type,handler){
-		if(!(type in this._events)){
-			throw Error('Unknown event type');
-		}
-		let handlers = this._events[type];
-		if(typeof handler === 'function'){
-			handler = handler.name;
-		}
-		if(typeof handler === 'string'){
-			if(handler in handlers){
-				delete handlers[handler];
-			}
-		}
-	}
-
-	addEventListener(type,handler){
-		if(!(type in this._events)){
-			throw Error('Unknown event type');
-		}
-		let name = handler.name;
-		if(name === ''){
-			name = handler.toString();
-		}
-		this._events[type][name] = handler;
 	}
 
 	get Filter(){

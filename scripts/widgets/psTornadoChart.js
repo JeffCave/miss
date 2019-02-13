@@ -28,14 +28,28 @@ export default class psTornadoChart extends HTMLElement {
 	}
 
 	get report(){
+		console.warn("Deprecated: use 'psTornadoChart.DeepDiff' instead");
 		return this._.results;
 	}
-	set report(value){
+
+	get DeepDiff(){
+		return this._.deepdiff;
+	}
+
+	set DeepDiff(value){
+		this._.deepdiff = value;
+		if(!this._.handler){
+			this._.handler = (e)=>{
+				this.monitorResults(e.doc,null);
+			};
+		}
+		value.addEventListener('results',this._.handler);
+
 		this._.unwatch();
 		// Need to do this with a proxy
 		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
-		this._.results = value;
-		this._.results.$watch('results',(newval,oldval)=>{
+		this._.results = value.report;
+		this._.unwatch = this._.results.$watch('results',(newval,oldval)=>{
 			this.monitorResults(newval,oldval);
 		},{immediate:true,deep:true});
 	}
@@ -72,7 +86,7 @@ export default class psTornadoChart extends HTMLElement {
 				let row = body.rows[r];
 				if(result.complete === result.totalTokens){
 					row.classList.add('complete');
-					if(this.report.isSignificantResult(result)){
+					if(this.DeepDiff.isSignificantResult(result)){
 						row.classList.add('significant');
 					}
 				}
@@ -110,7 +124,8 @@ export default class psTornadoChart extends HTMLElement {
 	}
 
 	ordered(){
-		let list = Object.values(this.report.results).sort(psTornadoChart.compareResults);
+		let list = Object.values(this.DeepDiff.report.results);
+		list.sort(psTornadoChart.compareResults);
 		return list;
 	}
 
