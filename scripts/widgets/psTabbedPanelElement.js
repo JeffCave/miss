@@ -116,7 +116,10 @@ ul > li.active{
 
 
 window.customElements.define('ps-tabpanel',psTabbedPanelElement);
-/* global Vue */
-if(Vue && !Vue.config.ignoredElements.includes('ps-tabpanel')){
-	Vue.config.ignoredElements.push('ps-tabpanel');
+try{
+	/* global Vue */
+	if(Vue && !Vue.config.ignoredElements.includes('ps-tabpanel')){
+		Vue.config.ignoredElements.push('ps-tabpanel');
+	}
 }
+catch(err){}

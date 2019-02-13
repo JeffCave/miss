@@ -420,8 +420,10 @@ export default class psForceDirected extends HTMLElement {
 
 
 window.customElements.define('ps-forcedirected',psForceDirected);
-/* global Vue */
-if(Vue && !Vue.config.ignoredElements.includes('ps-forcedirected')){
-	Vue.config.ignoredElements.push('ps-forcedirected');
+try{
+	/* global Vue */
+	if(Vue && !Vue.config.ignoredElements.includes('ps-forcedirected')){
+		Vue.config.ignoredElements.push('ps-forcedirected');
+	}
 }
-
+catch(err){}

@@ -10,11 +10,6 @@
  <script async src="https://unpkg.com/esprima@~4.0/dist/esprima.js"></script>
  <script async src="https://unpkg.com/filbert@0.1.20/filbert.js"></script>
 
- <script async src="https://unpkg.com/vue/dist/vue.js"></script>
- <script async src="https://unpkg.com/vue-material@beta"></script>
- <script async src='https://unpkg.com/vuetify/dist/vuetify.js'></script>
- <script async src="https://unpkg.com/http-vue-loader"></script>
-
  <script src='scripts/widgets/deepdiff-opts.js'></script>
 
 
@@ -32,31 +27,9 @@
     instructions.style.display = 'block';
  </script>
 
- <template type="text/x-template" id="treeview-template">
-  <details style='margin-left:1em;' draggable='true' @dragstart='dragstart' :data-path='filecollection.path' open>
-   <summary> {{ filecollection.name }} </summary>
-   <treeview v-for="(filecollection, index) in filecollection.children" :key="index" :files="filecollection"></item>
-  </details>
- </template>
- <template type='text/x-template' id='submission-template'>
-  <details>
-   <summary>
-    <!-- button @click='showhide' title='Display'><span v-html="showhideIcon"></span></button -->
-    <button @click='remove' title='Delete' v-show='remover !== null'>&#128465;</button>
-    <!-- span @click='save'>&#128427;</span -->
-    {{submission.name}}
-   </summary>
-   <treeview :files="submission.content"></treeview>
-  </details>
- </template>
- <template type='text/x-template' id='submissions-template'>
-  <div>
-   <submission v-for='(sub,key) in ordered' :key="sub.name" :submission="sub" :remover='remover' ></submission>
-  </div>
- </template>
 
 
- <link rel='stylesheet' href='index.css' />
+ <link rel='stylesheet' href='main.css' />
  <link rel='stylesheet' href='style/main.css' />
  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
 </head>
@@ -78,9 +51,7 @@
    <h1>Submissions</h1>
    <ps-filedrop id='UploadSubmission'  title='Upload A Single Submission' >&#128462; Create Submission</ps-filedrop>
    <ps-filedrop id='UploadSubmissions' title='Upload Multiple Submissions'>&#128464; Upload a Bundle</ps-filedrop>
-   <div id='submissions'>
-    <submission-list :pouchdb='db' :filter='filter'></submission-list>
-   </div>
+   <ps-submission-list id='submissions'></ps-submission-list>
   </ps-panel>
  </section>
  <main>

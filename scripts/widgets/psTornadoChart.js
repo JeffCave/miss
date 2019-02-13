@@ -240,8 +240,10 @@ tr.deleting > td{
 
 
 window.customElements.define('ps-tornadochart',psTornadoChart);
-/* global Vue */
-if(Vue && !Vue.config.ignoredElements.includes('ps-tornadochart')){
-	Vue.config.ignoredElements.push('ps-tornadochart');
+try{
+	/* global Vue */
+	if(Vue && !Vue.config.ignoredElements.includes('ps-tornadochart')){
+		Vue.config.ignoredElements.push('ps-tornadochart');
+	}
 }
-
+catch(err){}

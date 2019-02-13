@@ -3,6 +3,8 @@ export {
 	DeepDiff
 };
 
+import 'https://unpkg.com/vue/dist/vue.js';
+
 import './algorithm/smithwaterman/SmithWaterman.js';
 import './preprocessor/LowercasePreprocessor.js';
 import './preprocessor/WhitespaceDeduplicationPreprocessor.js';
@@ -16,7 +18,6 @@ import "https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.4.3/pouchdb.min.js";
 import "./lib/pouchdb.upsert.min.js";
 
 import * as utils from './util/misc.js';
-import {psFile} from './util/psFile.js';
 
 /*
 global emit
@@ -43,8 +44,8 @@ export default class DeepDiff extends EventTarget{
 			},
 			methods:{
 				isSignificantResult:(result)=>{
-					let significant = this.significantSimilarity;
-					significant = (significant <= result.percentMatched);
+					console.warn("Deprecated: use 'DeepDiff.isSignificantResult' instead ");
+					let significant = this.isSignificantResult(result);
 					return significant;
 				}
 			},
@@ -440,6 +441,16 @@ export default class DeepDiff extends EventTarget{
 		utils.checkArgument(!isNaN(newNumThreads), "Attempted to set number of threads to " + newNumThreads + " - must be a number!");
 		utils.checkArgument(newNumThreads > 0, "Attempted to set number of threads to " + newNumThreads + " - must be positive integer!");
 		this.numThreads = newNumThreads;
+	}
+
+	/**
+	 * Compares the result against the perceived "significant" value;
+	 *
+	 */
+	isSignificantResult(result){
+		let significant = this.significantSimilarity;
+		significant = (significant <= result.percentMatched);
+		return significant;
 	}
 
 	/**

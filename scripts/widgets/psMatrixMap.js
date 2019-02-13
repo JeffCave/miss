@@ -228,7 +228,10 @@ td.complete{
 
 
 window.customElements.define('ps-matrixmap',psMatrixMap);
-/* global Vue */
-if(Vue && !Vue.config.ignoredElements.includes('ps-matrixmap')){
-	Vue.config.ignoredElements.push('ps-matrixmap');
+try{
+	/* global Vue */
+	if(Vue && !Vue.config.ignoredElements.includes('ps-matrixmap')){
+		Vue.config.ignoredElements.push('ps-matrixmap');
+	}
 }
+catch(err){}
