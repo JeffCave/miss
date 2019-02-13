@@ -216,13 +216,15 @@ button {
 window.customElements.define('ps-submission-list',psSubmissionList);
 window.customElements.define('ps-submission',psSubmission);
 
-/* global Vue */
-if(Vue){
-	if(!Vue.config.ignoredElements.includes('ps-submission-list')){
-		Vue.config.ignoredElements.push('ps-submission-list');
-	}
-	if(!Vue.config.ignoredElements.includes('ps-submission')){
-		Vue.config.ignoredElements.push('ps-submission');
+try{
+	/* global Vue */
+	if(Vue){
+		if(!Vue.config.ignoredElements.includes('ps-submission-list')){
+			Vue.config.ignoredElements.push('ps-submission-list');
+		}
+		if(!Vue.config.ignoredElements.includes('ps-submission')){
+			Vue.config.ignoredElements.push('ps-submission');
+		}
 	}
 }
-
+catch(err){}

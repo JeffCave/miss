@@ -131,7 +131,10 @@ label div.dragover {
 
 
 window.customElements.define('ps-filedrop',psFileDrop);
-/* global Vue */
-if(Vue && !Vue.config.ignoredElements.includes('ps-filedrop')){
-	Vue.config.ignoredElements.push('ps-filedrop');
+try{
+	/* global Vue */
+	if(Vue && !Vue.config.ignoredElements.includes('ps-filedrop')){
+		Vue.config.ignoredElements.push('ps-filedrop');
+	}
 }
+catch(err){}

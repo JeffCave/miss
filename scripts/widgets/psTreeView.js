@@ -245,8 +245,10 @@ class psTreeView extends HTMLElement{
 
 
 window.customElements.define('ps-treeview',psTreeView);
-/* global Vue */
-if(Vue && !Vue.config.ignoredElements.includes('ps-treeview')){
-	Vue.config.ignoredElements.push('ps-treeview');
+try{
+	/* global Vue */
+	if(Vue && !Vue.config.ignoredElements.includes('ps-treeview')){
+		Vue.config.ignoredElements.push('ps-treeview');
+	}
 }
-
+catch(err){}

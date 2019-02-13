@@ -210,9 +210,6 @@ class indexPage {
 
 
 window.addEventListener('load',async function(){
-	Vue.use(VueMaterial.default);
-	Vue.use(httpVueLoader);
-
 	let checker = new indexPage();
 });
 

@@ -113,7 +113,5 @@ try{
 		Vue.config.ignoredElements.push('deepdiff-opts');
 	}
 }
-catch(err){
-	// probably Vue not existing
-}
+catch(err){}
 
