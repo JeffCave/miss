@@ -10,11 +10,13 @@ export default class psMatrixMap extends HTMLElement{
 		super();
 
 		this._ = {
-			unwatch: ()=>{},
 			results:{
 				results:{},
 				submissions:{},
 				archives:[],
+			},
+			handler: (e)=>{
+				this.Render();
 			},
 			delay:1000,
 		};
@@ -32,33 +34,20 @@ export default class psMatrixMap extends HTMLElement{
 		table.append(this._.tbody);
 	}
 
-	get report(){
+	get DeepDiff(){
 		return this._.results;
 	}
-	set report(value){
-		this._.unwatch();
-		// Need to do this with a proxy
-		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
-		this._.results = value;
-		this._.unwatch = value.report.$watch('results',(newval,oldval)=>{
-			this.monitorResults(newval,oldval);
-		},{immediate:true,deep:true});
-
-		if(!this._.handler){
-			this._.handler = (e)=>{
-				this.monitorResults(e.doc,null);
-			};
+	set DeepDiff(value){
+		if(this._.results !== value){
+			if(this._.results.removeEventListener){
+				this._.results.removeEventListener('results',this._.handler);
+				this._.results.removeEventListener('load',this._.handler);
+			}
+			this._.results = value;
+			this._.results.addEventListener('results',this._.handler);
+			this._.results.addEventListener('load',this._.handler);
+			this.Render();
 		}
-		value.addEventListener('results',this._.handler);
-	}
-
-
-	monitorResults(newval,oldval){
-		this.Render();
-	}
-
-	RenderResult(result){
-
 	}
 
 	get Render(){
@@ -123,7 +112,7 @@ export default class psMatrixMap extends HTMLElement{
 						else{
 							settings.opacity = result.percentMatched;
 							settings.title += ' similar';
-							if(this.report.isSignificantResult(result)){
+							if(this.DeepDiff.isSignificantResult(result)){
 								settings.style = 'significant';
 							}
 						}
@@ -143,7 +132,7 @@ export default class psMatrixMap extends HTMLElement{
 	}
 
 	orderedSubmissions(){
-		let submissions = Object.values(this.report.report.submissions);
+		let submissions = Object.values(this.DeepDiff.report.submissions);
 		submissions.sort((a,b)=>{ return a.name.localeCompare(b.name); });
 		return submissions;
 	}
@@ -160,7 +149,7 @@ export default class psMatrixMap extends HTMLElement{
 
 	getResult(subA,subB){
 		let key = [subA.name,subB.name].sort().join('.');
-		let result = this.report.report.results[key];
+		let result = this.DeepDiff.report.results[key];
 		return result;
 	}
 

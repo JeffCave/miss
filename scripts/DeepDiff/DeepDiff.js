@@ -21,6 +21,7 @@ import * as utils from './util/misc.js';
 /*
 global CustomEvent
 global emit
+global Event
 global PouchDB
 global EventTarget
 */
@@ -57,13 +58,20 @@ export default class DeepDiff extends EventTarget{
 					return a;
 				},{});
 				return this.Results;
-			}).then(results=>{
+			})
+			.then(results=>{
 				this.report.results = results.reduce((a,d)=>{
 					a[d.name] = d;
 					return a;
 				},{});
-			});
-		this.dbInit();
+			})
+			.then(()=>{
+				return this.dbInit();
+			})
+			.then(()=>{
+				this.dispatchEvent(new Event('load'));
+			})
+			;
 	}
 
 	async dbInit(){
@@ -116,7 +124,8 @@ export default class DeepDiff extends EventTarget{
 			return designDoc;
 		});
 		this.runAllCompares();
-		['submissions','results'].forEach((eventType)=>{
+		//let events =
+		['submissions','results'].map(async (eventType)=>{
 			let opts = ['checksims',eventType].join('/');
 			opts = {
 				filter:opts,
@@ -133,9 +142,10 @@ export default class DeepDiff extends EventTarget{
 					if(e.seq % 1000 === 0){
 						this.db.compact();
 					}
-				});
+				})
+				;
 		});
-
+		//events = await Promise.all(events);
 
 		this.addEventListener('results',async (e)=>{
 			this._significantSimilarity = null;

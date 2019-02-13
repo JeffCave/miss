@@ -12,7 +12,6 @@ export default class psForceDirected extends HTMLElement {
 		super();
 
 		this._ = {
-			unwatch:()=>{},
 			results: {},
 			opts: {
 				lineColour: 'darkgray',
@@ -37,6 +36,9 @@ export default class psForceDirected extends HTMLElement {
 				INERTIA: 10,
 				STOPVEL: 0.1,
 				BOUNCE: 0.75
+			},
+			handler:(e)=>{
+				this.monitorResults();
 			}
 		};
 		this._.physics.SEGLEN = this._.radius*3;
@@ -72,13 +74,16 @@ export default class psForceDirected extends HTMLElement {
 		return this._.results;
 	}
 	set results(value){
-		this._.unwatch();
-		// Need to do this with a proxy
-		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
-		this._.results = value;
-		this._.results.$watch('results',(newval,oldval)=>{
-			this.monitorResults(newval,oldval);
-		},{immediate:true,deep:true});
+		if(this._.results !== value){
+			if(this._.results.removeEventListener){
+				this._.results.removeEventListener('results',this._.handler);
+				this._.results.removeEventListener('load',this._.handler);
+			}
+			this._.results = value;
+			this._.results.addEventListener('results',this._.handler);
+			this._.results.addEventListener('load',this._.handler);
+			this.monitorResults();
+		}
 	}
 
 
@@ -163,7 +168,7 @@ export default class psForceDirected extends HTMLElement {
 
 		Object.values(this.links).forEach(link=>{
 			// TODO: this is hacky... it should be picked up naturally on change
-			let r = this.results.$data.results[link.key];
+			let r = this.results.report.results[link.key];
 			if(!r){
 				return;
 			}
@@ -299,7 +304,7 @@ export default class psForceDirected extends HTMLElement {
 		if(this._ReSync) return this._ReSync;
 
 		let syncer = function(){
-			let results = Object.assign({},this.results.$data.results);
+			let results = Object.assign({},this.results.report.results);
 			results = Object.entries(results);
 			Object.keys(this.links).forEach(name=>{
 				if(!this.results.results[name]){

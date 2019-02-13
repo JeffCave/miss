@@ -10,13 +10,15 @@ export default class psTornadoChart extends HTMLElement {
 		super();
 
 		this._ = {
-			unwatch:()=>{},
 			results: {
 				results:[],
 				submission:[],
 				archives:[]
 			},
-			rows:{}
+			rows:{},
+			handler: (e)=>{
+				this.ReSync();
+			}
 		};
 
 		let shadow = this.attachShadow({mode: 'open'});
@@ -37,25 +39,13 @@ export default class psTornadoChart extends HTMLElement {
 	}
 
 	set DeepDiff(value){
-		this._.deepdiff = value;
-		if(!this._.handler){
-			this._.handler = (e)=>{
-				this.monitorResults(e.doc,null);
-			};
+		if(this._.deepdiff && this._.deepdiff.removeEventListener){
+			this._.deepdiff.removeEventListener('results',this._.handler);
+			this._.deepdiff.removeEventListener('load',this._.handler);
 		}
-		value.addEventListener('results',this._.handler);
-
-		this._.unwatch();
-		// Need to do this with a proxy
-		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
-		this._.results = value.report;
-		this._.unwatch = this._.results.$watch('results',(newval,oldval)=>{
-			this.monitorResults(newval,oldval);
-		},{immediate:true,deep:true});
-	}
-
-
-	monitorResults(newval,oldval){
+		this._.deepdiff = value;
+		this._.deepdiff.addEventListener('results',this._.handler);
+		this._.deepdiff.addEventListener('load',this._.handler);
 		this.ReSync();
 	}
 

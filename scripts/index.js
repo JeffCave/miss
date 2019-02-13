@@ -35,11 +35,11 @@ class indexPage {
 			opts.ddInstance = this.runner;
 		});
 		let forcechart = document.querySelector('#forcechart');
-		forcechart.results = this.runner.report;
+		forcechart.results = this.runner;
 		let tornadochart = document.querySelector('#tornadochart');
 		tornadochart.DeepDiff = this.runner;
 		let matrixmap = document.querySelector('#matrixmap');
-		matrixmap.report = this.runner;
+		matrixmap.DeepDiff = this.runner;
 
 		let uploadSubmission = document.querySelector('#UploadSubmission');
 		uploadSubmission.addEventListener('change', async (e)=>{
