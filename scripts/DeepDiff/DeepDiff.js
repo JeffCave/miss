@@ -40,39 +40,33 @@ export default class DeepDiff extends EventTarget{
 			submissions:{},
 			archives:[],
 		};
-		this.Submissions
-			.then(submission=>{
-				this.report.submissions = submission.reduce((a,d)=>{
-					d.tokens = Object.entries(d.content).reduce((a,d)=>{
-						let key = d[0];
-						let content = d[1];
-						let ext = key.split('.').pop();
-						let handler = ContentHandlers.lookupHandlerByExt(ext);
-						a[key] = handler.tokenizer.split(content.blob,key);
-						return a;
-					},{});
-					a[d.name] = d;
+
+		(async ()=>{
+			await this.dbInit();
+			let submission = await this.Submissions;
+			this.report.submissions = submission.reduce((a,d)=>{
+				d.tokens = Object.entries(d.content).reduce((a,d)=>{
+					let key = d[0];
+					let content = d[1];
+					let ext = key.split('.').pop();
+					let handler = ContentHandlers.lookupHandlerByExt(ext);
+					a[key] = handler.tokenizer.split(content.blob,key);
 					return a;
 				},{});
-				return this.Results;
-			})
-			.then(results=>{
-				this.report.results = results.reduce((a,d)=>{
-					a[d.name] = d;
-					return a;
-				},{});
-			})
-			.then(()=>{
-				return this.dbInit();
-			})
-			.then(()=>{
-				this.dispatchEvent(new Event('load'));
-			})
-			;
+				a[d.name] = d;
+				return a;
+			},{});
+			let results = await this.Results;
+			this.report.results = results.reduce((a,d)=>{
+				a[d.name] = d;
+				return a;
+			},{});
+			this.dispatchEvent(new Event('load'));
+		})();
 	}
 
 	async dbInit(){
-		await this.db.upsert('_design/checksims',(doc)=>{
+		let designdoc = this.db.upsert('_design/checksims',(doc)=>{
 			let designDoc = {
 				views:{
 					submissions:{
@@ -120,6 +114,7 @@ export default class DeepDiff extends EventTarget{
 			console.log('DB version: updating');
 			return designDoc;
 		});
+		designdoc = await designdoc;
 		this.runAllCompares();
 		//let events =
 		['submissions','results'].map(async (eventType)=>{
