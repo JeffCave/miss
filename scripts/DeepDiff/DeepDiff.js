@@ -5,7 +5,6 @@ export {
 
 import "https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.4.3/pouchdb.min.js";
 import "./lib/pouchdb.upsert.min.js";
-import 'https://unpkg.com/vue/dist/vue.js';
 
 import './algorithm/smithwaterman/SmithWaterman.js';
 import './preprocessor/LowercasePreprocessor.js';
@@ -36,13 +35,11 @@ export default class DeepDiff extends EventTarget{
 
 		this.numThreads = 1;
 		this.db = new PouchDB('DeepDiff');
-		this.report = new Vue({
-			data:{
-				results:{},
-				submissions:{},
-				archives:[],
-			},
-		});
+		this.report = {
+			results:{},
+			submissions:{},
+			archives:[],
+		};
 		this.Submissions
 			.then(submission=>{
 				this.report.submissions = submission.reduce((a,d)=>{
@@ -153,7 +150,7 @@ export default class DeepDiff extends EventTarget{
 				let id = e.detail.id.split('.');
 				id.shift();
 				id = id.join('.');
-				Vue.delete(this.report.results,id);
+				delete this.report.results[id];
 				this.Algorithm({name:id,action:'stop'});
 				console.log("removed result: " + e.detail.id);
 			}
@@ -162,7 +159,7 @@ export default class DeepDiff extends EventTarget{
 				summary.submissions.forEach((d)=>{
 					delete d.finalList;
 				});
-				Vue.set(this.report.results,e.detail.doc.name,summary);
+				this.report.results[e.detail.doc.name] = summary;
 
 				this.runAllCompares();
 			}
@@ -173,7 +170,7 @@ export default class DeepDiff extends EventTarget{
 				let id = e.detail.id.split('.');
 				id.shift();
 				id = id.join('.');
-				Vue.delete(this.report.submissions,id);
+				delete this.report.submissions[id];
 
 				let results = await this.db.allDocs({startkey:'result.',endkey:'result.\ufff0',include_docs:true});
 				let deletes = results.rows
@@ -196,7 +193,7 @@ export default class DeepDiff extends EventTarget{
 			else{
 				let summary = JSON.parse(JSON.stringify(e.detail.doc));
 				delete summary.content;
-				Vue.set(this.report.submissions,e.detail.doc.name,summary);
+				this.report.submissions[e.detail.doc.name] = summary;
 
 				//let results = await self.Submissions;
 				let results = await this.db.allDocs({startkey:'submission.',endkey:'submission.\ufff0', include_docs:true});

@@ -307,7 +307,7 @@ export default class psForceDirected extends HTMLElement {
 			let results = Object.assign({},this.results.report.results);
 			results = Object.entries(results);
 			Object.keys(this.links).forEach(name=>{
-				if(!this.results.results[name]){
+				if(!this.results.report.results[name]){
 					let link = this.links[name];
 					link.element.parentElement.removeChild(link.element);
 					delete this.links[name];
