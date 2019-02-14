@@ -1,7 +1,6 @@
 'use strict';
 
 /*
-global Vue
 global JSZip
 */
 
@@ -117,9 +116,9 @@ class indexPage {
 
 
 		let maxlen = Number.MAX_VALUE;
-		let names = Object.values(files)
+		let names = Object.keys(files)
 			.map((file)=>{
-				let path = file.relativePath.split('/');
+				let path = file.split('/');
 				maxlen = Math.min(maxlen,path.length);
 				return path;
 			})
@@ -132,7 +131,7 @@ class indexPage {
 		for(let allsame = false; !allsame && maxlen > 0; maxlen--){
 			allsame = names
 				.map(name=>{
-					return name.join();
+					return name.join('/');
 				})
 				.every((name,i,names)=>{
 					if(i === 0){
@@ -152,11 +151,17 @@ class indexPage {
 		name = name.join('/');
 
 		files = Object.entries(files).reduce((a,d)=>{
-			let key = d[0].substr(name.length+1);
+			let key = d[0].substr(name.length+1); //.split('/').join('/');
 			let value = d[1];
 			a[key] = value;
 			return a;
 		},{});
+
+		name = name.split('/');
+		while(['.','file:',''].includes(name[0])){
+			name.shift();
+		}
+		name = name.join('/');
 
 		return {
 			name: name,
