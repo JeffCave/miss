@@ -30,6 +30,41 @@ class indexPage {
 	constructor() {
 		this.runner = new DeepDiff();
 
+		let deleteall = document.querySelector('#DeleteAll');
+		let save = document.querySelector('#Download');
+		let restore = document.querySelector('#Restore');
+		deleteall.addEventListener('click',()=>{
+			this.runner.Clear();
+		});
+		save.addEventListener('click',async ()=>{
+			let json = await this.runner.Save();
+			json = JSON.stringify(json);
+			var zip = new JSZip();
+			zip.file("db.json", json);
+			await zip
+				.generateAsync({type : "blob"})
+				.then(function(content) {
+					//content = window.btoa(content);
+					saveAs(content, "DeepDiff.zip");
+
+				})
+				;
+		});
+		restore.addEventListener('change', async (e)=>{
+			let files = e.target.files;
+			files = await unpack.unPack(files);
+			let json = [];
+			for(let f in files){
+				f = files[f];
+				f = new psFile(f);
+				f = await f.read('text');
+				json.push(f);
+			}
+			json = json.join('');
+			json = JSON.parse(json);
+			this.runner.Load(json);
+		});
+
 		Array.from(document.querySelectorAll('form[is="deepdiff-opts"]')).forEach(opts=>{
 			opts.ddInstance = this.runner;
 		});
@@ -169,43 +204,6 @@ class indexPage {
 		};
 	}
 
-
-	attachCommon(blob){
-		let parent = this;
-		this.common = null;
-		// 1) read the Blob
-		return JSZip
-			.loadAsync(blob)
-			.then(function(zip) {
-				parent.common = zip;
-			})
-			.catch(function (e) {
-				console.error("Error reading " + blob.name + ": " + e.message);
-			})
-			;
-	}
-
-
-
-	/**
-	 * Parse CLI arguments and run DeepDiff from them.
-	 *
-	 * TODO add unit tests
-	 *
-	 * @param args CLI arguments to parse
-	 */
-	async runHtml(htmlContainers = null){
-		if(!htmlContainers){
-			htmlContainers = this.Containers;
-		}
-		let checkSims = this.runner;
-
-		checkSims.CommonCode = this.common;
-		checkSims.ArchiveSubmissions = this.archive;
-		let results = await checkSims.runDeepDiff();
-
-		this.renderResults(results,htmlContainers);
-	}
 
 }
 

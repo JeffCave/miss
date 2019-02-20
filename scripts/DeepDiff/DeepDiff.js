@@ -33,36 +33,55 @@ export default class DeepDiff extends EventTarget{
 	constructor() {
 		super();
 
+		this._ = {};
+
 		this.numThreads = 1;
-		this.db = new PouchDB('DeepDiff');
 		this.report = {
 			results:{},
 			submissions:{},
 			archives:[],
 		};
 
-		(async ()=>{
-			await this.dbInit();
-			let submission = await this.Submissions;
-			this.report.submissions = submission.reduce((a,d)=>{
-				d.tokens = Object.entries(d.content).reduce((a,d)=>{
-					let key = d[0];
-					let content = d[1];
-					let ext = key.split('.').pop();
-					let handler = ContentHandlers.lookupHandlerByExt(ext);
-					a[key] = handler.tokenizer.split(content.blob,key);
-					return a;
-				},{});
-				a[d.name] = d;
+		this._.emit = {
+			load : ()=>{
+				this.dispatchEvent(new Event('load'));
+			}
+		};
+
+		this.dbLoad();
+
+	}
+
+
+	get db(){
+		if(this._.db){
+			return this._.db;
+		}
+		this._.db = new PouchDB('DeepDiff');
+		return this._.db;
+	}
+
+	async dbLoad(){
+		await this.dbInit();
+		let submission = await this.Submissions;
+		this.report.submissions = submission.reduce((a,d)=>{
+			d.tokens = Object.entries(d.content).reduce((a,d)=>{
+				let key = d[0];
+				let content = d[1];
+				let ext = key.split('.').pop();
+				let handler = ContentHandlers.lookupHandlerByExt(ext);
+				a[key] = handler.tokenizer.split(content.blob,key);
 				return a;
 			},{});
-			let results = await this.Results;
-			this.report.results = results.reduce((a,d)=>{
-				a[d.name] = d;
-				return a;
-			},{});
-			this.dispatchEvent(new Event('load'));
-		})();
+			a[d.name] = d;
+			return a;
+		},{});
+		let results = await this.Results;
+		this.report.results = results.reduce((a,d)=>{
+			a[d.name] = d;
+			return a;
+		},{});
+		this._.emit.load();
 	}
 
 	async dbInit(){
@@ -295,6 +314,34 @@ export default class DeepDiff extends EventTarget{
 			})
 			;
 	}
+
+	async Clear(){
+		console.log('Deleting database...');
+		await this.db.destroy();
+		this._.db = null;
+		console.log('Database deleted.');
+		await this.dbLoad();
+		this._.emit.load();
+	}
+
+	async Save(){
+		let docs = await this.db.allDocs({
+			startkey: '_\ufff0',
+			endkey: '\ufff0',
+			include_docs: true
+		});
+		docs = docs.rows;
+		console.log('Read database');
+		return docs;
+	}
+
+	async Load(json){
+		await this.Clear();
+		await this.db.bulkDocs(json);
+		await this.dbLoad();
+		console.log('Loaded from file');
+	}
+
 
 	/**
 	 * @param newSubmissions New set of submissions to work on. Must contain at least 1 submission.
