@@ -6,11 +6,10 @@ export{
 };
 
 /*
+global _
 global HTMLElement
 */
 
-import {psTreeView} from './psTreeView.js';
-import {Submission} from '../DeepDiff/submission/Submission.js';
 import {icons} from './icons.js';
 
 class psSubmissionList extends HTMLElement {
@@ -18,7 +17,7 @@ class psSubmissionList extends HTMLElement {
 		super();
 
 		this._ = {};
-		this._.submissions = {};
+		this._.DeepDiff = null;
 
 		this._.panel = this.attachShadow({mode: 'open'});
 
@@ -28,89 +27,88 @@ class psSubmissionList extends HTMLElement {
 
 		this._.elems = document.createElement('div');
 		this._.panel.append(this._.elems);
+
 	}
 
-	get pouchdb(){
-		return this._.pouchdb;
+	get DeepDiff(){
+		return this._.DeepDiff;
 	}
-	set pouchdb(value){
-		if(this._.pouchdb === value){
+
+	set DeepDiff(value){
+		if(this._.DeepDiff === value){
 			return;
 		}
-		if(this._.changes){
-			changes.cancel();
+
+		if(this.changeHandler){
+			this._.DeepDiff.removeEventListener('change',this.changeHandler);
+			this._.DeepDiff.removeEventListener('load',this.changeHandler);
+		}
+		else{
+			this.changeHandler = ()=>{
+				this.Render();
+			};
 		}
 
-		let changes = value.changes({
-			live:true,
-			include_docs:true,
-			filter: 'checksims/submissions'
-		});
-		changes.on('change',async (e)=>{
-			if(e.deleted){
-				delete this.Submissions[e.id];
-			}
-			else{
-				let sub = new psSubmission();
-				sub.Submission = await Submission.fromJSON(e.doc);
-				sub.remover = (id)=>{
-					this.remover(id);
-				};
-				this.Submissions[e.id] = sub;
-			}
-			this.Render();
-		});
+		this._.DeepDiff = value;
 
-		this._.changes = changes;
-		this._.pouchdb = value;
+		this._.DeepDiff.addEventListener('change',this.changeHandler);
+		this._.DeepDiff.addEventListener('load',this.changeHandler);
+
+		this.pouchdb = value.db;
+		this.Render();
 	}
 
-	get Submissions(){
-		return this._.submissions;
-	}
 
-	remover(id){
-		id = ['submission',id].join('.');
-		this.pouchdb.upsert(id,function(){
-			return {_deleted:true};
-		});
-	}
+	get Render(){
+		if(this._.renderer) return this._.renderer;
 
-	Render(){
-		let parent = this._.elems;
+		let renderer = async ()=>{
+			let parent = this._.elems;
 
-		let submissions = {};
-		Object.entries(this.Submissions).forEach((d)=>{
-			submissions[d[0]] = d[1];
-		});
-		let keys = Object.keys(submissions);
-		Array.from(parent.children).forEach((elem)=>{
-			// get the name of the current element
-			let name = 'submission.'+elem.Submission.name;
-			// if the element does not exist in the reference list,
-			// remvove it from the elements list
-			if(!keys.includes(name)){
-				elem.parentNode.removeChild(elem);
+			let submissions = {};
+			let orig = await this.DeepDiff.Submissions;
+			for(let s=orig.length-1; s>=0; s--){
+				let key = orig[s].name;
+				submissions[key] = orig[s];
 			}
-			// removing elements that are
-			let i = keys.indexOf(name);
-			if(i >= 0){
-				keys.splice(i, 1);
-			}
-		});
-		// add all of the items that are left over
-		keys.forEach(key=>{
-			// search for the alphabetic insertion point
-			let inspos = null;
-			for(let ref of parent.children){
-				if('submission.'+ref.Submission.name > key){
-					inspos = ref;
-					break;
+			let keys = Object.keys(submissions);
+			Array.from(parent.children).forEach((elem)=>{
+				// get the name of the current element
+				let name = 'submission.'+elem.Submission.name;
+				// if the element does not exist in the reference list,
+				// remvove it from the elements list
+				if(!keys.includes(name)){
+					elem.parentNode.removeChild(elem);
 				}
-			}
-			// insert the element
-			parent.insertBefore(submissions[key],inspos);
-		});
+				// removing elements that are
+				let i = keys.indexOf(name);
+				if(i >= 0){
+					keys.splice(i, 1);
+				}
+			});
+			// add all of the items that are left over
+			keys.forEach(key=>{
+				// search for the alphabetic insertion point
+				let inspos = null;
+				for(let ref of parent.children){
+					if('submission.'+ref.Submission.name > key){
+						inspos = ref;
+						break;
+					}
+				}
+				// insert the element
+				let sub = new psSubmission();
+				sub.Submission = submissions[key];
+				sub.remover = ()=>{
+					this.DeepDiff.removeSubmission(key);
+				};
+				parent.insertBefore(sub,inspos);
+			});
+		};
+
+		renderer = _.throttle(renderer,100);
+		this._.renderer = renderer;
+		return renderer;
 	}
 }
 

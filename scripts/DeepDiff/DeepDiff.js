@@ -150,6 +150,7 @@ export default class DeepDiff extends EventTarget{
 					//if(e.deleted) return;
 					console.log(eventType + ' change');
 					this.dispatchEvent(new CustomEvent(eventType,{ detail: e }));
+					this.dispatchEvent(new CustomEvent('change',{ detail: e }));
 					if(e.seq % 1000 === 0){
 						this.db.compact();
 					}
@@ -370,6 +371,18 @@ export default class DeepDiff extends EventTarget{
 		puts = await Promise.all(puts);
 		return puts;
 	}
+
+	removeSubmission(id){
+		if(id instanceof Submission){
+			id = id.name;
+		}
+		id = ['submission',id].join('.');
+		this.db.upsert(id,function(){
+			return {_deleted:true};
+		});
+	}
+
+
 
 
 	/**

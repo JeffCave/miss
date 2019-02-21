@@ -20,6 +20,10 @@ import './widgets/psSubmissions.js';
 import './widgets/psTabbedPanelElement.js';
 import './widgets/psTornadoChart.js';
 
+/*
+global saveAs
+*/
+
 
 /**
  * Parses DeepDiff' command-line options.
@@ -74,6 +78,8 @@ class indexPage {
 		tornadochart.DeepDiff = this.runner;
 		let matrixmap = document.querySelector('#matrixmap');
 		matrixmap.DeepDiff = this.runner;
+		let submissions = document.querySelector('#submissions');
+		submissions.DeepDiff = this.runner;
 
 		let uploadSubmission = document.querySelector('#UploadSubmission');
 		uploadSubmission.addEventListener('change', async (e)=>{
@@ -97,9 +103,6 @@ class indexPage {
 			this.runner.addSubmissions(submissions);
 		});
 
-		let submissions = document.querySelector('#submissions');
-		submissions.pouchdb = this.runner.db;
-		submissions.filter = 'checksims/submissions';
 	}
 
 
