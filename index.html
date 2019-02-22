@@ -28,11 +28,15 @@
 <body>
  <pre style='display:none;'></pre>
  <header>
-  <h1>Deep Diff</h1>
+  <h1>Measure <sup style='font-size:small'>of</sup> Integrity <sup style='font-size:small'>of</sup> Student Submissions</h1>
   <nav>
-   <button id='DeleteAll'>Delete</button>
-   <button id='Download'>Download</button>
-   <ps-filedrop id='Restore'>Restore</ps-filedrop>
+   <button id='DeleteAll' title='Remove Comparision Data'>&#128465;</button>
+   <button id='Download' title='Export a Comparison'><strong>&#10515;</strong></button>
+   <button id='RestoreClicker' title='Import a Comparison'>
+    &#10514;
+    <ps-filedrop id='Restore' accept=".miss" style='position:absolute;top:0;left:0;opacity:0;'> </ps-filedrop>
+   </button>
+
   </nav>
  </header>
  <section>

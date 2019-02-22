@@ -21,6 +21,7 @@ import './widgets/psTabbedPanelElement.js';
 import './widgets/psTornadoChart.js';
 
 /*
+global File
 global saveAs
 */
 
@@ -36,6 +37,7 @@ class indexPage {
 
 		let deleteall = document.querySelector('#DeleteAll');
 		let save = document.querySelector('#Download');
+		let restorebtn = document.querySelector('#RestoreClicker');
 		let restore = document.querySelector('#Restore');
 		deleteall.addEventListener('click',()=>{
 			this.runner.Clear();
@@ -49,13 +51,18 @@ class indexPage {
 				.generateAsync({type : "blob"})
 				.then(function(content) {
 					//content = window.btoa(content);
-					saveAs(content, "DeepDiff.zip");
+					saveAs(content, "DeepDiff.miss");
 
 				})
 				;
 		});
+		restorebtn.addEventListener('click',()=>{
+			restore.click();
+		});
 		restore.addEventListener('change', async (e)=>{
-			let files = e.target.files;
+			let files = Array.from(e.target.files).map(f=>{
+				return new File([f],f.name,{type:'application/zip'});
+			});
 			files = await unpack.unPack(files);
 			let json = [];
 			for(let f in files){

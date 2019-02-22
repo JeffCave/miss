@@ -7,18 +7,24 @@ body > header > h1 {
 body > header > nav{
 	display:inline-block;
 }
-body > header > nav#breadcrumb{
-	width:80%;
-}
-body > header > nav > ul, body > header > nav > ol{
-	display:block;
-	padding-left:0;
+body > header > nav > button, body > header > nav > ps-filedrop{
+	position:relative;
+	display:inline-block;
 	margin:0;
+	height:2em;
+	width:2em;
 }
+body > header > nav > ps-filedrop{
+	background-color:green;
+}
+
 body > header > nav > ul > li, body > header > nav > ol > li{
 	display:inline;
 }
 
+body > header > nav#breadcrumb{
+	width:80%;
+}
 body > header input[type='search']{
 	width: 10em;
 	margin:0;
