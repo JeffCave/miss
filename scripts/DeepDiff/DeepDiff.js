@@ -331,7 +331,11 @@ export default class DeepDiff extends EventTarget{
 			endkey: '\ufff0',
 			include_docs: true
 		});
-		docs = docs.rows;
+		docs = docs.rows.map((row)=>{
+			row = row.doc;
+			delete row._rev;
+			return row;
+		});
 		console.log('Read database');
 		return docs;
 	}
