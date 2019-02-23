@@ -1,5 +1,7 @@
 'use strict';
 
+import * as util from '../DeepDiff/util/misc.js';
+
 /*
 global _
 global HTMLElement
@@ -57,28 +59,38 @@ export default class psMatrixMap extends HTMLElement{
 			let submissions = this.orderedSubmissions();
 			let body = this._.tbody;
 			let header = this._.thead;
+			let isChanged = false;
 
 			while(header.cells.length < submissions.length+1){
 				let cell = document.createElement('th');
 				cell.innerHTML = '<span>&nbsp;</span>';
 				header.append(cell);
+				isChanged = true;
 			}
 			while(header.cells.length > submissions.length+1){
 				let cell = Array.from(header.cells).pop();
 				cell.parentElement.removeChild(cell);
+				isChanged = true;
 			}
 
 			while(body.rows.length < submissions.length){
 				let row = document.createElement('tr');
 				row.innerHTML = '<th>&nbsp;</th>';
 				body.append(row);
+				isChanged = true;
 			}
 			while(body.rows.length > submissions.length){
 				let row = Array.from(body.rows).pop();
 				row.parentElement.removeChild(row);
+				isChanged = true;
+			}
+			if(isChanged){
+				let paths = submissions.map((s)=>s.name);
+				this._.commonPath = util.CommonLead(paths,'/');
 			}
 
 			submissions.forEach((a,r)=>{
+				let name = a.name.substr(this._.commonPath.length);
 				let row = body.rows[r];
 				while(row.cells.length < submissions.length+1){
 					let cell = document.createElement('td');
@@ -89,8 +101,8 @@ export default class psMatrixMap extends HTMLElement{
 					let cell = Array.from(row.cells).pop();
 					row.removeChild(cell);
 				}
-				header.cells[r+1].children[0].textContent = a.name;
-				row.cells[0].textContent = a.name;
+				header.cells[r+1].children[0].textContent = name;
+				row.cells[0].textContent = name;
 				submissions.forEach((b,c)=>{
 					let cell = row.cells[c+1];
 					let settings = {

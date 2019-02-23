@@ -101,7 +101,40 @@ export function UniformDistribution(seed) {
 	return function() {return (seed = lcg(seed)) / 2147483648};
 }
 
+/**
+ *
+ *
+ */
+export function CommonLead(strings,splitter=''){
+	if(!strings.length){
+		return '';
+	}
 
+	strings = JSON.clone(strings);
+	strings = strings.map(d=>{return d.split(splitter);});
+	let maxlen = strings.reduce((a,d)=>{return Math.min(a,d.length);},Number.MAX_VALUE);
+	strings = strings.map((d)=>{
+		d = d.slice(0,maxlen);
+		return d;
+	});
+
+
+	let isSame = false;
+	let common = "dummy value";
+	while(!isSame && common.length > 0){
+		common = strings[0].join(splitter);
+		isSame = true;
+		for(let s=0; s<strings.length; s++){
+			let str = strings[s].join(splitter);
+			if(common !== str){
+				isSame = false;
+			}
+			strings[s].pop();
+		}
+	}
+	common = [common,splitter].join('');
+	return common;
+}
 
 
 

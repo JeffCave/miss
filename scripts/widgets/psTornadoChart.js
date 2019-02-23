@@ -1,5 +1,7 @@
 'use strict';
 
+import * as util from '../DeepDiff/util/misc.js';
+
 /*
 global _
 global HTMLElement
@@ -61,15 +63,29 @@ export default class psTornadoChart extends HTMLElement {
 			let results = this.ordered();
 			let body = this._.tbody;
 
+			let isChanged = false;
 			while(body.rows.length < results.length){
 				let row = document.createElement('tr');
 				let cell = "<td><meter min='0' max='1' value='0' title=''></meter><span></span></td>";
 				row.innerHTML = [cell,cell].join('');
 				body.append(row);
+				isChanged = true;
 			}
 			while(body.rows.length > results.length){
 				let row = Array.from(body.rows).pop();
 				row.parentElement.removeChild(row);
+				isChanged = true;
+			}
+			if(isChanged){
+				let paths = [];
+				for(let r in results){
+					let result = results[r];
+					for(let s in result.submissions){
+						let submission = result.submissions[s];
+						paths.push(submission.name);
+					}
+				}
+				this._.commonPath = util.CommonLead(paths,'/');
 			}
 
 			results.forEach((result,r)=>{
@@ -88,7 +104,7 @@ export default class psTornadoChart extends HTMLElement {
 					meter.value = submission.percentMatched;
 					meter.title = psTornadoChart.formatTitle(submission.percentMatched);
 					title.title = meter.title;
-					title.textContent = submission.name;
+					title.textContent = submission.name.substr(this._.commonPath.length);
 				});
 			});
 		};

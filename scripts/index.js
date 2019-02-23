@@ -10,6 +10,7 @@ import {Submission} from './DeepDiff/submission/Submission.js';
 import * as unpack from './DeepDiff/util/unpack.js';
 import {psFile} from './DeepDiff/util/psFile.js';
 import {ContentHandlers} from './DeepDiff/submission/ContentHandlers.js';
+import * as utils from './DeepDiff/util/misc.js';
 
 
 import './widgets/psFileDrop.js';
@@ -159,45 +160,9 @@ class indexPage {
 		}
 		files = values;
 
-
-
-		let maxlen = Number.MAX_VALUE;
-		let names = Object.keys(files)
-			.map((file)=>{
-				let path = file.split('/');
-				maxlen = Math.min(maxlen,path.length);
-				return path;
-			})
-			.map(path=>{
-				path = path.slice(0,maxlen);
-				return path;
-			})
-			;
-
-		for(let allsame = false; !allsame && maxlen > 0; maxlen--){
-			allsame = names
-				.map(name=>{
-					return name.join('/');
-				})
-				.every((name,i,names)=>{
-					if(i === 0){
-						return true;
-					}
-					let rtn = name === names[i-1];
-					return rtn;
-				})
-				;
-			if(!allsame){
-				names.forEach((name)=>{
-					name.pop();
-				});
-			}
-		}
-		let name = names[0] || [];
-		name = name.join('/');
-
+		let name = utils.CommonLead(Object.keys(files),'/');
 		files = Object.entries(files).reduce((a,d)=>{
-			let key = d[0].substr(name.length+1); //.split('/').join('/');
+			let key = d[0].substr(name.length);
 			let value = d[1];
 			a[key] = value;
 			return a;

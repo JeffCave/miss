@@ -57,8 +57,10 @@ class DeepdiffOpts extends HTMLFormElement{
 		if(this._.instance){
 			if(this._.title !== title){
 				this._.title = title;
-				title.addEventListener('blur',(e)=>{
-					this._.instance.Title = e.target.value;
+				['blur','change','keyup','input'].forEach((event)=>{
+					title.addEventListener(event,(e)=>{
+						this._.instance.Title = e.target.value;
+					});
 				});
 			}
 			title.value = this._.instance.Title;

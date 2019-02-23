@@ -106,9 +106,9 @@ label {
 input[type="file"] {
 	position: absolute;
 	left: 0;
-	opacity: 0;
 	top: 0;
 	bottom: 0;
+	opacity: 0;
 	width: 100%;
 }
 
