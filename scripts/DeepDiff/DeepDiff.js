@@ -290,8 +290,13 @@ export default class DeepDiff extends EventTarget{
 
 	get Title(){
 		let title = this._.config.title;
-		title = title || '';
-		return title;
+		if(!title){
+			title = new Date();
+			title = title.toISOString().replace(/[^0-9]/g,'').substr(0,12);
+			title = 'MISS-' + title;
+			this.Title = title;
+		}
+		return this._.config.title;
 	}
 	set Title(value){
 		if(this._.config.title === value){
