@@ -101,7 +101,35 @@ export function UniformDistribution(seed) {
 	return function() {return (seed = lcg(seed)) / 2147483648};
 }
 
+/**
+ *
+ *
+ */
+export function CommonLead(strings,splitter=''){
+	if(!strings.length){
+		return '';
+	}
 
+	strings = JSON.clone(strings);
+	let isSame = false;
+	let common = "dummy value";
+	while(!isSame && common.length > 0){
+		common = strings[0];
+		isSame = true;
+		for(let s=0; s<strings.length; s++){
+			let str = strings[s];
+			if(common !== str){
+				isSame = false;
+			}
+			str = str.split(splitter);
+			str.pop();
+			str = str.join(splitter);
+			str += splitter;
+			strings[s] = str;
+		}
+	}
+	return common;
+}
 
 
 

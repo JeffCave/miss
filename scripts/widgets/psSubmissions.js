@@ -11,6 +11,7 @@ global HTMLElement
 */
 
 import {icons} from './icons.js';
+import * as utils from '../DeepDiff/util/misc.js';
 
 class psSubmissionList extends HTMLElement {
 	constructor(){
@@ -65,6 +66,7 @@ class psSubmissionList extends HTMLElement {
 		let renderer = async ()=>{
 			let parent = this._.elems;
 
+			let isChange = false;
 			let submissions = {};
 			let orig = await this.DeepDiff.Submissions;
 			for(let s=orig.length-1; s>=0; s--){
@@ -73,6 +75,7 @@ class psSubmissionList extends HTMLElement {
 			}
 			let keys = Object.keys(submissions);
 			Array.from(parent.children).forEach((elem)=>{
+				isChange = true;
 				// get the name of the current element
 				let name = 'submission.'+elem.Submission.name;
 				// if the element does not exist in the reference list,
@@ -88,6 +91,7 @@ class psSubmissionList extends HTMLElement {
 			});
 			// add all of the items that are left over
 			keys.forEach(key=>{
+				isChange = true;
 				// search for the alphabetic insertion point
 				let inspos = null;
 				for(let ref of parent.children){
@@ -104,6 +108,14 @@ class psSubmissionList extends HTMLElement {
 				};
 				parent.insertBefore(sub,inspos);
 			});
+
+			if(isChange){
+				let commonPath = Object.keys(submissions);
+				commonPath = utils.CommonLead(commonPath,'/');
+				for(let ref of parent.children){
+					ref.CommonPath = commonPath;
+				}
+			}
 		};
 
 		renderer = _.throttle(renderer,100);
@@ -141,6 +153,15 @@ class psSubmission extends HTMLElement {
 		this.Render();
 	}
 
+	get CommonPath(){
+		return this._.common || '';
+	}
+	set CommonPath(value){
+		this._.common = value;
+		let name = this._.panel.querySelector("output[name='name']");
+		name.value = this.Submission.name.substr(this.CommonPath.length,Number.MAX_VALUE);
+	}
+
 	get remover(){
 		return this._.remover;
 	}
@@ -173,8 +194,8 @@ class psSubmission extends HTMLElement {
 			this.remove();
 		});
 
-		let name = panel.querySelector("output[name='name']");
-		name.value = this.Submission.name;
+		let name = this._.panel.querySelector("output[name='name']");
+		name.value = this.Submission.name.substr(this.CommonPath.length,Number.MAX_VALUE);
 
 		let tree = panel.querySelector('ps-treeview');
 		tree.files = this.Submission.content;
