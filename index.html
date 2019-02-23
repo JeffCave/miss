@@ -28,7 +28,15 @@
 <body>
  <pre style='display:none;'></pre>
  <header>
-  <h1>Measure <sup style='font-size:small'>of</sup> Integrity <sup style='font-size:small'>of</sup> Student Submissions</h1>
+  <h1>
+   Measure
+   <sup style='font-size:small;font-variant:small-caps;'>of</sup>
+   Integrity
+   <sup style='font-size:small;font-variant:small-caps;'>of</sup>
+   Submissions
+   <sup style='font-size:small;font-variant:small-caps;'>of</sup>
+   Students
+  </h1>
   <nav>
    <button id='DeleteAll' title='Remove Comparision Data'>&#128465;</button>
    <button id='Download' title='Export a Comparison'><strong>&#10515;</strong></button>
@@ -40,9 +48,13 @@
   </nav>
  </header>
  <section>
-  <ps-panel icon='settings' state='minimize'>
-   <h1>Options</h1>
-   <form is='deepdiff-opts' state='minimize'>
+  <ps-panel icon='settings'>
+   <form is='deepdiff-opts'>
+
+    <label title='Enter a title for submissions that uniquely identifies this collection of assignments'>Title</label>
+    <input name='title' type='text' placeholder='Enter a title for your submissions' />
+
+    <label title='Determines the algorithm used when calculating the similiarity of documents'>Algorithm Variant</label>
     <select name='algorithm' list='algorithms'>
      <option value='test'>Test</option>
     </select>

@@ -43,16 +43,17 @@ class indexPage {
 			this.runner.Clear();
 		});
 		save.addEventListener('click',async ()=>{
-			let json = await this.runner.Save();
+			let json = await this.runner.Export();
 			json = JSON.stringify(json);
 			var zip = new JSZip();
 			zip.file("db.json", json);
+			let title = this.runner.Title;
+			title += ".miss";
 			await zip
 				.generateAsync({type : "blob"})
 				.then(function(content) {
 					//content = window.btoa(content);
-					saveAs(content, "DeepDiff.miss");
-
+					saveAs(content, title);
 				})
 				;
 		});
@@ -73,7 +74,7 @@ class indexPage {
 			}
 			json = json.join('');
 			json = JSON.parse(json);
-			this.runner.Load(json);
+			this.runner.Import(json);
 		});
 
 		Array.from(document.querySelectorAll('form[is="deepdiff-opts"]')).forEach(opts=>{

@@ -3,8 +3,9 @@ export {
 	DeepDiff
 };
 
-import "https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.4.3/pouchdb.min.js";
+import "https://cdnjs.cloudflare.com/ajax/libs/pouchdb/7.0.0/pouchdb.min.js";
 import "./lib/pouchdb.upsert.min.js";
+import "https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.1/underscore-min.js";
 
 import './algorithm/smithwaterman/SmithWaterman.js';
 import './preprocessor/LowercasePreprocessor.js';
@@ -18,6 +19,7 @@ import {Submission} from './submission/Submission.js';
 import * as utils from './util/misc.js';
 
 /*
+global _
 global CustomEvent
 global emit
 global Event
@@ -33,7 +35,9 @@ export default class DeepDiff extends EventTarget{
 	constructor() {
 		super();
 
-		this._ = {};
+		this._ = {
+			config:{}
+		};
 
 		this.numThreads = 1;
 		this.report = {
@@ -63,6 +67,15 @@ export default class DeepDiff extends EventTarget{
 
 	async dbLoad(){
 		await this.dbInit();
+		this._.config = await this.db
+			.get('config')
+			.catch((e)=>{
+				if(e.status !== 404){
+					console.error('ERROR loading DeepDiff configuration.');
+				}
+				return {};
+			})
+			;
 		let submission = await this.Submissions;
 		this.report.submissions = submission.reduce((a,d)=>{
 			d.tokens = Object.entries(d.content).reduce((a,d)=>{
@@ -253,26 +266,43 @@ export default class DeepDiff extends EventTarget{
 	 * @return Similarity detection algorithm to use
 	 */
 	get Algorithm() {
-		if(!this.algorithm){
-			this.algorithm = AlgorithmRegistry.def;
-			this.algorithm = AlgorithmRegistry.processors[this.algorithm];
+		if(!this._.algorithm){
+			this.Algorithm = AlgorithmRegistry.def;
 		}
-		return this.algorithm;
+		return this._.algorithm;
 	}
 	/**
 	 * @param newAlgorithm New similarity detection algorithm to use
 	 * @return This configuration
 	 */
 	set Algorithm(newAlgorithm) {
-		utils.checkNotNull(newAlgorithm);
 		if(typeof newAlgorithm === 'string'){
-			newAlgorithm = AlgorithmRegistry.processors[newAlgorithm];
+			this._.config.algorithm = newAlgorithm;
+			this._.algorithm = AlgorithmRegistry.processors[this._.config.algorithm];
 		}
-
-		this.algorithm = newAlgorithm;
+		this.SaveConfig();
 	}
+
+
 	get AlgorithmRegistry(){
 		return AlgorithmRegistry.processors;
+	}
+
+	get Title(){
+		let title = this._.config.title;
+		title = title || '';
+		return title;
+	}
+	set Title(value){
+		if(this._.config.title === value){
+			return;
+		}
+		if(typeof value !== 'string'){
+			throw new Error('Invalid datatype. Expected String, receive "'+(typeof value)+'" ('+value.toString()+')');
+		}
+		value = value.toString();
+		this._.config.title = value;
+		this.SaveConfig();
 	}
 
 	/**
@@ -326,6 +356,10 @@ export default class DeepDiff extends EventTarget{
 	}
 
 	async Save(){
+		console.warn("DEPCRECATED: use 'export' instead");
+		return this.Export();
+	}
+	async Export(){
 		let docs = await this.db.allDocs({
 			startkey: '_\ufff0',
 			endkey: '\ufff0',
@@ -341,6 +375,10 @@ export default class DeepDiff extends EventTarget{
 	}
 
 	async Load(json){
+		console.warn("DEPCRECATED: use 'Import' instead");
+		return this.Import(json);
+	}
+	async Import(json){
 		await this.Clear();
 		await this.db.bulkDocs(json);
 		await this.dbLoad();
@@ -542,6 +580,28 @@ export default class DeepDiff extends EventTarget{
 	 */
 	static get Version(){
 		return "0.2.0";
+	}
+
+	get SaveConfig(){
+		if(this._.configsaver){
+			return this._.configsaver;
+		}
+
+		let configsaver = async ()=>{
+			let save = this.db.upsert('config',(oldDoc)=>{
+				let newDoc = this._.config;
+				if(utils.docsEqual(oldDoc,newDoc)){
+					return false;
+				}
+				return newDoc;
+			});
+			save = await save;
+			return save;
+		};
+		configsaver = _.debounce(configsaver,1000);
+
+		this._.configsaver = configsaver;
+		return this._.configsaver;
 	}
 
 	async Compare(pair, force = false){

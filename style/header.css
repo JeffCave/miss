@@ -6,14 +6,18 @@ body > header > h1 {
 
 body > header > nav{
 	display:inline-block;
+	padding:0.3em;
 }
-body > header > nav > button, body > header > nav > ps-filedrop{
+
+body > header > nav > button,
+body > header > nav > ps-filedrop{
 	position:relative;
 	display:inline-block;
 	margin:0;
 	height:2em;
 	width:2em;
 }
+
 body > header > nav > ps-filedrop{
 	background-color:green;
 }

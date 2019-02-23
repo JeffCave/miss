@@ -18,6 +18,9 @@ class DeepdiffOpts extends HTMLFormElement{
 	set ddInstance(instance){
 		if(this._.instance !== instance){
 			this._.instance = instance;
+			instance.addEventListener('load',()=>{
+				this.UpdateAlgoList();
+			});
 			this.UpdateAlgoList();
 		}
 	}
@@ -31,12 +34,15 @@ class DeepdiffOpts extends HTMLFormElement{
 			window.addEventListener('load',()=>{
 				this.connectedCallback();
 			});
+			return;
 		}
+
 		let instance = this.getAttribute('for');
 		if(instance){
 			this.ddInstance = eval(instance);
 		}
 		this.UpdateAlgoList();
+
 	}
 
 	UpdateAlgoList(){
@@ -46,6 +52,18 @@ class DeepdiffOpts extends HTMLFormElement{
 			dlAlgos.setAttribute('name','algorithms');
 			this.appendChild(dlAlgos);
 		}
+
+		let title = this.querySelector("input[name='title']");
+		if(this._.instance){
+			if(this._.title !== title){
+				this._.title = title;
+				title.addEventListener('blur',(e)=>{
+					this._.instance.Title = e.target.value;
+				});
+			}
+			title.value = this._.instance.Title;
+		}
+
 
 		let algos = ['No Algorithms found'];
 		let algo = algos[0];
