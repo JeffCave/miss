@@ -10,6 +10,8 @@ global _
 global HTMLElement
 */
 
+import './psTreeView.js';
+
 import {icons} from './icons.js';
 import * as utils from '../DeepDiff/util/misc.js';
 
