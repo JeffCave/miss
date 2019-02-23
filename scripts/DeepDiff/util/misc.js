@@ -111,23 +111,28 @@ export function CommonLead(strings,splitter=''){
 	}
 
 	strings = JSON.clone(strings);
+	strings = strings.map(d=>{return d.split(splitter);});
+	let maxlen = strings.reduce((a,d)=>{return Math.min(a,d.length);},Number.MAX_VALUE);
+	strings = strings.map((d)=>{
+		d = d.slice(0,maxlen);
+		return d;
+	});
+
+
 	let isSame = false;
 	let common = "dummy value";
 	while(!isSame && common.length > 0){
-		common = strings[0];
+		common = strings[0].join(splitter);
 		isSame = true;
 		for(let s=0; s<strings.length; s++){
-			let str = strings[s];
+			let str = strings[s].join(splitter);
 			if(common !== str){
 				isSame = false;
 			}
-			str = str.split(splitter);
-			str.pop();
-			str = str.join(splitter);
-			str += splitter;
-			strings[s] = str;
+			strings[s].pop();
 		}
 	}
+	common = [common,splitter].join('');
 	return common;
 }
 
