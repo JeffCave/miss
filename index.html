@@ -5,6 +5,7 @@
  <meta charset="utf-8" />
 
  <script async src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js'></script>
+ <script async src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.js" integrity="sha256-htuR1Owx8i9hm4h4Y4d/FjlPLoj2teQmhJ5WnNSo3w0=" crossorigin="anonymous"></script>
  <script async src='https://cdnjs.cloudflare.com/ajax/libs/jsSHA/2.3.1/sha.js'></script>
  <script async src="https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.4.3/pouchdb.min.js" integrity="sha256-KCHhiEhNiEbEd8h607QOlmc3LkpQ/En/mS302LGjnLY=" crossorigin="anonymous"></script>
 
@@ -27,12 +28,33 @@
 <body>
  <pre style='display:none;'></pre>
  <header>
-  <h1>Deep Diff</h1>
+  <h1>
+   Measure
+   <sup style='font-size:small;font-variant:small-caps;'>of</sup>
+   Integrity
+   <sup style='font-size:small;font-variant:small-caps;'>of</sup>
+   Submissions
+   <sup style='font-size:small;font-variant:small-caps;'>of</sup>
+   Students
+  </h1>
+  <nav>
+   <button id='DeleteAll' title='Remove Comparision Data'>&#128465;</button>
+   <button id='Download' title='Export a Comparison'><strong>&#10515;</strong></button>
+   <button id='RestoreClicker' title='Import a Comparison'>
+    &#10514;
+    <ps-filedrop id='Restore' accept=".miss" style='position:absolute;top:0;left:0;opacity:0;'> </ps-filedrop>
+   </button>
+
+  </nav>
  </header>
  <section>
-  <ps-panel icon='settings' state='minimize'>
-   <h1>Options</h1>
-   <form is='deepdiff-opts' state='minimize'>
+  <ps-panel icon='settings'>
+   <form is='deepdiff-opts'>
+
+    <label title='Enter a title for submissions that uniquely identifies this collection of assignments'>Title</label>
+    <input name='title' type='text' placeholder='Enter a title for your submissions' />
+
+    <label title='Determines the algorithm used when calculating the similiarity of documents'>Algorithm Variant</label>
     <select name='algorithm' list='algorithms'>
      <option value='test'>Test</option>
     </select>

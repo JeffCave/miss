@@ -20,6 +20,11 @@ import './widgets/psSubmissions.js';
 import './widgets/psTabbedPanelElement.js';
 import './widgets/psTornadoChart.js';
 
+/*
+global File
+global saveAs
+*/
+
 
 /**
  * Parses DeepDiff' command-line options.
@@ -30,6 +35,48 @@ class indexPage {
 	constructor() {
 		this.runner = new DeepDiff();
 
+		let deleteall = document.querySelector('#DeleteAll');
+		let save = document.querySelector('#Download');
+		let restorebtn = document.querySelector('#RestoreClicker');
+		let restore = document.querySelector('#Restore');
+		deleteall.addEventListener('click',()=>{
+			this.runner.Clear();
+		});
+		save.addEventListener('click',async ()=>{
+			let json = await this.runner.Export();
+			json = JSON.stringify(json);
+			var zip = new JSZip();
+			zip.file("db.json", json);
+			let title = this.runner.Title;
+			title += ".miss";
+			await zip
+				.generateAsync({type : "blob"})
+				.then(function(content) {
+					//content = window.btoa(content);
+					saveAs(content, title);
+				})
+				;
+		});
+		restorebtn.addEventListener('click',()=>{
+			restore.click();
+		});
+		restore.addEventListener('change', async (e)=>{
+			let files = Array.from(e.target.files).map(f=>{
+				return new File([f],f.name,{type:'application/zip'});
+			});
+			files = await unpack.unPack(files);
+			let json = [];
+			for(let f in files){
+				f = files[f];
+				f = new psFile(f);
+				f = await f.read('text');
+				json.push(f);
+			}
+			json = json.join('');
+			json = JSON.parse(json);
+			this.runner.Import(json);
+		});
+
 		Array.from(document.querySelectorAll('form[is="deepdiff-opts"]')).forEach(opts=>{
 			opts.ddInstance = this.runner;
 		});
@@ -39,6 +86,8 @@ class indexPage {
 		tornadochart.DeepDiff = this.runner;
 		let matrixmap = document.querySelector('#matrixmap');
 		matrixmap.DeepDiff = this.runner;
+		let submissions = document.querySelector('#submissions');
+		submissions.DeepDiff = this.runner;
 
 		let uploadSubmission = document.querySelector('#UploadSubmission');
 		uploadSubmission.addEventListener('change', async (e)=>{
@@ -62,9 +111,6 @@ class indexPage {
 			this.runner.addSubmissions(submissions);
 		});
 
-		let submissions = document.querySelector('#submissions');
-		submissions.pouchdb = this.runner.db;
-		submissions.filter = 'checksims/submissions';
 	}
 
 
@@ -169,43 +215,6 @@ class indexPage {
 		};
 	}
 
-
-	attachCommon(blob){
-		let parent = this;
-		this.common = null;
-		// 1) read the Blob
-		return JSZip
-			.loadAsync(blob)
-			.then(function(zip) {
-				parent.common = zip;
-			})
-			.catch(function (e) {
-				console.error("Error reading " + blob.name + ": " + e.message);
-			})
-			;
-	}
-
-
-
-	/**
-	 * Parse CLI arguments and run DeepDiff from them.
-	 *
-	 * TODO add unit tests
-	 *
-	 * @param args CLI arguments to parse
-	 */
-	async runHtml(htmlContainers = null){
-		if(!htmlContainers){
-			htmlContainers = this.Containers;
-		}
-		let checkSims = this.runner;
-
-		checkSims.CommonCode = this.common;
-		checkSims.ArchiveSubmissions = this.archive;
-		let results = await checkSims.runDeepDiff();
-
-		this.renderResults(results,htmlContainers);
-	}
 
 }
 
