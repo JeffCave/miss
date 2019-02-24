@@ -29,6 +29,7 @@ export default class psTabbedPanelElement extends HTMLElement {
 		this.tabs = {};
 		this.panels = {};
 		this.keys = [];
+		let panel = localStorage.getItem("tabbedpanel");
 		Array.from(this.children).forEach((d,i)=>{
 			if(!(d instanceof psPanelElement) || d.state === 'hide'){
 				d.style.display = 'none';
@@ -51,12 +52,13 @@ export default class psTabbedPanelElement extends HTMLElement {
 			});
 			this.activate(key);
 		});
-		this.activate();
+		this.activate(panel);
 	}
 
 	activate(panel){
 		panel = panel || Object.keys(this.panels)[0];
 		panel = panel.toLowerCase();
+		localStorage.setItem("tabbedpanel", panel);
 		for(let p of this.keys){
 			if(p === panel){
 				this.panels[p].classList.add('active');
