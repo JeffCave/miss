@@ -5,6 +5,7 @@ export {
 
 /*
 global HTMLElement
+global localStorage
 */
 
 import psPanelElement from './psPanelElement.js';

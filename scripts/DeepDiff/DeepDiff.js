@@ -227,7 +227,8 @@ export default class DeepDiff extends EventTarget{
 				let results = await this.db.allDocs({startkey:'submission.',endkey:'submission.\ufff0', include_docs:true});
 				results = results.rows
 					.filter((d)=>{
-						return d.id !== e.id;
+						let isMatch = (d.id === e.detail.id);
+						return !isMatch;
 					})
 					.map(d=>{
 						let result = AlgorithmResults.Create(e.detail.doc,d.doc)
@@ -396,7 +397,6 @@ export default class DeepDiff extends EventTarget{
 	 * @return This configuration
 	 */
 	async addSubmissions(newSubmissions) {
-		utils.checkNotNull(newSubmissions);
 		if(newSubmissions instanceof Submission){
 			newSubmissions = [newSubmissions];
 		}
