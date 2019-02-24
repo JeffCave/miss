@@ -17,6 +17,8 @@ global CustomEvent
 export default class psFileDrop extends HTMLElement{
 	constructor(){
 		super();
+		// generate a unique number for every file drop
+		// that is placed on the page
 		psFileDrop.count = (psFileDrop.count||0)+1;
 
 		this._ = {
@@ -42,6 +44,8 @@ export default class psFileDrop extends HTMLElement{
 		this._.div = shadow.querySelector('div');
 		let input = shadow.querySelector('input');
 		this._.input = input;
+		let accept = this.getAttribute('accept');
+		input.setAttribute('accept',accept);
 		input.addEventListener('change',(e)=>{
 			this.isDragOver = false;
 			var event = new CustomEvent('change',e);
@@ -91,6 +95,10 @@ export default class psFileDrop extends HTMLElement{
 		this.removeEventListener('change',this._.onfile);
 		this._.onfile = value;
 		this.addEventListener('change',this._.onfile);
+	}
+
+	click(){
+		this._.input.click();
 	}
 
 

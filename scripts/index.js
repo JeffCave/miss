@@ -58,9 +58,6 @@ class indexPage {
 				})
 				;
 		});
-		restorebtn.addEventListener('click',()=>{
-			restore.click();
-		});
 		restore.addEventListener('change', async (e)=>{
 			let files = Array.from(e.target.files).map(f=>{
 				return new File([f],f.name,{type:'application/zip'});
