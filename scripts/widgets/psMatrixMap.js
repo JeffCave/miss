@@ -21,11 +21,14 @@ export default class psMatrixMap extends HTMLElement{
 				this.Render();
 			},
 			delay:1000,
+			filler:'&#9608;',
 		};
 
 		let shadow = this.attachShadow({mode: 'open'});
+		this._.shadow = shadow;
 		shadow.innerHTML = '<style>'+psMatrixMap.DefaultCss+'</style>';
 		let table = document.createElement('table');
+		table.classList.add('matrixmap');
 		this._.thead = document.createElement('thead');
 		table.append(this._.thead);
 		this._.thead.append(document.createElement('tr'));
@@ -50,6 +53,12 @@ export default class psMatrixMap extends HTMLElement{
 			this._.results.addEventListener('load',this._.handler);
 			this.Render();
 		}
+	}
+
+	get innerHTML(){
+		let html = this._.shadow.innerHTML;
+		//html = html.replace(/â–ˆ/g,this._.filler);
+		return html;
 	}
 
 	get Render(){
@@ -168,21 +177,21 @@ export default class psMatrixMap extends HTMLElement{
 	static get DefaultCss(){
 		return `
 
-table {
+table.matrixmap {
 	background-color: transparent;
 	margin: 1em;
 	border-collapse:collapse;
 }
-thead th, thead th > span {
+table.matrixmap thead th, table.matrixmap thead th > span {
 	background-color: transparent;
 	writing-mode: vertical-rl;
 	text-align:right;
 }
 
-tbody {
+table.matrixmap tbody {
 }
 
-td > span{
+table.matrixmap td > span{
 	display:block;
 	font-size: 3em;
 	height: 1.5em;
@@ -194,7 +203,7 @@ td > span{
 	left: -0.1em;
 }
 
-td, td.complete {
+table.matrixmap td, table.matrixmap td.complete {
 	cursor:default;
 	position: relative;
 	text-align: left;
@@ -213,19 +222,19 @@ td, td.complete {
 	transition: opacity 1s, color 1s;
 }
 
-td.active{
+table.matrixmap td.active{
 	color: orange;
 	color: var(--notice-warn-high);
 
 	transition: opacity 1s, color 1s;
 }
 
-td.significant{
+table.matrixmap td.significant{
 	color: darkred;
 	color: var(--notice-fail-high);
 }
 
-td.complete{
+table.matrixmap td.complete{
 	color: black;
 	color: var(--notice-info-high);
 }
