@@ -24,8 +24,10 @@ export default class psTornadoChart extends HTMLElement {
 		};
 
 		let shadow = this.attachShadow({mode: 'open'});
+		this._.shadow = shadow;
 		shadow.innerHTML = '<style>'+psTornadoChart.DefaultCss+'</style>';
 		let table = document.createElement('table');
+		table.classList.add('tornado');
 		this._.tbody = document.createElement('tbody');
 		shadow.append(table);
 		table.append(this._.tbody);
@@ -49,6 +51,11 @@ export default class psTornadoChart extends HTMLElement {
 		this._.deepdiff.addEventListener('results',this._.handler);
 		this._.deepdiff.addEventListener('load',this._.handler);
 		this.ReSync();
+	}
+
+	get innerHTML(){
+		let html = this._.shadow.innerHTML;
+		return html;
 	}
 
 
@@ -151,22 +158,22 @@ export default class psTornadoChart extends HTMLElement {
 
 	static get DefaultCss(){
 		return `
-table{
+table.tornado{
 	width: calc(100% - 1em);
 	max-width: 300px;
 	border-collapse: collapse;
 	border: 0;
 	margin: 1em;
 }
-thead {
+table.tornado thead {
 	display: none;
 }
-tbody {
+table.tornado tbody {
 	border:0;
 }
-tr {
+table.tornado tr {
 }
-td {
+table.tornado td {
 	border: 0;
 	padding: 0;
 	margin: 0;
@@ -176,21 +183,22 @@ td {
 	vertical-align: middle;
 }
 
-tr > td > meter {
+table.tornado tr > td > meter {
 	width: 100%;
 	height: 1.25em;
 }
-tr > td > meter::-webkit-meter-bar {
+table.tornado tr > td > meter::-webkit-meter-bar {
+	background: magenta;
 	background: var(--notice-pending-low);
 	transition: all 0.5s ease-out;
 }
-tr > td > meter::-webkit-meter-optimum-value{
+table.tornado tr > td > meter::-webkit-meter-optimum-value{
 	background: var(--notice-pending-high);
 	border-top-right-radius: 0.5em;
 	border-bottom-right-radius: 0.5em;
 	transition: all 0.5s ease-out;
 }
-tr > td > span {
+table.tornado tr > td > span {
 	position: absolute;
 	left: 0.5em;
 	color: white;
@@ -201,52 +209,52 @@ tr > td > span {
 	padding: 0.15em;
 }
 
-tr > td:nth-of-type(1) {
+table.tornado tr > td:nth-of-type(1) {
 	border-right: 0.1em solid white;
 	border-right-color: var(--notice-pending-high);
 }
-tr > td:nth-of-type(1) > meter {
+table.tornado tr > td:nth-of-type(1) > meter {
 	transform: rotate(180deg);
 }
-tr > td:nth-of-type(1) > span {
+table.tornado tr > td:nth-of-type(1) > span {
 	right: 0.5em;
 }
 
-tr.complete > td > meter::-webkit-meter-bar {
+table.tornado tr.complete > td > meter::-webkit-meter-bar {
 	background: var(--notice-info-low);
 	transition: all 5s ease-out;
 }
-tr.complete > td > meter::-webkit-meter-optimum-value{
+table.tornado tr.complete > td > meter::-webkit-meter-optimum-value{
 	border: 0;
 	background: var(--notice-info-high);
 	transition: all 5s ease-out;
 }
-tr.complete > td:nth-of-type(1) {
+table.tornado tr.complete > td:nth-of-type(1) {
 	border-right-color: var(--notice-info-high);
 	transition: all 5s ease-in-out;
 }
 
-tr.significant > td > meter::-webkit-meter-bar {
+table.tornado tr.significant > td > meter::-webkit-meter-bar {
 	background: var(--notice-fail-low);
 	transition: all 5s ease-out;
 }
-tr.significant > td > meter::-webkit-meter-optimum-value{
+table.tornado tr.significant > td > meter::-webkit-meter-optimum-value{
 	border:0;
 	background: var(--notice-fail-high);
 	transition: all 5s ease-out;
 }
-tr.significant > td:nth-of-type(1) {
+table.tornado tr.significant > td:nth-of-type(1) {
 	border-right-color: var(--notice-fail-high);
 	transition: all 5s ease-in-out;
 }
-tr.deleting{
+table.tornado tr.deleting{
 	opacity:0.1;
 	height:1px;
 	transition:
 		opacity 1s,
 		height:1s;
 }
-tr.deleting > td{
+table.tornado tr.deleting > td{
 	position:relative;
 	height:1px;
 	transition:

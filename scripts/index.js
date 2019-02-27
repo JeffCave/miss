@@ -2,6 +2,7 @@
 
 /*
 global JSZip
+global Blob
 */
 
 
@@ -9,6 +10,7 @@ import {DeepDiff} from './DeepDiff/DeepDiff.js';
 import {Submission} from './DeepDiff/submission/Submission.js';
 import * as unpack from './DeepDiff/util/unpack.js';
 import {psFile} from './DeepDiff/util/psFile.js';
+import psStaticHtml from './DeepDiff/util/psStaticHtml.js';
 import {ContentHandlers} from './DeepDiff/submission/ContentHandlers.js';
 import * as utils from './DeepDiff/util/misc.js';
 
@@ -38,8 +40,8 @@ class indexPage {
 
 		let deleteall = document.querySelector('#DeleteAll');
 		let save = document.querySelector('#Download');
-		let restorebtn = document.querySelector('#RestoreClicker');
 		let restore = document.querySelector('#Restore');
+		let print = document.querySelector('#Print');
 		deleteall.addEventListener('click',()=>{
 			this.runner.Clear();
 		});
@@ -86,6 +88,18 @@ class indexPage {
 		matrixmap.DeepDiff = this.runner;
 		let submissions = document.querySelector('#submissions');
 		submissions.DeepDiff = this.runner;
+
+		print.addEventListener('click',()=>{
+			let html = new psStaticHtml();
+			html.MISS = this.runner;
+			html.charts['Force Directed'] = forcechart;
+			html.charts['Relationship Listing'] = tornadochart;
+			html.charts['Heatmap'] = matrixmap;
+			html = html.BuildHtml();
+			let name = this.runner.Title + ".html";
+			html = new Blob([html],{type:'text/html'});
+			window.saveAs(html,name);
+		});
 
 		let uploadSubmission = document.querySelector('#UploadSubmission');
 		uploadSubmission.addEventListener('change', async (e)=>{

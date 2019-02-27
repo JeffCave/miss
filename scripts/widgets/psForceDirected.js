@@ -67,6 +67,8 @@ export default class psForceDirected extends HTMLElement {
 		this.svg.lines = this.svg.children[0];
 		this.svg.nodes = this.svg.children[1];
 
+		this._.shadow = shadow;
+
 		this.stop();
 	}
 
@@ -84,6 +86,12 @@ export default class psForceDirected extends HTMLElement {
 			this._.results.addEventListener('load',this._.handler);
 			this.monitorResults();
 		}
+	}
+
+	get innerHTML(){
+		let shadow = this._.shadow;
+		let html = shadow.innerHTML;
+		return html;
 	}
 
 
