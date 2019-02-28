@@ -11,6 +11,7 @@ import {Submission} from './DeepDiff/submission/Submission.js';
 import * as unpack from './DeepDiff/util/unpack.js';
 import {psFile} from './DeepDiff/util/psFile.js';
 import psStaticHtml from './DeepDiff/util/psStaticHtml.js';
+import psStaticEpub from './DeepDiff/util/psStaticEpub.js';
 import {ContentHandlers} from './DeepDiff/submission/ContentHandlers.js';
 import * as utils from './DeepDiff/util/misc.js';
 
@@ -95,9 +96,20 @@ class indexPage {
 			html.charts['Force Directed'] = forcechart;
 			html.charts['Relationship Listing'] = tornadochart;
 			html.charts['Heatmap'] = matrixmap;
-			html = html.BuildHtml();
+			html = html.BuildDoc();
 			let name = this.runner.Title + ".html";
 			html = new Blob([html],{type:'text/html'});
+			window.saveAs(html,name);
+		});
+		let epub = document.querySelector('#Epub');
+		epub.addEventListener('click',async ()=>{
+			let name = this.runner.Title + ".epub";
+			let html = new psStaticEpub();
+			html.MISS = this.runner;
+			html.charts['Force Directed'] = forcechart;
+			html.charts['Relationship Listing'] = tornadochart;
+			//html.charts['Heatmap'] = matrixmap;
+			html = await html.BuildDoc();
 			window.saveAs(html,name);
 		});
 
