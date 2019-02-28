@@ -37,7 +37,7 @@
    Students
   </h1>
   <nav>
-   <button id='Epub' title='Epub'>&#128366;</button>
+   <button id='Epub' title='Epub' class='experimental'>&#128366;</button>
    <button id='Print' title='Print'>&#128438;</button>
    <button id='DeleteAll' title='Remove Comparision Data'>&#128465;</button>
    <button id='Download' title='Export a Comparison'>&#128228;</button>
@@ -133,6 +133,7 @@ Sidebar 2
   <a href=''>Jeff Cave</a>
   &mdash; Privacy
   &mdash; <a href='docs/readme.md'>Purpose</a>
+  &mdash; <a href='?experimental'>Experimental Mode</a>
  </footer>
 
 
@@ -179,6 +180,13 @@ Sidebar 2
    modules = false;
  </script>
  <script type="text/javascript">
+    let experimental = (window.location.search === '?experimental');
+    if(experimental){
+        Array.from(document.querySelectorAll('.experimental')).forEach((elem)=>{
+            elem.classList.remove('experimental');
+        });
+    }
+
     let supported = [
             ()=>{
                 return modules;
@@ -197,7 +205,7 @@ Sidebar 2
             return d();
         })
         ;
-    supported = supported || (window.location.search === '?ignoreCompat');
+    supported = supported || experimental || (window.location.search === '?ignoreCompat');
 
     if(!supported){
         let everything = Array.from(document.querySelectorAll('body > *'));

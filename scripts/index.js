@@ -108,7 +108,7 @@ class indexPage {
 			html.MISS = this.runner;
 			html.charts['Force Directed'] = forcechart;
 			html.charts['Relationship Listing'] = tornadochart;
-			html.charts['Heatmap'] = matrixmap;
+			//html.charts['Heatmap'] = matrixmap;
 			html = await html.BuildDoc();
 			window.saveAs(html,name);
 		});

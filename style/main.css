@@ -97,6 +97,10 @@ ps-filedrop{
 	margin:0.3em;
 }
 
+.experimental{
+	display:none;
+}
+
 @media all and (min-width: 400px) {
 	main {
 		flex: 10 0px;
