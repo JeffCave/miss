@@ -1,8 +1,11 @@
 'use strict';
 
+import 'https://unpkg.com/jepub/dist/jepub.js';
+
 /*
 global Document
 global EventTarget
+global jEpub
 */
 
 export default class psStaticHtml extends EventTarget{
@@ -41,39 +44,37 @@ export default class psStaticHtml extends EventTarget{
 	}
 
 	BuildDoc(){
-		let vis = Object
-			.entries(this.charts)
-			.map((d)=>{
-				let html = "<h2>" + d[0] + "</h2>\n" + d[1].innerHTML;
-				return html;
-			})
+		let date = new Date();
+
+		let desc = [
+				'<pre>',
+				' {{datetime}}',
+				' Produced by <a href="'+window.location+'" title="Measure of Integrity of Submissions of Students">MISS</a>',
+				'</pre>',
+			]
 			.join('\n')
+			.replace(/{{datetime}}/g,date.toISOString().substr(0,10))
 			;
-		let content = [
-			'<html>',
-			'<head>',
-			' <meta charset="utf-8" />',
-			' <title>{{title}}</title>',
-			' <style>{{css}}</style>',
-			'</head>',
-			'<body>',
-			' <h1>{{title}}</h1>',
-			' <pre>',
-			'  {{datetime}}',
-			'  Produced by <a href="'+window.location+'">MISS</a>',
-			' </pre>',
-			'{{vis}}',
-			'</body>',
-			'</html>'
-		];
-		content = content.join('\n');
-		content = content
-			.replace(/{{title}}/g,this.MISS.Title)
-			.replace(/{{datetime}}/g,(new Date()).toISOString())
-			.replace(/{{css}}/g,this.CSS)
-			.replace(/{{vis}}/g,vis)
-			;
-		return content;
+		let epub = new jEpub({
+			i18n: 'en', // Internationalization
+			title: this.MISS.Title,
+			author: 'Book author',
+			//publisher: 'Produced by <a href="'+window.location+'">Measure of Integrity of Submissions of Students</a>',
+			publisher: 'Measure of Integrity of Submissions of Students',
+			description: desc, // optional
+			tags: ['miss','students', 'similarity', 'report' ] // optional
+		});
+		epub.date(new Date());
+		epub.uuid(this.MISS.report.hash);
+		//epub.cover(buffer: object)
+		//epub.notes(content: string)
+		Object.entries(this.charts).forEach((d)=>{
+			let key = d[0];
+			let html = ['<style>',this.CSS,'</style>',d[1].innerHTML].join('');
+			epub.add(key, html);
+		});
+		epub = epub.generate('blob');
+		return epub;
 	}
 
 	get CSS(){
