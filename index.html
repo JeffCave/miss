@@ -3,7 +3,7 @@
 <head>
  <!-- Google Analytics -->
  <script>
-  window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+  window.ga=window.ga||function(){(window.ga.q=ga.q||[]).push(arguments)};window.ga.l=+new Date;
   window.ga('create', 'UA-59013760-4', 'auto');
   window.ga('send', 'pageview');
  </script>
@@ -44,6 +44,7 @@
    <sup style='font-size:small;font-variant:small-caps;'>of</sup>
    Students
   </h1>
+  <button title='Donate'><a class='marketing' href='https://www.patreon.com/plaidsheep'>&#9829;</a></button>
   <nav>
    <button id='Epub' title='Epub' class='experimental'>&#128366;</button>
    <button id='Print' title='Print'>&#128438;</button>
@@ -53,7 +54,6 @@
     &#128229;
     <ps-filedrop id='Restore' accept=".miss" style='position:absolute;top:0;left:0;opacity:0;'></ps-filedrop>
    </button>
-
   </nav>
  </header>
  <section>
@@ -97,39 +97,136 @@
     </section>
    </ps-panel>
    <ps-panel id='help' icon='help'>
-    <h1>Help</h1>
-    <dl>
-     <dt><a href='./tests/sampleassignment.zip'>Sample Assignments</a></dt>
-      <dd>
-       A few demo files that I have used in classes. Formatted
-       appropriately for student submission, and copied a couple of way.
-       Gives some data that will match and some data that will not match.
-      </dd>
-     <dt><a href='./tests/smallcompares.zip'>Small Compares</a></dt>
-      <dd>
-       <p>
-       Two files with a very small comparison dataset. Suitable for debugging,
-       and manually tracing of the algorithm.
-       <ol>
-        <li><pre><a href="https://en.wikipedia.org/wiki/Coelacanth">C O E L A C A N T H</a></pre></li>
-        <li><pre>  P E L I C A N</pre></li>
-       </ol>
-       From a bioinformatics class slides I <a href="http://slideplayer.com/slide/5142106/16/images/21/Smith-Waterman-Algorithm.jpg">found online</a>
-       </p>
-       <p>
-        A better dataset would be one that matches multiple times.
+    <h1>FAQ</h1>
+    <details open>
+     <summary>Quick Start</summary>
+     <p>
+      Do you have a class full of students whose assignments you would like to
+      check? Are they in a ZIP file? Perfect.
+     </p>
+     <ol>
+      <li>Click that button over to the left. (the one called <c>Upload a bundle</c>)</li>
+      <li>Upload the file</li>
+      <li>Watch the pretty charts</li>
+     </ol>
+     <p>
+      If everything is working properly, you should be able to upload the file
+      the way you downloaded it from your <abbr title='Learning Management System'>LMS</abbr>
+    </details>
+    <details>
+     <summary>What file formats are supported?</summary>
+     <p>
+      MISS was originally designed to help with an introductory python class,
+      and was shortly followed by a Javascript class.
+     </p>
+     <ul>
+      <li>Plain English</li>
+      <li>Python</li>
+      <li>Javascript</li>
+     </ul>
+     <p>
+      Files are tokenized based on their file type (identified by extension)
+      which gives them some contextual interpretation.
+     </p>
+     <h3>Sample Files</h3>
+     <dl>
+      <dt><a href='./tests/sampleassignment.zip'>Sample Assignments</a></dt>
+       <dd>
+        A few demo files that I have used in classes. Formatted
+        appropriately for student submission, and copied a couple of way.
+        Gives some data that will match and some data that will not match.
+       </dd>
+      <dt><a href='./tests/smallcompares.zip'>Small Compares</a></dt>
+       <dd>
+        <p>
+        Two files with a very small comparison dataset. Suitable for debugging,
+        and manually tracing of the algorithm.
         <ol>
-         <li><pre><a href="https://www.youtube.com/watch?v=iCclS78a7P0">H <span style='background-color:lightblue;'>E L L O</span> J <span style='background-color:lightblue;'>E L L O</span></a></pre></li>
-         <li><pre>B <span style='background-color:lightblue;'>E L L O</span> W , B <span style='background-color:lightblue;'>E L O</span> W</pre></li>
+         <li><pre><a href="https://en.wikipedia.org/wiki/Coelacanth">C O E L A C A N T H</a></pre></li>
+         <li><pre>  P E L I C A N</pre></li>
         </ol>
-       </p>
-      </dd>
-     <dt><a href='./tests/bigcompares.zip'>Big Compares</a></dt>
-      <dd>
-       Genome of E.Coli, and Y.Pestarius. Makes for a really big compare,
-       and is know to currently break the application.
-      </dd>
-    </dl>
+        From a bioinformatics class slides I <a href="http://slideplayer.com/slide/5142106/16/images/21/Smith-Waterman-Algorithm.jpg">found online</a>
+        </p>
+        <p>
+         A better dataset would be one that matches multiple times.
+         <ol>
+          <li><pre><a href="https://www.youtube.com/watch?v=iCclS78a7P0">H <span style='background-color:lightblue;'>E L L O</span> J <span style='background-color:lightblue;'>E L L O</span></a></pre></li>
+          <li><pre>B <span style='background-color:lightblue;'>E L L O</span> W , B <span style='background-color:lightblue;'>E L O</span> W</pre></li>
+         </ol>
+        </p>
+       </dd>
+      <dt><a href='./tests/bigcompares.zip'>Big Compares</a></dt>
+       <dd>
+        Genome of E.Coli, and Y.Pestarius. Makes for a really big compare,
+        and is know to currently break the application.
+       </dd>
+     </dl>
+    </details>
+    <details>
+     <summary>How do you protect my data?</summary>
+     <p>
+      Very simply: I don't store any.
+     </p>
+     <p>
+      One of the primary impetus for the project was to address concerns of
+      <a href='https://en.wikipedia.org/wiki/Turnitin#Reception'>retaliation from students</a>.
+      An instructor expressed concerns about transmitting data across
+      international boundaries, and having it stored on in data-centers not
+      in the institutions control. To overcome these objectives, MISS was
+      created to work entirely from within the browser.
+     </p>
+     <p>
+      No data is transferred off you computer.
+     </p>
+     <p>
+      Having said that, I do collect anonymous usage data about your use of
+      the site. It is hoped this information will give insight into what new
+      features should be implemented.
+     </p>
+    </details>
+    <details>
+     <summary>So this program tells me who is cheating?</summary>
+     <p><strong>No! Used properly it will tell you who is not cheating.</strong></p>
+     <p>
+      This program does a blind comparison, but like any creative work,
+      software will have common elements to it. Good solutions will be
+      independantly discovered. This program does not catch cheaters.
+     </p>
+     <p>
+      Rather, this program gives you a begin your search. Rather than having
+      to search through hundreds of submissions, this can narrow your search
+      down to things that <i>look similar</i>. MISS identifies the point where
+      similarity becomes abnormally high for the group.
+     </p>
+     <p>
+      In fact, this tool, in its first iteration, found someone suspected of
+      cheating to have done nothing wrong. The student had given been given a
+      second chance and had submitted a program that was suspicously similar
+      to a unique solution presented by a strong student. The instructor's
+      bias lead to a more intensive investigation than was warranted. The
+      fact that computers have no passion means they never analyze with bias,
+      and instead showed that the level of similarity was high, but normal,
+      for the class (and was actually just tutoring).
+     </p>
+    </details>
+    <details>
+     <summary>Licenses</summary>
+     <p>
+      The software is free to use.
+     </p>
+     <p>
+      If you find this useful, do feel free to give a leave a
+      <a href=''>tip or donation</a> If you use it regularily, consider
+      taking out a subscription. If your organization uses it regularily,
+      please contact me to discuss enterprise features.
+     </p>
+     <p>
+      The idea of using software to scan large numbers of student assignments
+      is not new. In particular
+      <a href='https://theory.stanford.edu/~aiken/moss/'>MOSS</a>
+      has served as the direct inspiration for MISS.
+     </p>
+    </details>
    </ps-panel>
   </ps-tabpanel>
 

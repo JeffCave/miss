@@ -171,6 +171,7 @@ export default class psPanelElement extends HTMLElement {
 	min-height:inherit;
 	max-height:inherit;
 	overflow:inherit;
+	padding:6px;
 	transition:
 		min-width 1s,
 		max-width 1s,

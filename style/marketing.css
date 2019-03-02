@@ -1,0 +1,30 @@
+
+header a.marketing{
+	display:inline-block;
+	font-size: 3em;
+	text-decoration: none;
+	color: red;
+	text-shadow: 0 0 1px FireBrick;
+	transition: text-shadow 1s ease-out;
+}
+header button:hover a.marketing{
+	text-shadow: 0 0 9px FireBrick;
+	transition: text-shadow 1 ease-in-out;
+	/* Set it for ~50beats/second ... you know.. relaaaaxxxxeed */
+	animation: heartbeat 1.5s infinite;
+	animation-delay: 3s;
+}
+
+/* Standard syntax */
+@keyframes heartbeat {
+	0%   {text-shadow:0 0 9px FireBrick}
+	10%  {text-shadow:0 0 9px FireBrick}
+	/* astolic */
+	13%  {text-shadow:-3px 0 6px FireBrick}
+	/* diastolic */
+	17%  {text-shadow:+3px 0 6px FireBrick}
+	20%  {text-shadow:0 0 9px FireBrick}
+	30%  {text-shadow:0 0 1px FireBrick}
+	90%  {text-shadow:0 0 1px FireBrick}
+	100% {text-shadow:0 0 9px FireBrick}
+}

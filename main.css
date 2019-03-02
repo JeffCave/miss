@@ -20,12 +20,12 @@ textarea{
 	height:300px;
 }
 
-nav {
+nav.progress {
 	height:2vmin;
 	width:100%;
 }
 
-nav > progress[value]{
+nav.progress > progress[value]{
 	position:absolute;
 	width:100%;
 	height:100%;
@@ -38,10 +38,10 @@ nav > progress[value]{
 	border: 0;
 }
 
-nav > progress[value]::-webkit-progress-bar {
+nav.progress > progress[value]::-webkit-progress-bar {
 	background-color:var(--notice-info-off);
 }
-nav > progress[value]::-webkit-progress-value {
+nav.progress > progress[value]::-webkit-progress-value {
 	background-color:var(--notice-info-high);
 }
 

@@ -5,6 +5,8 @@
 body{
 	position:relative;
 	font-family: 'Open Sans', sans-serif;
+	color:black;
+	color:var(--main-text-color);
 	display: flex;
 	flex-flow: row wrap;
 	margin:0;
@@ -23,17 +25,6 @@ body > header {
 	text-align: justify;
 	padding:0.1em;
 }
-
-body > header > nav {
-	position: absolute;
-	right: 0;
-	top: 0;
-	text-align: right;
-}
-body > header > nav > button {
-	display: inline;
-}
-
 
 a, a:link,a:visited, a:active, a:hover {
 	color:inherit;

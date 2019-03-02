@@ -5,12 +5,14 @@
 @import url('header.css');
 @import url('sidebar.css');
 @import url('charts.css');
+@import url('marketing.css');
 
 
 :root{
 	--main-color: rgb(36, 142, 194);
 	--main-color-contrast: white;
 	--main-highlight: var(--notice-info-low);
+	--main-text-color:black;
 	--corners:0.25em;
 
 	--notice-info-off:whitesmoke;
@@ -95,6 +97,16 @@ ps-filedrop{
 	display:block;
 	width:200px;
 	margin:0.3em;
+}
+
+#help details {
+	margin-left: 1em;
+}
+
+#help summary {
+	display: inline;
+	font-size: larger;
+	font-weight: bold;
 }
 
 .experimental{
