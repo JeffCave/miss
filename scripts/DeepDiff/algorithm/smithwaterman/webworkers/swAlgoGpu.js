@@ -1,5 +1,12 @@
-import {psGpu} from '../../../lib/psGpu.js';
-import {SmithWatermanBase} from '../swAlgoBase.js';
+/**
+ * DO NOT IMPLEMENT AS MODULE
+ *
+ * This class is referenced by a webworker, which means it *must* not be 
+ * implemented as a module until Firefox implements modules in webworkers.
+ */
+
+importScripts('../../../lib/psGpu.js?nocache');
+importScripts('../swAlgoBase.js?nocache');
 
 'use strict';
 

@@ -1,8 +1,9 @@
-
-export{
-	psGpu,
-	pixel
-};
+/**
+ * DO NOT IMPLEMENT AS MODULE
+ *
+ * This class is referenced by a webworker, which means it *must* not be 
+ * implemented as a module until Firefox implements modules in webworkers.
+ */
 
 /*
 global OffscreenCanvas
@@ -515,3 +516,21 @@ class pixel{
 	}
 }
 
+(()=>{
+	let g = null;
+	try{
+		g = window;
+	}
+	catch(e){
+		try{
+			g = self;
+		}
+		catch(e){
+			g = global;
+		}
+	}
+	if(!g){
+		console.error("No global object defined.");
+	}
+	g.psGpu = psGpu;
+})();

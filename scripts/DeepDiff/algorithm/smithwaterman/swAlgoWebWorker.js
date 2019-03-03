@@ -1,12 +1,12 @@
-'use strict';
-
-
 export{
 	swAlgoWebWorker
 };
 
-import SmithWatermanBase from './swAlgoBase.js';
+import './swAlgoBase.js';
 
+/*
+global SmithWatermanBase
+*/
 
 class swAlgoWebWorker extends SmithWatermanBase{
 
@@ -19,7 +19,7 @@ class swAlgoWebWorker extends SmithWatermanBase{
 
 		let WorkerUrl = window.location.pathname.split('/');
 		WorkerUrl.pop();
-		WorkerUrl = WorkerUrl.concat('/scripts/DeepDiff/algorithm/smithwaterman/webworkers/'+this._.variant+'.js'.split('/'));
+		WorkerUrl = WorkerUrl.concat(('/scripts/DeepDiff/algorithm/smithwaterman/webworkers/'+this._.variant+'.js?').split('/'));
 		WorkerUrl = WorkerUrl.filter((u)=>{return u;});
 		WorkerUrl.unshift(window.location.origin);
 		WorkerUrl = WorkerUrl.join('/');
