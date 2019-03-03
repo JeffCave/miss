@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <!-- Google Analytics -->
+ <script>
+  window.ga=window.ga||function(){(window.ga.q=ga.q||[]).push(arguments)};window.ga.l=+new Date;
+  window.ga('create', 'UA-59013760-4', 'auto');
+  window.ga('send', 'pageview');
+ </script>
+ <script async src='https://www.google-analytics.com/analytics.js'></script>
+ <!-- End Google Analytics -->
+
+ <meta charset="utf-8" />
+
+ <script type="module" src="./scripts/browsercheck.js"></script>
+ <script type="text/javascript" nomodule>window.nomodule = true;</script>
+ <script>
+    if(!window.nomodule){
+        window.addEventListener('load',()=>{
+            document.querySelector('.results').innerHTML = BrowserCheck.ResultsToHTML();
+            let style = document.createElement('style');
+            style.textContent = BrowserCheck.CSS;
+            document.head.appendChild(style);
+        });
+    }
+ </script>
+ 
+ <link rel="shortcut icon" type="image/png" href="favicon.png"/>
+
+ <link rel='stylesheet' href='style/main.css' />
+</head>
+<body>
+ 
+<a href='index.html?CompatCheck=wimp'>
+<div style='background-color:red;'>
+ I know what I'm doing. Safeties are for wimps. Let's do this.
+</div>
+ </a>
+ 
+<h1>Browser Support</h1>
+
+<ul class='results' style='list-style: none;'>
+ <li>[FAIL] Modules</li>
+ <li>[FAIL] WebWorkers</li>
+ <li>[FAIL] WebGL Canvas</li>
+</ul>
+
+
+
+<p>
+ As this was originally a personal tool, I used it to learn about some 
+ features that have not yet been officially released. While most of these 
+ features have been converted to older (but more ubiquitous) techniques, 
+ some of what is done here just cannot be acheived without bleeding edge 
+ browser support.
+</p>
+<p>
+ Detection of the requisite features is attempted, so if you are seeing 
+ the application, you should not be experiecing any problems. If you are 
+ wondering what you changed to get this to work (maybe you need to turn 
+ features on or off), we do keep lists for that:
+</p>
+<h2>Chrome</h2>
+<ol>
+ <li>Navigate to <a href='chrome://flags/'>Chrome Experiments</a></li>
+ <li>
+  Activate <a href='chrome://flags/#enable-javascript-harmony'>"Experimental Javascript"</a>
+  <ul><li>javascript modules</li></ul>
+ </li>
+ <li>
+  Activate <a href='chrome://flags/#enable-experimental-web-platform-features'>"Experimental Web Platform Features"</a>
+  <ul><li>activates imports in webWorkers</li></ul>
+ </li>
+ 
+</ol>
+<h2>FireFox</h2>
+<ol>
+ <li>Navigate to <a href='about:config'>Configuration</a></a>
+ <li>
+  Activate <a href='about:config/#dom.moduleScripts.enabled'>dom.moduleScripts.enabled</a>
+  <ul><li>javascript modules</li></ul>
+ </li>
+ <li>
+  Activate <a href='about:config/#dom.moduleScripts.enabled'>gfx.offscreencanvas.enabled</a>
+  <ul><li>javascript offScreenCanvas (allows webWorkers to use Canvas)</li></ul>
+ </li>
+</ol>
+<h2>Edge</h2>
+<ol>
+ <li>Navigate to <a href='about:flags'>Edge Flags</a></li>
+ <li>Activate "Experimental Javascript"</li>
+</ol>
+ 
+
+
+</body>
+</html>

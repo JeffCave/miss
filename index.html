@@ -23,7 +23,6 @@
 
 
  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:400,500,700,400italic|Material+Icons">
- <link rel="stylesheet" href="//unpkg.com/vue-material@beta/dist/theme/default.css">
  <link rel="shortcut icon" type="image/png" href="favicon.png"/>
 
 
@@ -227,6 +226,16 @@
       has served as the direct inspiration for MISS.
      </p>
     </details>
+    <details>
+     <summary>Browser Support</summary>
+     <p>
+      Use Google Chrome.
+     </p>
+     <p>
+      There are some issues with browswer support. If you are interested, you 
+      can view the <a href='browsercheck.html'>browser support page</a> which 
+      has information on how to turn on and off advanced features.
+     </p>
    </ps-panel>
   </ps-tabpanel>
 
@@ -241,89 +250,9 @@ Sidebar 2
   &mdash; <a href='?experimental'>Experimental Mode</a>
  </footer>
 
-
-
- <div id='unsupported' style='display:none;'>
-  <h1>Experimental Features required</h1>
-  <p>
-   In an effort to put this together, it seemed a good idea to use some
-   JavaScript v6 features. Unfortunately, it appears that your browser does
-   not currently support them <strong>by default</strong>
-  </p>
-  <p>
-   <strike>Don't Panic!! As of early 2018, most browsers don't; however most allow you
-   to turn the features on.</strike> <strong>Panic.</strong> Only Chrome
-   supports the requisite features.
-  </p>
-  <p>
-   <a href='?ignoreCompat'>Click here</a> to ignore this warning and prove
-   me wrong. If you do prove me wrong, please file a bug report.
-  </p>
-  <h2>Chrome</h2>
-  <ol>
-   <li>Navigate to <a href='chrome://flags/'>Chrome Experiments</a></li>
-   <li>Activate <a href='chrome://flags/#enable-javascript-harmony'>"Experimental Javascript"</a></li>
-   <li>Activate <a href='chrome://flags/#enable-experimental-web-platform-features'>"Experimental Web Platform Features"</a></li>
-  </ol>
-  <h2>FireFox</h2>
-  <ol>
-   <li>Navigate to <a href='about:config'>Configuration</a></a>
-   <li>Activate <a href='about:config/#dom.moduleScripts.enabled'>dom.moduleScripts.enabled</a></li>
-   <li>Activate <a href='about:config/#dom.moduleScripts.enabled'>gfx.offscreencanvas.enabled</a></li>
-  </ol>
-  <h2>Edge</h2>
-  <ol>
-   <li>Navigate to <a href='about:flags'>Edge Flags</a></li>
-   <li>Activate "Experimental Javascript"</li>
-  </ol>
- </div>
-
- <script type="module" src="./scripts/index.js"></script>
- <script type="text/javascript">
-    var modules = true;
- </script>
  <script type="text/javascript" nomodule>
-   modules = false;
+   window.location = 'browsercheck.html';
  </script>
- <script type="text/javascript">
-    let experimental = (window.location.search === '?experimental');
-    if(experimental){
-        Array.from(document.querySelectorAll('.experimental')).forEach((elem)=>{
-            elem.classList.remove('experimental');
-        });
-    }
-
-    let supported = [
-            ()=>{
-                return modules;
-            },
-            ()=>{
-                let agent = navigator.userAgent;
-                //In Chrome, the true version is after "Chrome"
-                let issupport = (agent.indexOf("Chrome")!=-1);
-                return issupport;
-            },
-            ()=>{
-                return true;
-            }
-        ]
-        .every(d=>{
-            return d();
-        })
-        ;
-    supported = supported || experimental || (window.location.search === '?ignoreCompat');
-
-    if(!supported){
-        let everything = Array.from(document.querySelectorAll('body > *'));
-        everything.forEach(function(d){
-            d.style.display = 'none';
-        });
-        let instructions = document.body.querySelector('#unsupported');
-        instructions.style.display = 'block';
-    }
- </script>
-
-
-
+ <script type="module" src="./scripts/index.js"></script>
 </body>
 </html>

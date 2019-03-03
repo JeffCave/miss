@@ -5,8 +5,8 @@
  * implemented as a module until Firefox implements modules in webworkers.
  */
 
-importScripts('../../../lib/psGpu.js?nocache');
-importScripts('../swAlgoBase.js?nocache');
+importScripts('../../../lib/psGpu.js');
+importScripts('../swAlgoBase.js');
 
 'use strict';
 

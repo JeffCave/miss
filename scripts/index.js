@@ -14,6 +14,7 @@ import psStaticHtml from './DeepDiff/util/psStaticHtml.js';
 import psStaticEpub from './DeepDiff/util/psStaticEpub.js';
 import {ContentHandlers} from './DeepDiff/submission/ContentHandlers.js';
 import * as utils from './DeepDiff/util/misc.js';
+import './browsercheck.js';
 
 
 import './widgets/psFileDrop.js';
@@ -209,6 +210,9 @@ class indexPage {
 
 
 window.addEventListener('load',async function(){
+	if(!BrowserCheck.isCompatible){
+		window.location = './browsercheck.html';
+	}
 	let checker = new indexPage();
 });
 

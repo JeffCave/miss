@@ -24,7 +24,8 @@ class swAlgoWebWorker extends SmithWatermanBase{
 		WorkerUrl.unshift(window.location.origin);
 		WorkerUrl = WorkerUrl.join('/');
 
-		this.thread = new Worker(WorkerUrl, {type:'module'});
+		//this.thread = new Worker(WorkerUrl, {type:'module'});
+		this.thread = new Worker(WorkerUrl);
 		this.thread.onmessage = (msg)=>{
 			this.postMessage(msg);
 		};
