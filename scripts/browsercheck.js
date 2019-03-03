@@ -1,8 +1,26 @@
 'use strict';
 
+//import * as Bowser from 'https://cdnjs.cloudflare.com/ajax/libs/bowser/1.9.4/bowser.js';
+
 export default class BrowserCheck{
 	constructor(){
 		
+	}
+	
+	static get browser(){
+		/*
+		if(BrowserCheck._bowser){
+			return BrowserCheck._bowser;
+		}
+		BrowserCheck._bowser = Bowser.getParser(window.navigator.userAgent);
+		return BrowserCheck._bowser;
+		*/
+		let agent = window.navigator.userAgent;
+		let geckoTest = /firefox/i;
+		if(geckoTest.test(agent)){
+			return "gecko";
+		}
+		return "other";
 	}
 	
 	static get Tests(){
