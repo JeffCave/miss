@@ -18,6 +18,10 @@
     if(!window.nomodule){
         window.addEventListener('load',()=>{
             document.querySelector('.results').innerHTML = BrowserCheck.ResultsToHTML();
+            if(BrowserCheck.isCompatible){
+                document.querySelector('blockquote.warn').style.display = 'none';
+                document.querySelector('blockquote.info').style.display = 'block';
+            }
             let style = document.createElement('style');
             style.textContent = BrowserCheck.CSS;
             document.head.appendChild(style);
@@ -31,11 +35,6 @@
 </head>
 <body>
  
-<a href='index.html?CompatCheck=wimp'>
-<div style='background-color:red;'>
- I know what I'm doing. Safeties are for wimps. Let's do this.
-</div>
- </a>
  
 <h1>Browser Support</h1>
 
@@ -45,7 +44,17 @@
  <li>[FAIL] WebGL Canvas</li>
 </ul>
 
-
+<a href='index.html?CompatCheck=wimp'>
+ <blockquote class='warn'>
+  <p>I know what I'm doing. Safeties are for wimps. Let's do this.</p>
+ </blockquote>
+</a>
+<a href='index.html'>
+ <blockquote class='info' style='display:none'>
+  <p>It looks like all requirements are met.</p>
+  <p>Head back to the site.</p>
+ </blockquote>
+</a>
 
 <p>
  As this was originally a personal tool, I used it to learn about some 
