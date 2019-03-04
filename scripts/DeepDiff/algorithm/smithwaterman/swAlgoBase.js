@@ -1,12 +1,13 @@
-import '../../util/misc.js';
-
+/**
+ * DO NOT IMPLEMENT AS MODULE
+ *
+ * This class is referenced by a webworker, which means it *must* not be 
+ * implemented as a module until Firefox implements modules in webworkers.
+ */
 'use strict';
 
-export{
-	SmithWatermanBase
-};
 
-export default class SmithWatermanBase{
+class SmithWatermanBase{
 
 	/**
 	 * Maximum area is 1 GB
@@ -48,7 +49,8 @@ export default class SmithWatermanBase{
 			},
 			variant:'swAlgoCell',
 		};
-		this._ = JSON.merge(this._, opts);
+		opts = JSON.parse(JSON.stringify(opts));
+		this._ = Object.assign(this._, opts);
 
 		this.remaining = 0;
 		this.totalSize = a.length*b.length;
@@ -204,4 +206,23 @@ export default class SmithWatermanBase{
 
 
 }
+
+(()=>{
+	let g = null;
+	try{
+		g = window;
+	}
+	catch(e){
+		try{
+			g = self;
+		}
+		catch(e){
+			g = global;
+		}
+	}
+	if(!g){
+		console.error("No global object defined.");
+	}
+	g.SmithWatermanBase = SmithWatermanBase;
+})();
 

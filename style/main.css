@@ -53,6 +53,24 @@
 
 /**** custom components ***/
 
+blockquote.warn{
+	background-color:var(--notice-warn-off);
+	border:0.3em solid var(--notice-warn-low);
+	color: var(--notice-warn-high);
+	font-weight: bold;
+	padding:1em;
+	border-radius: 0.25em;
+}
+
+blockquote.info{
+	background-color:var(--notice-info-off);
+	border:0.3em solid var(--notice-info-low);
+	color: var(--notice-info-high);
+	font-weight: bold;
+	padding:1em;
+	border-radius: 0.25em;
+}
+
 .showhide{
 	display:none;
 }
@@ -132,6 +150,14 @@ ps-filedrop{
 	}
 }
 
-
+@-moz-document url-prefix() {
+	detail > summary{
+		color:red;
+	}
+	detail > summary:before{
+		content:'\25B6';
+		padding-right: 0.5em;
+	}
+}
 
 

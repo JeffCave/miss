@@ -157,7 +157,7 @@ export default class psTornadoChart extends HTMLElement {
 	}
 
 	static get DefaultCss(){
-		return `
+		let css = `
 table.tornado{
 	width: calc(100% - 1em);
 	max-width: 300px;
@@ -186,13 +186,17 @@ table.tornado td {
 table.tornado tr > td > meter {
 	width: 100%;
 	height: 1.25em;
+	background: lightgray;
+	background: var(--notice-pending-low);
+	transition: all 0.5s ease-out;
 }
 table.tornado tr > td > meter::-webkit-meter-bar {
-	background: magenta;
+	background: lightgray;
 	background: var(--notice-pending-low);
 	transition: all 0.5s ease-out;
 }
 table.tornado tr > td > meter::-webkit-meter-optimum-value{
+	background: darkgray;
 	background: var(--notice-pending-high);
 	border-top-right-radius: 0.5em;
 	border-bottom-right-radius: 0.5em;
@@ -211,6 +215,7 @@ table.tornado tr > td > span {
 
 table.tornado tr > td:nth-of-type(1) {
 	border-right: 0.1em solid white;
+	border-right-color: darkgray;
 	border-right-color: var(--notice-pending-high);
 }
 table.tornado tr > td:nth-of-type(1) > meter {
@@ -220,30 +225,46 @@ table.tornado tr > td:nth-of-type(1) > span {
 	right: 0.5em;
 }
 
+table.tornado tr.complete > td > meter {
+	background: lightsteelblue;
+	background: var(--notice-info-low);
+	transition: all 5s ease-out;
+}
 table.tornado tr.complete > td > meter::-webkit-meter-bar {
+	background: lightsteelblue;
 	background: var(--notice-info-low);
 	transition: all 5s ease-out;
 }
 table.tornado tr.complete > td > meter::-webkit-meter-optimum-value{
 	border: 0;
+	background: steelblue;
 	background: var(--notice-info-high);
 	transition: all 5s ease-out;
 }
 table.tornado tr.complete > td:nth-of-type(1) {
+	border-right-color: steelblue;
 	border-right-color: var(--notice-info-high);
 	transition: all 5s ease-in-out;
 }
 
+table.tornado tr.significant > td > meter{
+	background: lightsalmon;
+	background: var(--notice-fail-low);
+	transition: all 5s ease-out;
+}
 table.tornado tr.significant > td > meter::-webkit-meter-bar {
+	background: lightsalmon;
 	background: var(--notice-fail-low);
 	transition: all 5s ease-out;
 }
 table.tornado tr.significant > td > meter::-webkit-meter-optimum-value{
 	border:0;
+	background: darkred;
 	background: var(--notice-fail-high);
 	transition: all 5s ease-out;
 }
 table.tornado tr.significant > td:nth-of-type(1) {
+	border-right-color: darkred;
 	border-right-color: var(--notice-fail-high);
 	transition: all 5s ease-in-out;
 }
@@ -262,6 +283,14 @@ table.tornado tr.deleting > td{
 		height:1s;
 }
 		`;
+		if(window.BrowserCheck.browser === 'gecko'){
+			//css = css.replace(/-webkit-/g,'-moz-');
+			css = css
+				.replace(/:-webkit-meter-bar/g,':-moz-meter-bar')
+				.replace(/:-webkit-meter-optimum-value/g,'-moz-meter-optimum::-moz-meter-bar')
+				;
+		}
+		return css;
 	}
 
 
