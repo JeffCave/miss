@@ -28,7 +28,7 @@ import {swAlgoWebWorker} from './swAlgoWebWorker.js';
 	};
 });
 // also register a default one
-AlgorithmRegistry.processors['smithwaterman'] = AlgorithmRegistry.processors['smithwaterman-swAlgoGpu'];
+AlgorithmRegistry.processors['smithwaterman'] = AlgorithmRegistry.processors['smithwaterman-swAlgoCell'];
 
 
 
