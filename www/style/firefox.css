@@ -1,0 +1,15 @@
+@-moz-document url-prefix() {
+	details > summary{
+		margin-top:10px;
+	}
+	details > summary:before{
+		content:'\1F892';
+		padding-right: 0.5em;
+	}
+	
+	details[open] > summary:before{
+		content:'\1F893';
+		padding-right: 0.5em;
+	}
+
+}

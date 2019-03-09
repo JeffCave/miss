@@ -51,8 +51,8 @@
    <button id='Epub' title='Epub' class='experimental'>&#128366;</button>
    <button id='Print' title='Print'>&#128438;</button>
    <button id='DeleteAll' title='Remove Comparision Data'>&#128465;</button>
-   <button id='Download' title='Export a Comparison'>&#128228;</button>
-   <button id='RestoreClicker' title='Import a Comparison'>
+   <button id='Download' title='Save to your computer'>&#128228;</button>
+   <button id='RestoreClicker' title='Restore a Comparison'>
     &#128229;
     <ps-filedrop id='Restore' accept=".miss" style='position:absolute;top:0;left:0;opacity:0;'></ps-filedrop>
    </button>
@@ -104,7 +104,7 @@
      <summary>Quick Start</summary>
      <p>
       Do you have a class full of students whose assignments you would like to
-      check? Are they in a ZIP file? Perfect.
+      check? Are they in a ZIP file? Perfect. (If you don't, you can <a href='./samples/sampleassignment.zip' alt='Download a sample if you '>download a sample</a>)
      </p>
      <ol>
       <li>Click that button over to the left. (the one called <c>Upload a bundle</c>)</li>
@@ -114,6 +114,7 @@
      <p>
       If everything is working properly, you should be able to upload the file
       the way you downloaded it from your <abbr title='Learning Management System'>LMS</abbr>
+     </p>
     </details>
     <details>
      <summary>What file formats are supported?</summary>
@@ -122,9 +123,10 @@
       and was shortly followed by a Javascript class.
      </p>
      <ul>
-      <li>Plain English</li>
-      <li>Python</li>
-      <li>Javascript</li>
+      <li>Python (*.py)</li>
+      <li>Javascript (*.js)</li>
+      <li>FASTA (*.dna)</li>
+      <li>Plain English (*.txt)</li>
      </ul>
      <p>
       Files are tokenized based on their file type (identified by extension)
@@ -132,13 +134,13 @@
      </p>
      <h3>Sample Files</h3>
      <dl>
-      <dt><a href='./tests/sampleassignment.zip'>Sample Assignments</a></dt>
+      <dt><a href='./samples/sampleassignment.zip'>Sample Assignments</a></dt>
        <dd>
         A few demo files that I have used in classes. Formatted
         appropriately for student submission, and copied a couple of way.
         Gives some data that will match and some data that will not match.
        </dd>
-      <dt><a href='./tests/smallcompares.zip'>Small Compares</a></dt>
+      <dt><a href='./samples/smallcompares.zip'>Small Compares</a></dt>
        <dd>
         <p>
         Two files with a very small comparison dataset. Suitable for debugging,
@@ -157,7 +159,7 @@
          </ol>
         </p>
        </dd>
-      <dt><a href='./tests/bigcompares.zip'>Big Compares</a></dt>
+      <dt><a href='./samples/bigcompares.zip'>Big Compares</a></dt>
        <dd>
         Genome of E.Coli, and Y.Pestarius. Makes for a really big compare,
         and is know to currently break the application.
@@ -171,11 +173,11 @@
      </p>
      <p>
       One of the primary impetus for the project was to address concerns of
-      <a href='https://en.wikipedia.org/wiki/Turnitin#Reception'>retaliation from students</a>.
+      <a href='https://en.wikipedia.org/wiki/Turnitin#Reception' title='Turnitin Controversies'>retaliation from students</a>.
       An instructor expressed concerns about transmitting data across
-      international boundaries, and having it stored on in data-centers not
+      international boundaries, and having it stored in data-centers not
       in the institutions control. To overcome these objectives, MISS was
-      created to work entirely from within the browser.
+      created to work <em>entirely from within the local browser</em>.
      </p>
      <p>
       No data is transferred off you computer.
@@ -195,20 +197,25 @@
       independantly discovered. This program does not catch cheaters.
      </p>
      <p>
-      Rather, this program gives you a begin your search. Rather than having
-      to search through hundreds of submissions, this can narrow your search
-      down to things that <i>look similar</i>. MISS identifies the point where
-      similarity becomes abnormally high for the group.
+      Rather, this program gives you a place to begin your search. Do you have 
+      120 papers to grade? You probably only need to investigate about 15%. 
+      Rather than having to search through hundreds of submissions, this can 
+      narrow your search down to things that <i>look similar</i>. MISS 
+      identifies the point where similarity becomes abnormally high for the 
+      group.
      </p>
      <p>
       In fact, this tool, in its first iteration, found someone suspected of
-      cheating to have done nothing wrong. The student had given been given a
-      second chance and had submitted a program that was suspicously similar
-      to a unique solution presented by a strong student. The instructor's
-      bias lead to a more intensive investigation than was warranted. The
-      fact that computers have no passion means they never analyze with bias,
-      and instead showed that the level of similarity was high, but normal,
-      for the class (and was actually just tutoring).
+      cheating to have done nothing wrong.
+     </p>
+     <p>
+      The student had been given a second chance to submit an assignment late 
+      and had submitted a program that was suspicously similar to a unique 
+      solution presented by a strong student. Events led to a more intensive 
+      inspection than was warranted. The fact that computers have no passion 
+      means they never analyze with bias, and instead showed that the level of 
+      similarity was high, but normal for the class (and was actually just 
+      tutoring).
      </p>
     </details>
     <details>
