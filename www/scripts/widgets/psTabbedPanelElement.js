@@ -37,6 +37,7 @@ export default class psTabbedPanelElement extends HTMLElement {
 				return;
 			}
 			d.normal();
+			d.minimizable = false;
 
 			let li = document.createElement('li');
 			li.innerHTML = d.summary;
@@ -52,6 +53,12 @@ export default class psTabbedPanelElement extends HTMLElement {
 				this.activate(key);
 			});
 			this.activate(key);
+
+			// remove a bunch of the panel's formatting that is now controlled
+			// by the tab
+			d.domIcon.style.display = 'none';
+			d.querySelector('h1').style.display = 'none';
+			d.style.border = '0 solid black';
 		});
 		this.activate(panel);
 	}

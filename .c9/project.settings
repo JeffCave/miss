@@ -2,6 +2,9 @@
     "build": {
         "@saveall": true
     },
+    "general": {
+        "@stripws": true
+    },
     "language": {
         "tern_defs": {
             "json()": {

@@ -36,6 +36,9 @@ export default class psPanelElement extends HTMLElement {
 			;
 
 		this.domMaximize = document.createElement('span');
+		// toggle the switch on/off to reset everything
+		this.maximizable = !this.maximizable;
+		this.maximizable = !this.maximizable;
 		panel.append(this.domMaximize);
 		let btn = this.domMaximize;
 		btn.classList.add('resizer');
@@ -57,6 +60,9 @@ export default class psPanelElement extends HTMLElement {
 		});
 
 		this.domMinimize = document.createElement('span');
+		// toggle the switch on/off to reset everything
+		this.minimizable = !this.minimizable;
+		this.minimizable = !this.minimizable;
 		panel.append(this.domMinimize);
 		btn = this.domMinimize;
 		btn.setAttribute('name','minimize');
@@ -112,6 +118,7 @@ export default class psPanelElement extends HTMLElement {
 		this.classList.push('maximize');
 	}
 
+
 	get state(){
 		return this.getAttribute('state') || 'normal';
 	}
@@ -141,6 +148,42 @@ export default class psPanelElement extends HTMLElement {
 		}
 	}
 
+	get minimizable(){
+		let value = this.getAttribute('minimize');
+		value = value || 'true';
+		value = value.toLowerCase();
+		value = ('true' === value);
+		return value;
+	}
+	set minimizable(value){
+		value = (value == true);
+		let oldval = this.minimizable;
+		if(value === oldval){
+			return;
+		}
+
+		this.setAttribute('minimize',value);
+		this.domMinimize.style.display = value ? '' : 'none';
+	}
+
+	get maximizable(){
+		let value = this.getAttribute('maximize');
+		value = value || 'true';
+		value = value.toLowerCase();
+		value = ('true' === value);
+		return value;
+	}
+	set maximizable(value){
+		value = (value == true);
+		let oldval = this.maximizable;
+		if(value === oldval){
+			return;
+		}
+
+		this.setAttribute('maximize',value);
+		this.domMaximize.style.display = value ? '' : 'none';
+	}
+
 	static restorePanel(e){
 		e.target.state = 'normal';
 	}
@@ -159,9 +202,9 @@ export default class psPanelElement extends HTMLElement {
 
 [name='minimize'], [name='maximize'], [name='normal']{
 	float: right;
-	zIndex: 1000;
+	z-index: 100000;
 	cursor: default;
-	textShadow: 0 0 1px white;
+	text-shadow: 0 0 1px white;
 }
 
 :host(.normal){
