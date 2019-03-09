@@ -14,11 +14,12 @@ Currently under active development. Not production ready.
 1. Create a zip file containing all projects to compare
    * the folder structure should be a single folder, containing one folder per project
 2. Navigate to website: https://jefferey-cave.gitlab.io/miss/
-3. Upload zip file
-4. Run
+3. Upload the zip file
 
 Several reports are offered offering different insights into work
 inter-relatedness.
+
+Supports Python, Javascript, and FASTA.
 
 # How to Cheat
 

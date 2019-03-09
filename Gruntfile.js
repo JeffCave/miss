@@ -110,19 +110,17 @@ module.exports = function(grunt) {
 	]);
 	
 	grunt.task.registerTask('secretkeys', 'Replace various keys', function() {
-		var oauth;
+		var secrets;
 		//grunt.log.write('HERE:'+ JSON.stringify(JSON.parse(process.env.oauthKeys),null,4) + '\n');
 		try{
-			oauth = JSON.parse(process.env.oauthKeys).oauth;
+			secrets = JSON.parse(process.env.secrets);
 		}
 		catch(e){
-			oauth = {google:{}};
+			secrets = {patreon:{}};
 		}
 		var replaces = {
-			'239959269801-rc9sbujsr5gv4gm43ecsavjk6s149ug7.apps.googleusercontent.com':oauth.google.client_id || '{**GOOGLECLIENTID**}',
-			'QyYKQRBx7HuKI-q11oJnkK-d':oauth.google.client_secret || '{**GOOGLESECRETKEY**}',
-			'WOUpQ37Vcfz4cV8rTewKGwypbnJ5UT':oauth.secret || '{**SECRETKEY**}',
-			'==LOCALAUTH==':oauth.login || '**LOCALAUTH**',
+			'==secrets.patreon.TokenFromUs==':secrets.patreon.TokenFromUs || '==secrets.patreon.TokenFromUs==',
+			'==secrets.patreon.TokenFromThem==':secrets.patreon.TokenFromThem || '==secrets.patreon.TokenFromThem==',
 		};
 		const child = require('child_process');
 		grunt.file.expand('bin/**/*.json').forEach(function(file) {

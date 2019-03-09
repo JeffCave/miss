@@ -24,7 +24,8 @@
                 "patreon": {
                     "command": "grunt deploy",
                     "env": {
-                        "deployment": "{\"user\":\"fishReplicator\",\"pass\":\"M4WGFWa3\",\"protocol\":\"https\",\"hostname\":\"couchdb-73f718.smileupps.com\",\"port\":\"443\",\"db\":\"patreon\"}"
+                        "deployment": "{\"user\":\"fishReplicator\",\"pass\":\"M4WGFWa3\",\"protocol\":\"https\",\"hostname\":\"couchdb-73f718.smileupps.com\",\"port\":\"443\",\"db\":\"patreon\"}",
+                        "secrets": "{\"patreon\":{\"TokenFromUs\":\"0123456789\",\"TokenFromThem\":\"9876543210\"}}"
                     },
                     "name": "patreon",
                     "runner": "Shell command",
