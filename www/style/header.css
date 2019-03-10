@@ -1,22 +1,22 @@
 body > header{
-	display: inline-flex;
-	justify-content: space-between;
+	display: flex;
+	justify-content:space-between;
+	align-items: flex-end;
+	align-items: center;
 }
 
 
 
 body > header > h1 {
+	display:inline-block;
+	text-align: left;
 	margin:0;
-	display:block;
 	font-weight: bold;
 }
 
-body > header > nav{
-	display:block;
-	padding:0.3em;
-}
-
 body > header > nav {
+	display:inline-block;
+	padding:0.3em;
 	/*position: absolute;*/
 	right: 0;
 	top: 0;

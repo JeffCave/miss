@@ -114,6 +114,7 @@ class indexPage {
 			window.saveAs(html,name);
 		});
 
+		/*
 		let uploadSubmission = document.querySelector('#UploadSubmission');
 		uploadSubmission.addEventListener('change', async (e)=>{
 			let files = e.target.files;
@@ -121,6 +122,7 @@ class indexPage {
 			let submission = new Submission(folder.name,folder.files);
 			this.runner.addSubmissions(submission);
 		});
+		*/
 
 		let uploadSubmissions = document.querySelector('#UploadSubmissions');
 		uploadSubmissions.addEventListener('change', async (e)=>{

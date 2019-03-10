@@ -1,0 +1,39 @@
+{
+  "name": "patreon",
+  "version": "0.0.1",
+  "description": "A package to manage permissions between GitLab and Patreons",
+  "scripts": {
+    "lint": "grunt jshint",
+    "conf": "curl -sL https://deb.nodesource.com/setup_7.x | sudo -E bash - && sudo apt-get install -y nodejs && sudo rm /usr/bin/node && sudo ln -s /usr/bin/nodejs /usr/bin/node && export LC_ALL=C",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "main": "Gruntfile.js",
+  "devDependencies": {
+    "chai": "*",
+    "chai-as-promised": "*",
+    "follow": "latest",
+    "grunt": "latest",
+    "grunt-check-dependencies": "latest",
+    "grunt-cli": "*",
+    "grunt-contrib-jshint": "latest",
+    "grunt-contrib-watch": "latest",
+    "grunt-couch": "latest",
+    "grunt-eslint": "latest",
+    "grunt-exec": "latest",
+    "grunt-mocha-test": "latest",
+    "grunt-npm-install": "latest",
+    "grunt-shell": "latest",
+    "grunt-shell-spawn": "latest",
+    "jshint": "latest",
+    "mocha": "latest",
+    "mocha-jshint": "latest",
+    "node-netstat": "latest",
+    "slimerjs": "*",
+    "request": "*",
+    "request-promise-native": "*",
+    "sync-request": "latest",
+    "webdriverjs": "latest"
+  }
+}
+
+

@@ -59,7 +59,7 @@
   </nav>
  </header>
  <section>
-  <ps-panel icon='settings'>
+  <ps-panel icon='settings' can-maximize='false'>
    <form is='deepdiff-opts'>
 
     <label title='Enter a title for submissions that uniquely identifies this collection of assignments'>Title</label>
@@ -71,10 +71,11 @@
     </select>
    </form>
   </ps-panel>
-  <ps-panel icon='collections'>
+  <ps-panel icon='collections' can-maximize='false'>
    <h1>Submissions</h1>
-   <ps-filedrop id='UploadSubmission'  title='Upload A Single Submission' >&#128462; Create Submission</ps-filedrop>
-   <ps-filedrop id='UploadSubmissions' title='Upload Multiple Submissions'>&#128464; Upload a Bundle</ps-filedrop>
+   <!-- <ps-filedrop id='UploadSubmission'  title='Upload A Single Submission' >&#10010;</ps-filedrop> -->
+   <!-- <ps-filedrop id='UploadSubmissions' title='Upload a Zipped Bundle of Submissions'>&#10010;+&#128476;</ps-filedrop> -->
+   <ps-filedrop id='UploadSubmissions' title='Upload a Zipped Bundle of Submissions'>&#10010;</ps-filedrop>
    <ps-submission-list id='submissions'></ps-submission-list>
   </ps-panel>
  </section>
@@ -197,11 +198,11 @@
       independantly discovered. This program does not catch cheaters.
      </p>
      <p>
-      Rather, this program gives you a place to begin your search. Do you have 
-      120 papers to grade? You probably only need to investigate about 15%. 
-      Rather than having to search through hundreds of submissions, this can 
-      narrow your search down to things that <i>look similar</i>. MISS 
-      identifies the point where similarity becomes abnormally high for the 
+      Rather, this program gives you a place to begin your search. Do you have
+      120 papers to grade? You probably only need to investigate about 15%.
+      Rather than having to search through hundreds of submissions, this can
+      narrow your search down to things that <i>look similar</i>. MISS
+      identifies the point where similarity becomes abnormally high for the
       group.
      </p>
      <p>
@@ -209,12 +210,12 @@
       cheating to have done nothing wrong.
      </p>
      <p>
-      The student had been given a second chance to submit an assignment late 
-      and had submitted a program that was suspicously similar to a unique 
-      solution presented by a strong student. Events led to a more intensive 
-      inspection than was warranted. The fact that computers have no passion 
-      means they never analyze with bias, and instead showed that the level of 
-      similarity was high, but normal for the class (and was actually just 
+      The student had been given a second chance to submit an assignment late
+      and had submitted a program that was suspicously similar to a unique
+      solution presented by a strong student. Events led to a more intensive
+      inspection than was warranted. The fact that computers have no passion
+      means they never analyze with bias, and instead showed that the level of
+      similarity was high, but normal for the class (and was actually just
       tutoring).
      </p>
     </details>
@@ -242,8 +243,8 @@
       Use Google Chrome.
      </p>
      <p>
-      There are some issues with browswer support. If you are interested, you 
-      can view the <a href='browsercheck.html'>browser support page</a> which 
+      There are some issues with browswer support. If you are interested, you
+      can view the <a href='browsercheck.html'>browser support page</a> which
       has information on how to turn on and off advanced features.
      </p>
    </ps-panel>
