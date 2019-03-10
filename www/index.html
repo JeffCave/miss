@@ -59,7 +59,7 @@
   </nav>
  </header>
  <section>
-  <ps-panel icon='settings'>
+  <ps-panel icon='settings' can-maximize='false'>
    <form is='deepdiff-opts'>
 
     <label title='Enter a title for submissions that uniquely identifies this collection of assignments'>Title</label>
@@ -71,10 +71,11 @@
     </select>
    </form>
   </ps-panel>
-  <ps-panel icon='collections'>
+  <ps-panel icon='collections' can-maximize='false'>
    <h1>Submissions</h1>
-   <ps-filedrop id='UploadSubmission'  title='Upload A Single Submission' >&#128462; Create Submission</ps-filedrop>
-   <ps-filedrop id='UploadSubmissions' title='Upload Multiple Submissions'>&#128464; Upload a Bundle</ps-filedrop>
+   <!-- <ps-filedrop id='UploadSubmission'  title='Upload A Single Submission' >&#10010;</ps-filedrop> -->
+   <!-- <ps-filedrop id='UploadSubmissions' title='Upload a Zipped Bundle of Submissions'>&#10010;+&#128476;</ps-filedrop> -->
+   <ps-filedrop id='UploadSubmissions' title='Upload a Zipped Bundle of Submissions'>&#10010;</ps-filedrop>
    <ps-submission-list id='submissions'></ps-submission-list>
   </ps-panel>
  </section>

@@ -167,7 +167,7 @@ export default class psPanelElement extends HTMLElement {
 	}
 
 	get maximizable(){
-		let value = this.getAttribute('maximize');
+		let value = this.getAttribute('can-maximize');
 		value = value || 'true';
 		value = value.toLowerCase();
 		value = ('true' === value);
@@ -180,7 +180,7 @@ export default class psPanelElement extends HTMLElement {
 			return;
 		}
 
-		this.setAttribute('maximize',value);
+		this.setAttribute('can-maximize',value);
 		this.domMaximize.style.display = value ? '' : 'none';
 	}
 

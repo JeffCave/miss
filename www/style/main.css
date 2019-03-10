@@ -114,7 +114,7 @@ input.pass{
 
 ps-filedrop{
 	position:relative;
-	display:block;
+	display:inline;
 	width:200px;
 	margin:0.3em;
 }
