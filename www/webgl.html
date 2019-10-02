@@ -66,9 +66,9 @@
     <dd>
 	The direction we have to travel to find the best previous score in the chain
 	 <ol>
-	  <li>North</li>
-	  <li>West</li>
-	  <li>NorthWest</li>
+	  <li>&nbsp;64 - Vertical</li>
+	  <li>127 - Horizontal</li>
+	  <li>191 - Diagonal</li>
 	 </ol>
 	</dd>
    <dt>Running Total</dt>
@@ -94,12 +94,8 @@ class pixel{
 	set a(vals){ this.setValue(3,vals); }
 
 	setValue(offset,vals){
-		if(vals < 0){
-			vals = 0;
-		}
-		if(vals > 255){
-			vals = 255;
-		}
+		vals = Math.max(vals,0);
+		vals = Math.min(vals,255);
 		this.pixels[this.offset+offset] = vals;
 	}
 
@@ -569,7 +565,6 @@ Timings (ms): 1854.8
 		
 		void main() {
 
-			/*******************************/
 			// calculate the size of a pixel
 			vec2 pixSize = vec2(1.0, 1.0) / u_resolution;
 			vec4 pixNull = vec4(0.0,0.0,0.0,0.0);
@@ -580,64 +575,71 @@ Timings (ms): 1854.8
 			vec4 s    = texture2D(u_image, v_texCoord + vec2(         0,+pixSize.y));
 			vec4 e    = texture2D(u_image, v_texCoord + vec2(+pixSize.x,         0));
 			// test for out of bounds values
-			if(v_texCoord.y >= u_resolution.y){
+			if(v_texCoord.y+pixSize.y >= 1.0){
 				se = pixNull;
 				s = pixNull;
 			}
-			if(v_texCoord.x >= u_resolution.x){
+			if(v_texCoord.x+pixSize.x >= 1.0){
 				se = pixNull;
 				e = pixNull;
 			}
 			if(here.a == 0.0){
 				// we aren't part of a chain, stop all processing
-				here = vec4(0,0,0,0);
+				here = pixNull;
 			}
 			else {
 				// we are part of a chain, but the question is "which chain?"
 				// to determine the correct chain, we need to check two things
 				// 
-				// 1. it has to be pointing at us
-				// 2. we want the biggest value
+				// 1. the chain needs to point to us
+				// 2. we only want to be part of the chain with the biggest score
 				// 
-				// To do this, we check them one at a time
-				vec4 there = pixNull;
-				float tmp = 0.0;
+				float diff = 0.0;
 				
-				tmp = abs(1.0*DIRPART-s.b);
-				if(tmp < 0.1 && s.a == max( s.a,there.a)){
+				// assume there is no chain pointing at us
+				vec4 there = pixNull;
+				
+				// Check the vertical for it pointing at us, and it having a higher score than the previous candidate
+				diff = abs(1.0*DIRPART-s.b);
+				if(diff < 0.1 &&  s.a > there.a){
 					there = s;
 				}
-				tmp = abs(2.0*DIRPART-e.b);
-				if(tmp < 0.1 &&  e.a == max( e.a,there.a)){
+				// Check the horizontal ...
+				diff = abs(2.0*DIRPART-e.b);
+				if(diff < 0.1 &&  e.a > there.a){
 					there = e;
 				}
-				tmp = abs(3.0*DIRPART-se.b);
-				if(tmp < 0.1 && se.a == max(se.a,there.a)){
+				// check the diagonal ...
+				diff = abs(3.0*DIRPART-se.b);
+				if(diff < 0.1 && se.a > there.a){
 					there = se;
 				}
 				
-				// we have identified a candidate, but the question 
-				// becomes, "is it a continued chain or are we proposing to start a new chain".
-				// if we are starting a new chain, we should start at the high water mark
-				if(there.r == 0.0 && there.a <= here.a){
+				// we have identified a candidate, but the question becomes, "is it a 
+				// continued chain or are we proposing to start a new chain".
+				// 
+				// if we are starting a new chain (the candidate has a chain position 
+				// of zero), we should start at the high water mark so check to see that 
+				// the candidate is bigger than we are. If it isn't, don't use it.
+				if(there.r <= 1.0/255.0 && there.a <= here.a){
+					// start a new chain
 					there = pixNull;
 				}
-				// If, after all that, we are still pointing at a null pixel, 
-				// use our current values, but make sure that the red channel 
-				// is re-initialized.
+				
+				// If, after all that, no candidate has been found, keep the existing 
+				// values, but reset the chain length counter.
 				if(there.g == 0.0){
 					there = here;
-					there.r = 0.0;
+					there.r = 0.0/255.0;
 				}
 				
-				// should have figured out which one we needed.
-				// keep track of the ID and SCORE of the chain
+				// At this point we now know what chain we are part of, record those 
+				// values, and increment the length counter.
 				here.ga = there.ga;
 				here.r = there.r + 1.0/255.0;
 			}
 
-			/*******************************/
-
+			// return the values
 			gl_FragColor = here;
 		}
 	`);
