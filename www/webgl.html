@@ -711,7 +711,7 @@ Timings (ms): 1854.8
 	window.performance.mark('frames.start');
 	for(swVals.cycle=0; swVals.cycle < swVals.total_cycles; swVals.cycle++){
 		gpu.run('smithwaterman');
-		drawGrid(gpu,swVals);
+		//drawGrid(gpu,swVals);
 	}
 	window.performance.mark('frames.end');
 	window.performance.measure('frames','frames.start','frames.end');
@@ -720,10 +720,10 @@ Timings (ms): 1854.8
 
 	window.performance.mark('chains.start');
 	gpu.run('initChain');
-	drawGrid(gpu,swVals);
+	//drawGrid(gpu,swVals);
 	for(swVals.cycle=0; swVals.cycle < swVals.total_cycles; swVals.cycle++){
 		gpu.run('chain');
-		drawGrid(gpu,swVals);
+		//drawGrid(gpu,swVals);
 	}
 	data = gpu.read();
 	let chains = ResolveChains(swVals,data,gpu.gl.drawingBufferWidth,gpu.gl.drawingBufferHeight);
@@ -736,55 +736,39 @@ Timings (ms): 1854.8
 
 
 function ResolveChains(swVals,values, width, height){
-	const MIN_SIGNIFICANT = 3;
+	const MIN_LENGTH = 3;
+	const MIN_SCORE = 3;
 	const MAX_CHAINS = 10;
-	const modDir = [
-			[0,0], // don't move
-			[0,1],
-			[1,0],
-			[1,1]
-		];
 
-	let index = new Map();
+	let chains = new Map();
 	for(let i=swVals.total_area-1; i>=0; i-=1){
 		let pix = new pixel(values,i*4);
 		if(pix.a === 0) continue;
-
-		let d = {
-			i: i,
-			score: pix.a,
-			chain:[]
-		};
-
-		let md = modDir[pix.b%modDir.length];
-		d.prev = i;
-		d.prev -= md[0] * 1;
-		d.prev -= md[1] * width;
-		index.set(d.i, d);
-	}
-	let chains = [];
-	while(index.size > 0){
-		let root = Array.from(index.values())
-			.sort((a,b)=>{
-				let ord = b.score - a.score;
-				if(ord === 0){
-					ord = a.i - b.i;
-				}
-				return ord;
-			})
-			.shift()
-			;
-
-		for(let item = root; item; item = index.get(item.prev)){
-			root.chain.push(item);
-			index.delete(item.i);
+		//if(pix.a < MIN_SCORE) continue;
+		
+		if(!chains.has(pix.g)){
+			if(pix.a < MIN_SCORE){
+				continue;
+			}
+			chains.set(pix.g,{
+				id: pix.g,
+				score: pix.a,
+				i : i,
+				chain: []
+			});
 		}
-		let finItem = root.chain[root.chain.length-1];
-		root.score -= Math.max(0,finItem.score-2);
-		if(root && root.score >= MIN_SIGNIFICANT){
-			chains.push(root);
-		}
+		let chain = chains.get(pix.g);
+		
+		chain.chain.push(i);
 	}
+	chains = Array.from(chains.values());
+	chains = chains
+		.filter((d)=>{
+			let len = d.chain.length >= MIN_LENGTH;
+			let score = d.score >= MIN_SCORE;
+			let keep = len && score;
+			return keep;
+		});
 	chains = chains
 		.sort((a,b)=>{
 			let ord = b.score - a.score;
@@ -793,6 +777,7 @@ function ResolveChains(swVals,values, width, height){
 			}
 			return ord;
 		})
+	chains = chains
 		.slice(0,Math.min(MAX_CHAINS,chains.length))
 		;
 	return chains;
@@ -864,9 +849,9 @@ function drawChains(chains){
 		let colour = colours.shift();
 		chain.chain.forEach(d=>{
 			let tomark = [];
-			tomark.push(tds[d.i]);
-			tomark.push(tds[d.i].parentElement.querySelector('th'));
-			tomark.push(ths[tds[d.i].cellIndex]);
+			tomark.push(tds[d]);
+			tomark.push(tds[d].parentElement.querySelector('th'));
+			tomark.push(ths[tds[d].cellIndex]);
 			tomark.forEach((td)=>{
 				if(td.style.backgroundColor === ''){
 					td.style.backgroundColor = 'white';
