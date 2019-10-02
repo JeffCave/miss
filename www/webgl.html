@@ -513,6 +513,7 @@ Timings (ms): 1854.8
 			// calculate the size of a pixel
 			vec2 pixSize = vec2(1.0, 1.0) / u_resolution;
 			vec4 pixNull = vec4(0.0,0.0,0.0,0.0);
+			float DIRPART = 1.0 / 4.0;
 			// find our four critical points
 			vec4 here = texture2D(u_image, v_texCoord);
 			vec4 nw   = texture2D(u_image, v_texCoord + vec2(-pixSize.x,-pixSize.y));
@@ -535,13 +536,13 @@ Timings (ms): 1854.8
 
 			// Figure out what the directionality of the score was
 			if(nw.a == here.b){
-				here.b = 3.0/256.0;
+				here.b = DIRPART*3.0;
 			}
 			else if(w.a == here.b){
-				here.b = 2.0/256.0;
+				here.b = DIRPART*2.0;
 			}
 			else{
-				here.b = 1.0/256.0;
+				here.b = DIRPART*1.0;
 			}
 
 			// apply the skip penalty if it was anything but NW
@@ -572,6 +573,7 @@ Timings (ms): 1854.8
 			// calculate the size of a pixel
 			vec2 pixSize = vec2(1.0, 1.0) / u_resolution;
 			vec4 pixNull = vec4(0.0,0.0,0.0,0.0);
+			float DIRPART = 1.0 / 4.0;
 			// find our four critical points
 			vec4 here = texture2D(u_image, v_texCoord);
 			vec4 se   = texture2D(u_image, v_texCoord + vec2(+pixSize.x,+pixSize.y));
@@ -598,25 +600,40 @@ Timings (ms): 1854.8
 				// 2. we want the biggest value
 				// 
 				// To do this, we check them one at a time
-				vec4 there = here;
+				vec4 there = pixNull;
 				float tmp = 0.0;
 				
-				tmp = floor(s.b*256.0);
-				if(tmp > 0.5 && tmp < 1.5 &&  s.a == max( s.a,there.a)){
+				tmp = abs(1.0*DIRPART-s.b);
+				if(tmp < 0.1 && s.a == max( s.a,there.a)){
 					there = s;
 				}
-				tmp = floor(e.b*256.0);
-				if(tmp > 1.5 && tmp < 2.5 &&  e.a == max( e.a,there.a)){
+				tmp = abs(2.0*DIRPART-e.b);
+				if(tmp < 0.1 &&  e.a == max( e.a,there.a)){
 					there = e;
 				}
-				tmp = floor(se.b*256.0);
-				if(tmp > 2.5 && tmp < 3.5 && se.a == max(se.a,there.a)){
+				tmp = abs(3.0*DIRPART-se.b);
+				if(tmp < 0.1 && se.a == max(se.a,there.a)){
 					there = se;
+				}
+				
+				// we have identified a candidate, but the question 
+				// becomes, "is it a continued chain or are we proposing to start a new chain".
+				// if we are starting a new chain, we should start at the high water mark
+				if(there.r == 0.0 && there.a <= here.a){
+					there = pixNull;
+				}
+				// If, after all that, we are still pointing at a null pixel, 
+				// use our current values, but make sure that the red channel 
+				// is re-initialized.
+				if(there.g == 0.0){
+					there = here;
+					there.r = 0.0;
 				}
 				
 				// should have figured out which one we needed.
 				// keep track of the ID and SCORE of the chain
-				here.rga = there.bga;
+				here.ga = there.ga;
+				here.r = there.r + 1.0/255.0;
 			}
 
 			/*******************************/
@@ -647,6 +664,25 @@ Timings (ms): 1854.8
 			float score = 0.0;
 			score = (w.rg == n.ba) ? scores.x : scores.y;
 			gl_FragColor = vec4(score,id,0,score);
+		}
+	`);
+
+	gpu.addProgram('initChain', `
+		precision mediump float;
+
+		// our texture
+		uniform sampler2D u_image;
+		// the texCoords passed in from the vertex shader.
+		varying vec2 v_texCoord;
+
+		// constants
+		uniform vec2 u_resolution;
+		uniform vec3 scores;
+
+		void main() {
+			vec4 here = texture2D(u_image, vec2(v_texCoord.x,v_texCoord.y));
+			here.r = 0.0;
+			gl_FragColor = here;
 		}
 	`);
 
@@ -681,6 +717,8 @@ Timings (ms): 1854.8
 	drawGrid(gpu,swVals);
 
 	window.performance.mark('chains.start');
+	gpu.run('initChain');
+	drawGrid(gpu,swVals);
 	for(swVals.cycle=0; swVals.cycle < swVals.total_cycles; swVals.cycle++){
 		gpu.run('chain');
 		drawGrid(gpu,swVals);
