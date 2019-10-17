@@ -65,8 +65,8 @@
   <dl>
    <dt>Comparison</dt>
     <dd>The score based on a direct comparison: x[0] == y[0], x[0] == y[1], ...</dd>
-   <dt>Unique Identifier</dt>
-    <dd>ID generated for each cell. Resolves to a fractional value (float), but displays out of one byte. Therefore may conflict at resolution time</dd>
+   <dt>Unused</dt>
+    <dd>Unused</dd>
    <dt>Directionality</dt>
     <dd>
 	The direction we have to travel to find the best previous score in the chain
@@ -83,12 +83,12 @@
   </dl>
   <h2>Chaining</h2>
   <dl>
-   <dt>Chain Length</dt>
-    <dd>The element position of the cell in the chain</dd>
-   <dt>Unique Identifier</dt>
-    <dd>ID generated for each cell. Same as above.</dd>
+   <dt>Unique Identifier [x]</dt>
+    <dd>ID generated for each cell.</dd>
+   <dt>Unique Identifier [y]</dt>
+    <dd>ID generated for each cell.</dd>
    <dt>Directionality</dt>
-    <dd>Same as above.</dd>
+    <dd>Same as compare (above).</dd>
    <dt>Chain Score</dt>
     <dd>The final score of the chain.</dd>
   </dl>
@@ -108,6 +108,8 @@ class pixel{
 	set g(vals){ this.setValue(1,vals); }
 	set b(vals){ this.setValue(2,vals); }
 	set a(vals){ this.setValue(3,vals); }
+	
+	get rg(){ return this.r*255+this.g; }
 
 	setValue(offset,vals){
 		vals = pixel.NZ(vals);
@@ -483,13 +485,28 @@ Timings (ms): 1854.8
 				'In maxime voluptates veniam sed eum aut soluta. Commodi modi aliquam reprehenderit quia eveniet nemo non modi. Quaerat doloribus ut id est corrupti. Facilis et consequatur',
 				'Repudiandae quam ratione neque minus. Consectetur soluta dicta est quidem accusamus cumque. Et fugiat quia consequatur aut. Deleniti alias itaque incidunt ad in omnis. Dolores hic vitae rerum ad possimus rem repellat. Voluptatem in similique labore reiciendis.',
 			],
+		'identical': [
+				'With many cheerful facts about the square of the hypotenuse',
+				'With many cheerful facts about the square of the hypotenuse'
+			],
+		'gilbertsulivan': [
+				'I am the very model of a modern major general',
+				"I've knowledge of things animal, vegetable, and mineral"
+			],
+		'longchain': [
+				'aaaabbbbbb',
+				'abcdefghi'
+			],
 		};
 	let submissions = samples['animals']
 		.map(d=>{
 			return d
+				// part of tokenizing means removing meaningless information from the inputs
 				.toLowerCase()
 				.split('')
 				.map(c=>{return c.charCodeAt(0);})
+				// we have a hard limit of 256 max. 
+				.slice(0,256)
 				;
 		})
 		.sort((a,b)=>{
@@ -525,7 +542,7 @@ Timings (ms): 1854.8
 			/*******************************/
 			// calculate the size of a pixel
 			vec2 pixSize = vec2(1.0, 1.0) / u_resolution;
-			vec4 pixNull = vec4(0.0,0.0,0.0,0.0);
+			vec4 pixNull = vec4(0.0, 0.0, 0.0, 0.0);
 			float DIRPART = 1.0 / 4.0;
 			// find our four critical points
 			vec4 here = texture2D(u_image, v_texCoord);
@@ -651,7 +668,6 @@ Timings (ms): 1854.8
 					// start a new chain
 					there = pixNull;
 				}
-				
 				// If, after all that, no candidate has been found, keep the existing 
 				// values
 				if(there.g == 0.0){
@@ -660,8 +676,7 @@ Timings (ms): 1854.8
 				
 				// At this point we now know what chain we are part of, record those 
 				// values, and increment the length counter.
-				here.ga = there.ga;
-				here.r = there.r + 1.0/255.0;
+				here.rga = there.rga;
 			}
 
 			// return the values
@@ -707,8 +722,8 @@ Timings (ms): 1854.8
 		uniform vec3 scores;
 
 		void main() {
-			vec4 here = texture2D(u_image, vec2(v_texCoord.x,v_texCoord.y));
-//			here.rg = v_texCoord.xy;
+			vec4 here = texture2D(u_image, v_texCoord);
+			here.rg = (v_texCoord * u_resolution) / 255.0;
 			gl_FragColor = here;
 		}
 	`);
@@ -748,7 +763,7 @@ Timings (ms): 1854.8
 	drawGrid(gpu,swVals);
 	for(swVals.cycle=0; swVals.cycle < swVals.total_cycles; swVals.cycle++){
 		gpu.run('chain');
-		drawGrid(gpu,swVals);
+		//drawGrid(gpu,swVals);
 	}
 	data = gpu.read();
 	let chains = ResolveChains(swVals,data,gpu.gl.drawingBufferWidth,gpu.gl.drawingBufferHeight);
@@ -771,18 +786,19 @@ function ResolveChains(swVals,values, width, height){
 		if(pix.a === 0) continue;
 		//if(pix.a < MIN_SCORE) continue;
 		
-		if(!chains.has(pix.g)){
+		let id = pix.rg;
+		if(!chains.has(id)){
 			if(pix.a < MIN_SCORE){
 				continue;
 			}
-			chains.set(pix.g,{
-				id: pix.g,
+			chains.set(id,{
+				id: id,
 				score: pix.a,
 				i : i,
 				chain: []
 			});
 		}
-		let chain = chains.get(pix.g);
+		let chain = chains.get(id);
 		
 		chain.chain.push(i);
 	}
