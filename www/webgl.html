@@ -10,6 +10,9 @@
 	canvas{
 		border:1em solid #888888;
 	}
+	dt{
+		font-weight: bold;
+	}
 	table{
 		text-align:right;
 		border-collapse: collapse;
@@ -21,16 +24,16 @@
 	td > i{
 		 font-style: normal;
 	}
-	td > i:nth-of-type(1){
+	td > i:nth-of-type(1), dt:nth-of-type(1){
 		color:red;
 	}
-	td > i:nth-of-type(2){
+	td > i:nth-of-type(2), dt:nth-of-type(2){
 		color:green;
 	}
-	td > i:nth-of-type(3){
+	td > i:nth-of-type(3), dt:nth-of-type(3){
 		color:blue;
 	}
-	td > i:nth-of-type(4){
+	td > i:nth-of-type(4), dt:nth-of-type(4){
 		color:black;
 	}
 	td > i:nth-of-type(2):after{
@@ -43,7 +46,52 @@
   </head>
 
  <body>
+  <!--fieldset>
+   <select>
+    <option value='animals'>Animals</option>
+	<option value='lorem'>Lorem Ipsum</option>
+   </select>
+  </fieldset -->
+  <h1>Memory Allocation</h1>
   <table></table>
+  <p>
+  Because WebGL handles 4 memory registers naturally (RGBA), we use those for (four?) memory locations. This also makes for a convenient colour coding for this debugger.
+  </p>
+  <p>
+   There are two phases that are run on the GPU: the comparison, and the 
+   chain resolution. Each of them use the memory slightly differently.
+  </p>
+  <h2>Compare</h2>
+  <dl>
+   <dt>Comparison</dt>
+    <dd>The score based on a direct comparison: x[0] == y[0], x[0] == y[1], ...</dd>
+   <dt>Unused</dt>
+    <dd>Unused</dd>
+   <dt>Directionality</dt>
+    <dd>
+	The direction we have to travel to find the best previous score in the chain
+	 <ol>
+	  <li>&nbsp;64 - Vertical</li>
+	  <li>127 - Horizontal</li>
+	  <li>191 - Diagonal</li>
+	 </ol>
+	</dd>
+   <dt>Running Total</dt>
+    <dd>
+	Following the directional indicators, the running total
+	</dd>
+  </dl>
+  <h2>Chaining</h2>
+  <dl>
+   <dt>Unique Identifier [x]</dt>
+    <dd>ID generated for each cell.</dd>
+   <dt>Unique Identifier [y]</dt>
+    <dd>ID generated for each cell.</dd>
+   <dt>Directionality</dt>
+    <dd>Same as compare (above).</dd>
+   <dt>Chain Score</dt>
+    <dd>The final score of the chain.</dd>
+  </dl>
   <script>
 class pixel{
 	constructor(pixels=[0,0,0,0], offset = 0){
@@ -60,14 +108,13 @@ class pixel{
 	set g(vals){ this.setValue(1,vals); }
 	set b(vals){ this.setValue(2,vals); }
 	set a(vals){ this.setValue(3,vals); }
+	
+	get rg(){ return this.r*255+this.g; }
 
 	setValue(offset,vals){
-		if(vals < 0){
-			vals = 0;
-		}
-		if(vals > 255){
-			vals = 255;
-		}
+		vals = pixel.NZ(vals);
+		vals = Math.max(vals,0);
+		vals = Math.min(vals,255);
 		this.pixels[this.offset+offset] = vals;
 	}
 
@@ -196,7 +243,7 @@ class psGpu{
 		dim = this.sanitizeRect(dim);
 		let pixels = this.emptyData(dim);
 
-		// grad the buffer that is most appropriate for reading from
+		// grab the buffer that is most appropriate for reading from
 		//console.debug('Buffer: ' + this._.textures.read.id + ' -> 😐');
 		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this._.textures.read.framebuffer);
 
@@ -368,7 +415,7 @@ class psGpu{
 				gl.compileShader(shader);
 				if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
 					gl.deleteShader(shader);
-					throw new Error('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
+					throw new Error(`An error occurred compiling the shaders (${name}): ` + gl.getShaderInfoLog(shader));
 				}
 				s.shader = shader;
 				return s;
@@ -390,7 +437,7 @@ class psGpu{
 
 		// If creating the shader program failed
 		if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-			throw new Error('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram));
+			throw new Error(`Unable to initialize the shader program (${name}): ` + gl.getProgramInfoLog(shaderProgram));
 		}
 
 		this._.programs[name] = {
@@ -427,19 +474,39 @@ Timings (ms): 1854.8
  * frames: 5.5;
  * chains: 1837.0;
 */
-	let submissions = [
-			// ~10 ms based on CPU
-			'PELLICAN',
-			'COELACANTH',
-			// 5.5 seconds based on CPU
-			//'In maxime voluptates veniam sed eum aut soluta. Commodi modi aliquam reprehenderit quia eveniet nemo non modi. Quaerat doloribus ut id est corrupti. Facilis et consequatur',
-			//'Repudiandae quam ratione neque minus. Consectetur soluta dicta est quidem accusamus cumque. Et fugiat quia consequatur aut. Deleniti alias itaque incidunt ad in omnis. Dolores hic vitae rerum ad possimus rem repellat. Voluptatem in similique labore reiciendis.',
-		]
+	let samples = {
+		'animals': [
+				// ~10 ms based on CPU
+				'PELLICAN',
+				'COELACANTH',
+			],
+		'lorem': [
+				// 5.5 seconds based on CPU
+				'In maxime voluptates veniam sed eum aut soluta. Commodi modi aliquam reprehenderit quia eveniet nemo non modi. Quaerat doloribus ut id est corrupti. Facilis et consequatur',
+				'Repudiandae quam ratione neque minus. Consectetur soluta dicta est quidem accusamus cumque. Et fugiat quia consequatur aut. Deleniti alias itaque incidunt ad in omnis. Dolores hic vitae rerum ad possimus rem repellat. Voluptatem in similique labore reiciendis.',
+			],
+		'identical': [
+				'With many cheerful facts about the square of the hypotenuse',
+				'With many cheerful facts about the square of the hypotenuse'
+			],
+		'gilbertsulivan': [
+				'I am the very model of a modern major general',
+				"I've knowledge of things animal, vegetable, and mineral"
+			],
+		'longchain': [
+				'aaaabbbbbb',
+				'abcdefghi'
+			],
+		};
+	let submissions = samples['animals']
 		.map(d=>{
 			return d
+				// part of tokenizing means removing meaningless information from the inputs
 				.toLowerCase()
 				.split('')
 				.map(c=>{return c.charCodeAt(0);})
+				// we have a hard limit of 256 max. 
+				.slice(0,256)
 				;
 		})
 		.sort((a,b)=>{
@@ -475,12 +542,13 @@ Timings (ms): 1854.8
 			/*******************************/
 			// calculate the size of a pixel
 			vec2 pixSize = vec2(1.0, 1.0) / u_resolution;
-			vec4 pixNull = vec4(0.0,0.0,0.0,0.0);
+			vec4 pixNull = vec4(0.0, 0.0, 0.0, 0.0);
+			float DIRPART = 1.0 / 4.0;
 			// find our four critical points
 			vec4 here = texture2D(u_image, v_texCoord);
 			vec4 nw   = texture2D(u_image, v_texCoord + vec2(-pixSize.x,-pixSize.y));
-			vec4 w    = texture2D(u_image, v_texCoord + vec2(-pixSize.x,         0));
 			vec4 n    = texture2D(u_image, v_texCoord + vec2(         0,-pixSize.y));
+			vec4 w    = texture2D(u_image, v_texCoord + vec2(-pixSize.x,         0));
 			// test for out of bounds values
 			if(v_texCoord.y <= pixSize.y){
 				nw = pixNull;
@@ -498,19 +566,120 @@ Timings (ms): 1854.8
 
 			// Figure out what the directionality of the score was
 			if(nw.a == here.b){
-				here.b = 3.0/256.0;
+				here.b = DIRPART*3.0;
 			}
 			else if(w.a == here.b){
-				here.b = 2.0/256.0;
+				here.b = DIRPART*2.0;
 			}
 			else{
-				here.b = 1.0/256.0;
+				here.b = DIRPART*1.0;
 			}
 
 			// apply the skip penalty if it was anything but NW
 			here.a += scores.z * (here.b==float(3) ? float(0) : float(1));
+			// there is no direction if the score is zero
+			here.b = ceil(here.a) * here.b;
 			/*******************************/
 
+			gl_FragColor = here;
+		}
+	`);
+
+	gpu.addProgram('chain', `
+		precision mediump float;
+
+		// our texture
+		uniform sampler2D u_image;
+		// the texCoords passed in from the vertex shader.
+		varying vec2 v_texCoord;
+
+		// constants
+		uniform vec2 u_resolution;
+		uniform vec3 scores;
+		
+		void main() {
+
+			// calculate the size of a pixel
+			vec2 pixSize = vec2(1.0, 1.0) / u_resolution;
+			vec4 pixNull = vec4(0.0,0.0,0.0,0.0);
+			float DIRPART = 1.0 / 4.0;
+			float INTONE = 1.0 / 255.0;
+			// find our four critical points
+			vec2 coordSE = v_texCoord + vec2(+pixSize.x,+pixSize.y);
+			vec2 coordS  = v_texCoord + vec2(         0,+pixSize.y);
+			vec2 coordE  = v_texCoord + vec2(+pixSize.x,         0);
+			vec4 here = texture2D(u_image, v_texCoord);
+			vec4 se   = texture2D(u_image, coordSE);
+			vec4 s    = texture2D(u_image, coordS);
+			vec4 e    = texture2D(u_image, coordE);
+
+			// test for out of bounds values
+			if(v_texCoord.y+pixSize.y >= 1.0){
+				se = pixNull;
+				s = pixNull;
+			}
+			if(v_texCoord.x+pixSize.x >= 1.0){
+				se = pixNull;
+				e = pixNull;
+			}
+			if(here.a == 0.0){
+				// we aren't part of a chain, stop all processing
+				here = pixNull;
+			}
+			else {
+				// we are part of a chain, but the question is "which chain?"
+				// to determine the correct chain, we need to check two things
+				// 
+				// 1. the chain needs to point to us
+				// 2. we only want to be part of the chain with the biggest score
+				// 
+				float diff = 0.0;
+				
+				// assume there is no chain pointing at us
+				vec4 there = pixNull;
+				vec2 coordThere = vec2(0.0, 0.0);
+				
+				// Check the vertical for it pointing at us, and it having a higher score than the previous candidate
+				diff = abs(1.0*DIRPART-s.b);
+				if(diff < 0.1 &&  s.a > there.a){
+					there = s;
+					coordThere = coordS;
+				}
+				// Check the horizontal ...
+				diff = abs(2.0*DIRPART-e.b);
+				if(diff < 0.1 &&  e.a > there.a){
+					there = e;
+					coordThere = coordE;
+				}
+				// check the diagonal ...
+				diff = abs(3.0*DIRPART-se.b);
+				if(diff < 0.1 && se.a > there.a){
+					there = se;
+					coordThere = coordSE;
+				}
+				
+				// we have identified a candidate, but the question becomes, "is it a 
+				// continued chain or are we proposing to start a new chain".
+				// 
+				// if we are starting a new chain (the candidate has a chain position 
+				// of zero), we should start at the high water mark so check to see that 
+				// the candidate is bigger than we are. If it isn't, don't use it.
+				if(there.g != coordThere.y && there.a <= here.a){
+					// start a new chain
+					there = pixNull;
+				}
+				// If, after all that, no candidate has been found, keep the existing 
+				// values
+				if(there.g == 0.0){
+					there = here;
+				}
+				
+				// At this point we now know what chain we are part of, record those 
+				// values, and increment the length counter.
+				here.rga = there.rga;
+			}
+
+			// return the values
 			gl_FragColor = here;
 		}
 	`);
@@ -530,9 +699,32 @@ Timings (ms): 1854.8
 		void main() {
 			vec4 w = texture2D(u_image, vec2(v_texCoord.x,0));
 			vec4 n = texture2D(u_image, vec2(0,v_texCoord.y));
+
+			// create a unique identifier for every cell
+			float id = (floor(v_texCoord.y*u_resolution.y)*u_resolution.x + floor(v_texCoord.x*u_resolution.x)) / (u_resolution.x*u_resolution.y);
+
 			float score = 0.0;
 			score = (w.rg == n.ba) ? scores.x : scores.y;
-			gl_FragColor = vec4(score,0,0,score);
+			gl_FragColor = vec4(score,id,0,score);
+		}
+	`);
+
+	gpu.addProgram('initChain', `
+		precision mediump float;
+
+		// our texture
+		uniform sampler2D u_image;
+		// the texCoords passed in from the vertex shader.
+		varying vec2 v_texCoord;
+
+		// constants
+		uniform vec2 u_resolution;
+		uniform vec3 scores;
+
+		void main() {
+			vec4 here = texture2D(u_image, v_texCoord);
+			here.rg = (v_texCoord * u_resolution) / 255.0;
+			gl_FragColor = here;
 		}
 	`);
 
@@ -559,6 +751,7 @@ Timings (ms): 1854.8
 	window.performance.mark('frames.start');
 	for(swVals.cycle=0; swVals.cycle < swVals.total_cycles; swVals.cycle++){
 		gpu.run('smithwaterman');
+		//drawGrid(gpu,swVals);
 	}
 	window.performance.mark('frames.end');
 	window.performance.measure('frames','frames.start','frames.end');
@@ -566,6 +759,12 @@ Timings (ms): 1854.8
 	drawGrid(gpu,swVals);
 
 	window.performance.mark('chains.start');
+	gpu.run('initChain');
+	drawGrid(gpu,swVals);
+	for(swVals.cycle=0; swVals.cycle < swVals.total_cycles; swVals.cycle++){
+		gpu.run('chain');
+		//drawGrid(gpu,swVals);
+	}
 	data = gpu.read();
 	let chains = ResolveChains(swVals,data,gpu.gl.drawingBufferWidth,gpu.gl.drawingBufferHeight);
 	window.performance.mark('chains.end');
@@ -577,55 +776,40 @@ Timings (ms): 1854.8
 
 
 function ResolveChains(swVals,values, width, height){
-	const MIN_SIGNIFICANT = 3;
+	const MIN_LENGTH = 3;
+	const MIN_SCORE = 3;
 	const MAX_CHAINS = 10;
-	const modDir = [
-			[0,0], // don't move
-			[0,1],
-			[1,0],
-			[1,1]
-		];
 
-	let index = new Map();
+	let chains = new Map();
 	for(let i=swVals.total_area-1; i>=0; i-=1){
 		let pix = new pixel(values,i*4);
 		if(pix.a === 0) continue;
-
-		let d = {
-			i: i,
-			score: pix.a,
-			chain:[]
-		};
-
-		let md = modDir[pix.b%modDir.length];
-		d.prev = i;
-		d.prev -= md[0] * 1;
-		d.prev -= md[1] * width;
-		index.set(d.i, d);
-	}
-	let chains = [];
-	while(index.size > 0){
-		let root = Array.from(index.values())
-			.sort((a,b)=>{
-				let ord = b.score - a.score;
-				if(ord === 0){
-					ord = a.i - b.i;
-				}
-				return ord;
-			})
-			.shift()
-			;
-
-		for(let item = root; item; item = index.get(item.prev)){
-			root.chain.push(item);
-			index.delete(item.i);
+		//if(pix.a < MIN_SCORE) continue;
+		
+		let id = pix.rg;
+		if(!chains.has(id)){
+			if(pix.a < MIN_SCORE){
+				continue;
+			}
+			chains.set(id,{
+				id: id,
+				score: pix.a,
+				i : i,
+				chain: []
+			});
 		}
-		let finItem = root.chain[root.chain.length-1];
-		root.score -= Math.max(0,finItem.score-2);
-		if(root && root.score >= MIN_SIGNIFICANT){
-			chains.push(root);
-		}
+		let chain = chains.get(id);
+		
+		chain.chain.push(i);
 	}
+	chains = Array.from(chains.values());
+	chains = chains
+		.filter((d)=>{
+			let len = d.chain.length >= MIN_LENGTH;
+			let score = d.score >= MIN_SCORE;
+			let keep = len && score;
+			return keep;
+		});
 	chains = chains
 		.sort((a,b)=>{
 			let ord = b.score - a.score;
@@ -634,6 +818,7 @@ function ResolveChains(swVals,values, width, height){
 			}
 			return ord;
 		})
+	chains = chains
 		.slice(0,Math.min(MAX_CHAINS,chains.length))
 		;
 	return chains;
@@ -656,7 +841,8 @@ function drawGrid(gpu, runMetrics){
 		times.map(d=>{
 			return '<li>' + d.name + ': ' + d.duration.toFixed(1) + ';</li>';
 		}).join('') +
-		'</ul>'
+		'</ul>' +
+		'Last Kernel...: '+ gpu.CurrentProgram 
 		;
 
 	table = table.tBodies[0];
@@ -704,9 +890,9 @@ function drawChains(chains){
 		let colour = colours.shift();
 		chain.chain.forEach(d=>{
 			let tomark = [];
-			tomark.push(tds[d.i]);
-			tomark.push(tds[d.i].parentElement.querySelector('th'));
-			tomark.push(ths[tds[d.i].cellIndex]);
+			tomark.push(tds[d]);
+			tomark.push(tds[d].parentElement.querySelector('th'));
+			tomark.push(ths[tds[d].cellIndex]);
 			tomark.forEach((td)=>{
 				if(td.style.backgroundColor === ''){
 					td.style.backgroundColor = 'white';
