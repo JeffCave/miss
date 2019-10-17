@@ -57,11 +57,16 @@
   <p>
   Because WebGL handles 4 memory registers naturally (RGBA), we use those for (four?) memory locations. This also makes for a convenient colour coding for this debugger.
   </p>
+  <p>
+   There are two phases that are run on the GPU: the comparison, and the 
+   chain resolution. Each of them use the memory slightly differently.
+  </p>
+  <h2>Compare</h2>
   <dl>
    <dt>Comparison</dt>
     <dd>The score based on a direct comparison: x[0] == y[0], x[0] == y[1], ...</dd>
    <dt>Unique Identifier</dt>
-    <dd>ID generated for each cell. Resolves to a fractional value, but displays out of one byte. Therefore may conflict at resolution time</dd>
+    <dd>ID generated for each cell. Resolves to a fractional value (float), but displays out of one byte. Therefore may conflict at resolution time</dd>
    <dt>Directionality</dt>
     <dd>
 	The direction we have to travel to find the best previous score in the chain
@@ -75,6 +80,17 @@
     <dd>
 	Following the directional indicators, the running total
 	</dd>
+  </dl>
+  <h2>Chaining</h2>
+  <dl>
+   <dt>Chain Length</dt>
+    <dd>The element position of the cell in the chain</dd>
+   <dt>Unique Identifier</dt>
+    <dd>ID generated for each cell. Same as above.</dd>
+   <dt>Directionality</dt>
+    <dd>Same as above.</dd>
+   <dt>Chain Score</dt>
+    <dd>The final score of the chain.</dd>
   </dl>
   <script>
 class pixel{
@@ -94,6 +110,7 @@ class pixel{
 	set a(vals){ this.setValue(3,vals); }
 
 	setValue(offset,vals){
+		vals = pixel.NZ(vals);
 		vals = Math.max(vals,0);
 		vals = Math.min(vals,255);
 		this.pixels[this.offset+offset] = vals;
@@ -396,7 +413,7 @@ class psGpu{
 				gl.compileShader(shader);
 				if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
 					gl.deleteShader(shader);
-					throw new Error('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
+					throw new Error(`An error occurred compiling the shaders (${name}): ` + gl.getShaderInfoLog(shader));
 				}
 				s.shader = shader;
 				return s;
@@ -418,7 +435,7 @@ class psGpu{
 
 		// If creating the shader program failed
 		if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-			throw new Error('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram));
+			throw new Error(`Unable to initialize the shader program (${name}): ` + gl.getProgramInfoLog(shaderProgram));
 		}
 
 		this._.programs[name] = {
@@ -569,11 +586,16 @@ Timings (ms): 1854.8
 			vec2 pixSize = vec2(1.0, 1.0) / u_resolution;
 			vec4 pixNull = vec4(0.0,0.0,0.0,0.0);
 			float DIRPART = 1.0 / 4.0;
+			float INTONE = 1.0 / 255.0;
 			// find our four critical points
+			vec2 coordSE = v_texCoord + vec2(+pixSize.x,+pixSize.y);
+			vec2 coordS  = v_texCoord + vec2(         0,+pixSize.y);
+			vec2 coordE  = v_texCoord + vec2(+pixSize.x,         0);
 			vec4 here = texture2D(u_image, v_texCoord);
-			vec4 se   = texture2D(u_image, v_texCoord + vec2(+pixSize.x,+pixSize.y));
-			vec4 s    = texture2D(u_image, v_texCoord + vec2(         0,+pixSize.y));
-			vec4 e    = texture2D(u_image, v_texCoord + vec2(+pixSize.x,         0));
+			vec4 se   = texture2D(u_image, coordSE);
+			vec4 s    = texture2D(u_image, coordS);
+			vec4 e    = texture2D(u_image, coordE);
+
 			// test for out of bounds values
 			if(v_texCoord.y+pixSize.y >= 1.0){
 				se = pixNull;
@@ -598,21 +620,25 @@ Timings (ms): 1854.8
 				
 				// assume there is no chain pointing at us
 				vec4 there = pixNull;
+				vec2 coordThere = vec2(0.0, 0.0);
 				
 				// Check the vertical for it pointing at us, and it having a higher score than the previous candidate
 				diff = abs(1.0*DIRPART-s.b);
 				if(diff < 0.1 &&  s.a > there.a){
 					there = s;
+					coordThere = coordS;
 				}
 				// Check the horizontal ...
 				diff = abs(2.0*DIRPART-e.b);
 				if(diff < 0.1 &&  e.a > there.a){
 					there = e;
+					coordThere = coordE;
 				}
 				// check the diagonal ...
 				diff = abs(3.0*DIRPART-se.b);
 				if(diff < 0.1 && se.a > there.a){
 					there = se;
+					coordThere = coordSE;
 				}
 				
 				// we have identified a candidate, but the question becomes, "is it a 
@@ -621,16 +647,15 @@ Timings (ms): 1854.8
 				// if we are starting a new chain (the candidate has a chain position 
 				// of zero), we should start at the high water mark so check to see that 
 				// the candidate is bigger than we are. If it isn't, don't use it.
-				if(there.r <= 1.0/255.0 && there.a <= here.a){
+				if(there.g != coordThere.y && there.a <= here.a){
 					// start a new chain
 					there = pixNull;
 				}
 				
 				// If, after all that, no candidate has been found, keep the existing 
-				// values, but reset the chain length counter.
+				// values
 				if(there.g == 0.0){
 					there = here;
-					there.r = 0.0/255.0;
 				}
 				
 				// At this point we now know what chain we are part of, record those 
@@ -659,10 +684,10 @@ Timings (ms): 1854.8
 		void main() {
 			vec4 w = texture2D(u_image, vec2(v_texCoord.x,0));
 			vec4 n = texture2D(u_image, vec2(0,v_texCoord.y));
-			
+
 			// create a unique identifier for every cell
 			float id = (floor(v_texCoord.y*u_resolution.y)*u_resolution.x + floor(v_texCoord.x*u_resolution.x)) / (u_resolution.x*u_resolution.y);
-			
+
 			float score = 0.0;
 			score = (w.rg == n.ba) ? scores.x : scores.y;
 			gl_FragColor = vec4(score,id,0,score);
@@ -683,7 +708,7 @@ Timings (ms): 1854.8
 
 		void main() {
 			vec4 here = texture2D(u_image, vec2(v_texCoord.x,v_texCoord.y));
-			here.r = 0.0;
+//			here.rg = v_texCoord.xy;
 			gl_FragColor = here;
 		}
 	`);
@@ -720,10 +745,10 @@ Timings (ms): 1854.8
 
 	window.performance.mark('chains.start');
 	gpu.run('initChain');
-	//drawGrid(gpu,swVals);
+	drawGrid(gpu,swVals);
 	for(swVals.cycle=0; swVals.cycle < swVals.total_cycles; swVals.cycle++){
 		gpu.run('chain');
-		//drawGrid(gpu,swVals);
+		drawGrid(gpu,swVals);
 	}
 	data = gpu.read();
 	let chains = ResolveChains(swVals,data,gpu.gl.drawingBufferWidth,gpu.gl.drawingBufferHeight);
