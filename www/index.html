@@ -15,6 +15,12 @@
 
  <meta charset="utf-8" />
 
+<!--
+ <link rel="stylesheet" href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css">
+ <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+ <script src='https://unpkg.com/@material/mwc-button@0.10.0/mwc-button.js'></script>
+-->
+
  <script async src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js'></script>
  <script async src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.js" integrity="sha256-htuR1Owx8i9hm4h4Y4d/FjlPLoj2teQmhJ5WnNSo3w0=" crossorigin="anonymous"></script>
  <script async src='https://cdnjs.cloudflare.com/ajax/libs/jsSHA/2.3.1/sha.js'></script>
@@ -35,20 +41,20 @@
  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
 </head>
 <body>
- <pre style='display:none;'></pre>
  <header>
   <h1>
-   Measure
+   <span>Measure</span>
    <sup style='font-size:small;font-variant:small-caps;'>of</sup>
-   Integrity
+   <span>Integrity</span>
    <sup style='font-size:small;font-variant:small-caps;'>of</sup>
-   Submissions
+   <span>Submissions</span>
    <sup style='font-size:small;font-variant:small-caps;'>of</sup>
-   Students
+   <span>Students</span>
   </h1>
   <button title='Donate' onclick='window.location="https://www.patreon.com/plaidsheep"'><a class='marketing' href='https://www.patreon.com/plaidsheep'>&#9829;</a></button>
   <nav>
-   <button id='Bug' title='Report a Bug' onclick='window.location="https://gitlab.com/jefferey-cave/miss/issues"'>&#128030;</button>
+   <button id='Bug' title='Report a Bug' onclick='window.location="https://gitlab.com/jefferey-cave/miss/issues"'>&#128027;</button>
+   <button id='Exception' title='Cause an error' class='experimental' onclick='throw new Error("Test Exception")'>&#128163;</button>
    <button id='Epub' title='Epub' class='experimental'>&#128366;</button>
    <button id='Print' title='Print'>&#128438;</button>
    <button id='DeleteAll' title='Remove Comparision Data'>&#128465;</button>
@@ -58,6 +64,7 @@
     <ps-filedrop id='Restore' accept="application/zip,.miss" style='position:absolute;top:0;left:0;opacity:0;'></ps-filedrop>
    </button>
   </nav>
+  <ps-alert></ps-alert>
  </header>
  <section>
   <ps-panel icon='settings' can-maximize='false'>
