@@ -4,8 +4,6 @@
  * https://css-tricks.com/drag-and-drop-file-uploading/
  *
  */
-import "https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.0/underscore-min.js";
-
 'use strict';
 
 /*

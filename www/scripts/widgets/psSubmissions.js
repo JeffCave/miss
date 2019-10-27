@@ -43,12 +43,20 @@ class psSubmissionList extends HTMLElement {
 		}
 
 		if(this.changeHandler){
-			this._.DeepDiff.removeEventListener('change',this.changeHandler);
+			this._.DeepDiff.removeEventListener('submissions',this.changeHandler);
 			this._.DeepDiff.removeEventListener('load',this.changeHandler);
 		}
 		else{
-			this.changeHandler = ()=>{
-				this.Render();
+			this.changeHandler = (e)=>{
+				if(!e.detail){
+					this.Resync();
+				}
+				else if(e.detail.deleted){
+					this.remove(e.detail.doc);
+				}
+				else{
+					this.add(e.detail.doc);
+				}
 			};
 		}
 
@@ -61,8 +69,43 @@ class psSubmissionList extends HTMLElement {
 		this.Render();
 	}
 
+	add(submission){
+		// search for the alphabetic insertion point
+		let inspos = null;
+		for(let ref of this._.elems.children){
+			if('submission.'+ref.Submission.name > submission.name){
+				inspos = ref;
+				break;
+			}
+		}
+		// insert the element
+		let sub = new psSubmission();
+		sub.Submission = submission;
+		sub.remover = ()=>{
+			this.DeepDiff.removeSubmission(submission.name);
+			submission.deleting = true;
+		};
+		this._.elems.insertBefore(sub,inspos);
+	}
 
-	get Render(){
+	remove(submission){
+		Array.from(this._.elems.children).forEach((elem)=>{
+			// get the name of the current element
+			let name = 'submission.'+elem.Submission.name;
+			// if the element does not exist in the reference list,
+			// remvove it from the elements list
+			let id = submission.name || submission._id;
+			if(id === name){
+				elem.parentNode.removeChild(elem);
+			}
+		});
+	}
+
+	Render(){
+		this.Resync();
+	}
+
+	get Resync(){
 		if(this._.renderer) return this._.renderer;
 
 		let renderer = async ()=>{
@@ -92,23 +135,9 @@ class psSubmissionList extends HTMLElement {
 				}
 			});
 			// add all of the items that are left over
+			isChange = isChange || (keys.length > 0);
 			keys.forEach(key=>{
-				isChange = true;
-				// search for the alphabetic insertion point
-				let inspos = null;
-				for(let ref of parent.children){
-					if('submission.'+ref.Submission.name > key){
-						inspos = ref;
-						break;
-					}
-				}
-				// insert the element
-				let sub = new psSubmission();
-				sub.Submission = submissions[key];
-				sub.remover = ()=>{
-					this.DeepDiff.removeSubmission(key);
-				};
-				parent.insertBefore(sub,inspos);
+				this.add(submissions[key]);
 			});
 
 			if(isChange){
@@ -168,8 +197,10 @@ class psSubmission extends HTMLElement {
 		return this._.remover;
 	}
 	set remover(value){
-		this._.remover = value;
-		this.Render();
+		this._.remover = ()=>{
+			value();
+			this.Render();
+		};
 	}
 
 	remove(){
@@ -183,7 +214,7 @@ class psSubmission extends HTMLElement {
 		// assumed 'true'. Also, toggle it.
 		let value = (this.submission.visible === false);
 		// set it on the object
-		Vue.set(this.submission,'visible',value);
+		this.submission.visible = value;
 		return value;
 	}
 
@@ -201,6 +232,12 @@ class psSubmission extends HTMLElement {
 
 		let tree = panel.querySelector('ps-treeview');
 		tree.files = this.Submission.content;
+
+		if(this.Submission.deleting){
+			let s = this.shadowRoot;
+			s = s.querySelector('details');
+			s.style.opacity = 0.5;
+		}
 	}
 
 	get Template(){
