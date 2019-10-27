@@ -17,6 +17,7 @@ import * as utils from './DeepDiff/util/misc.js';
 import './browsercheck.js';
 
 
+import './widgets/psAlert.js';
 import './widgets/psFileDrop.js';
 import './widgets/psForceDirected.js';
 import './widgets/psMatrixMap.js';
@@ -236,6 +237,10 @@ class indexPage {
 
 
 
+window.alert = (msg,type='info')=>{
+	document.querySelector('ps-alert').display(type,msg);
+};
+
 window.addEventListener('load',async function(){
 	if(!indexPage.isExperimental && !BrowserCheck.isCompatible){
 		window.location = './browsercheck.html';
@@ -248,6 +253,17 @@ window.addEventListener('error', async function(event) {
 		'exDescription': event.message,
 		'exFatal': false
 	});
-	let message = "Error: This is embarrassing. An error occured that I failed to anticipate.\nI have made a note of this, but would love if you could file an error report. Sometimes it's nice to talk the problem out with the person that experienced it.\nReference Message:\n\n:"
-	window.alert(message + event.message);
+	let message = `
+<p>
+This is embarrassing. An error occured that I failed to anticipate.
+<p>
+I have made a note of this, but would love if you
+<a target='_blank' href='https://gitlab.com/jefferey-cave/miss/issues'>would file an error
+report</a>. Sometimes it's nice to talk the problem out with the person
+that experienced it.
+</p>
+<p>Reference Message:</p>
+<blockquote><pre style='border-left:0.3em;'>${event.message}</pre></blockquote>
+	`;
+	window.alert(message,'fail');
 });

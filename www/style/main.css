@@ -55,6 +55,15 @@
 
 /**** custom components ***/
 
+blockquote.fail{
+	background-color:var(--notice-fail-off);
+	border:0.3em solid var(--notice-fail-low);
+	color: var(--notice-fail-high);
+	font-weight: bold;
+	padding:1em;
+	border-radius: 0.25em;
+}
+
 blockquote.warn{
 	background-color:var(--notice-warn-off);
 	border:0.3em solid var(--notice-warn-low);
@@ -151,6 +160,3 @@ ps-filedrop{
 		order: 4;
 	}
 }
-
-
-
