@@ -4,9 +4,9 @@
 
 export default class BrowserCheck{
 	constructor(){
-		
+
 	}
-	
+
 	static get browser(){
 		/*
 		if(BrowserCheck._bowser){
@@ -22,7 +22,7 @@ export default class BrowserCheck{
 		}
 		return "other";
 	}
-	
+
 	static get Tests(){
 		return {
 			'Modules': ()=>{
@@ -36,7 +36,7 @@ export default class BrowserCheck{
 			},
 		};
 	}
-	
+
 	static get isCompatible(){
 		if(BrowserCheck.CompatCheckOff){
 			return true;
@@ -45,7 +45,7 @@ export default class BrowserCheck{
 		results = results.every(r=>r.result);
 		return results;
 	}
-	
+
 	static get CompatCheckOff(){
 		let pairs = window.location.search.split('?')[1] || '';
 		pairs = pairs.split('&');
@@ -60,7 +60,7 @@ export default class BrowserCheck{
 		});
 		return flag;
 	}
-	
+
 	static RunTests(){
 		if(BrowserCheck.results){
 			return BrowserCheck.results;
@@ -79,7 +79,7 @@ export default class BrowserCheck{
 		;
 		return BrowserCheck.results;
 	}
-	
+
 	static ResultsToHTML(results=null){
 		if(!results){
 			results = BrowserCheck.RunTests();
@@ -94,7 +94,7 @@ export default class BrowserCheck{
 		}).join('');
 		return html;
 	}
-	
+
 	static get CSS(){
 		return `
  ul.results li.wait::before{
