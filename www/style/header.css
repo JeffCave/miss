@@ -11,8 +11,23 @@ body > header > h1 {
 	display:inline-block;
 	text-align: left;
 	margin:0;
+	margin-left:0.3em;
 	font-weight: bold;
 }
+body > header > h1 > span {
+	font-size: 32px;
+	transition-delay: 30s;
+	transition: font-size 2s;
+}
+body > header > h1 > span{
+	display: inline-block;
+	font-size:0;
+	transition-delay: 30s;
+}
+body > header > h1 > span:first-letter{
+	font-size:32px;
+}
+
 
 body > header > nav {
 	display:inline-block;
@@ -43,6 +58,7 @@ body > header > nav#breadcrumb{
 	width:80%;
 }
 body > header input[type='search']{
+	display:inline-block;
 	width: 10em;
 	margin:0;
 	display:inline;
