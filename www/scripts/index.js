@@ -243,7 +243,26 @@ window.alert = (msg,type='info')=>{
 
 window.addEventListener('load',async function(){
 	if(!indexPage.isExperimental && !BrowserCheck.isCompatible){
-		window.location = './browsercheck.html';
+		let message = `
+<p>
+It appears that there may be some browser compatibility issues.
+</p>
+<p>
+For more information, please check the <a href='./browsercheck.html'>browser compatibility page</a>. It has useful information on configuration changes you can make to your browser to get access to some experimental browser features.
+</p>
+<p>
+Alternately, you can <a href='?CompatCheck=wimp'>just proceed</a> &hellip; nothing <strong>bad</strong> is going to happen &hellip; I promise that this won't cause:
+</p>
+<ul>
+<li>Sinkholes</li>
+<li>Alien Invasion</li>
+<li>Spontaneous Combustion</li>
+</ul>
+<p>
+&hellip; at worst, just weirdness.
+</p>
+		`;
+		window.alert(message,'info');
 	}
 	new indexPage();
 });
