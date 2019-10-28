@@ -230,8 +230,10 @@ class psSubmission extends HTMLElement {
 		let name = this._.panel.querySelector("output[name='name']");
 		name.value = this.Submission.name.substr(this.CommonPath.length,Number.MAX_VALUE);
 
-		let tree = panel.querySelector('ps-treeview');
-		tree.files = this.Submission.content;
+		if(this.Submission.content){
+			let tree = panel.querySelector('ps-treeview');
+			tree.files = this.Submission.content;
+		}
 
 		if(this.Submission.deleting){
 			let s = this.shadowRoot;
