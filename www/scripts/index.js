@@ -267,6 +267,7 @@ Alternately, you can <a href='?CompatCheck=wimp'>just proceed</a> &hellip; nothi
 	new indexPage();
 });
 
+let nexterrorreport = Date.now();
 window.addEventListener('error', async function(event) {
 	ga('send', 'exception', {
 		'exDescription': event.message,
@@ -284,5 +285,8 @@ that experienced it.
 <p>Reference Message:</p>
 <blockquote><pre style='border-left:0.3em;'>${event.message}</pre></blockquote>
 	`;
-	window.alert(message,'fail');
+	if(Date.now() > nexterrorreport ){
+		window.alert(message,'fail');
+		nexterrorreport = Date.now() + 1000 * 60 * 5;
+	}
 });
