@@ -55,6 +55,7 @@ class psSubmissionList extends HTMLElement {
 					this.remove(e.detail.doc);
 				}
 				else{
+					if(e.detail.id.startsWith('result.')) return;
 					this.add(e.detail.doc);
 				}
 			};
