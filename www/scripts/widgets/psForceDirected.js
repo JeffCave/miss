@@ -72,10 +72,10 @@ export default class psForceDirected extends HTMLElement {
 		this.stop();
 	}
 
-	get results(){
+	get DeepDiff(){
 		return this._.results;
 	}
-	set results(value){
+	set DeepDiff(value){
 		if(this._.results !== value){
 			if(this._.results.removeEventListener){
 				this._.results.removeEventListener('results',this._.handler);
@@ -86,6 +86,13 @@ export default class psForceDirected extends HTMLElement {
 			this._.results.addEventListener('load',this._.handler);
 			this.monitorResults();
 		}
+	}
+
+	get results(){
+		return this.DeepDiff;
+	}
+	set results(value){
+		this.DeepDiff = value;
 	}
 
 	get innerHTML(){

@@ -22,9 +22,11 @@ import './widgets/psFileDrop.js';
 import './widgets/psForceDirected.js';
 import './widgets/psMatrixMap.js';
 import './widgets/psPanelElement.js';
+import './widgets/psSimilarityCompare.js';
 import './widgets/psSubmissions.js';
 import './widgets/psTabbedPanelElement.js';
 import './widgets/psTornadoChart.js';
+import psSimilarityCompare from './widgets/psSimilarityCompare.js';
 
 /*
 global File
@@ -89,14 +91,10 @@ class indexPage {
 		Array.from(document.querySelectorAll('form[is="deepdiff-opts"]')).forEach(opts=>{
 			opts.ddInstance = this.runner;
 		});
-		let forcechart = document.querySelector('#forcechart');
-		forcechart.results = this.runner;
-		let tornadochart = document.querySelector('#tornadochart');
-		tornadochart.DeepDiff = this.runner;
-		let matrixmap = document.querySelector('#matrixmap');
-		matrixmap.DeepDiff = this.runner;
-		let submissions = document.querySelector('#submissions');
-		submissions.DeepDiff = this.runner;
+		['#forcechart','#tornadochart','#matrixmap','#submissions','#simcompare'].forEach(async (selector)=>{
+			let chart = document.querySelector(selector);
+			chart.DeepDiff = this.runner;
+		});
 
 		print.addEventListener('click',()=>{
 			let html = new psStaticHtml();
