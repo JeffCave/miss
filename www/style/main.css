@@ -144,6 +144,10 @@ ps-filedrop{
 
 .preload{
 	display:block;
+	animation: heartbeat 1.5s infinite;
+	animation-delay: 0s;
+	color: var(--main-color);
+	text-align: center;
 }
 
 .waitload{
