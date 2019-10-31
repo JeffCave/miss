@@ -265,6 +265,11 @@ Alternately, you can <a href='?CompatCheck=wimp'>just proceed</a> &hellip; nothi
 		window.alert(message,'info');
 	}
 	new indexPage();
+
+	// everything is loaded. make it visible;
+	let style = document.createElement('style');
+	style.innerHTML = ".preload{display:none;} .waitload{display:block;opacity:1;transition:opacity 1s;}";
+	document.body.append(style);
 });
 
 let nexterrorreport = Date.now();

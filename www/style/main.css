@@ -142,6 +142,15 @@ ps-filedrop{
 	display:none;
 }
 
+.preload{
+	display:block;
+}
+
+.waitload{
+	display:none;
+	opacity:0;
+}
+
 @media all and (min-width: 400px) {
 	main {
 		flex: 10 0px;

@@ -51,7 +51,7 @@
    <span>Students</span>
   </h1>
   <button title='Donate' onclick='window.location="https://www.patreon.com/plaidsheep"'><a class='marketing' href='https://www.patreon.com/plaidsheep'>&#9829;</a></button>
-  <nav>
+  <nav class='waitload'>
    <button id='Bug' title='Report a Bug' onclick='window.location="https://gitlab.com/jefferey-cave/miss/issues"'>&#128027;</button>
    <button id='Exception' title='Cause an error' class='experimental' onclick='throw new Error("Test Exception")'>&#128163;</button>
    <button id='Epub' title='Epub' class='experimental'>&#128366;</button>
@@ -65,7 +65,8 @@
   </nav>
   <ps-alert></ps-alert>
  </header>
- <section>
+ <h1 class='preload'>Loading ...</h1>
+ <section class='waitload'>
   <ps-panel icon='settings' can-maximize='false'>
    <form is='deepdiff-opts'>
 
@@ -86,19 +87,8 @@
    <ps-submission-list id='submissions'></ps-submission-list>
   </ps-panel>
  </section>
- <main>
-  <div>
-   <svg viewBox="0 0 160 160" width="160" height="160">
-    <circle cx="80" cy="80" r="50" fill='rgb(36, 142, 194)' />
-    <g transform=" matrix(0.866, -0.5, 0.25, 0.433, 80, 80)">
-     <path d="M 0,70 A 65,70 0 0,0 65,0 5,5 0 0,1 75,0 75,70 0 0,1 0,70Z" fill="red">
-      <animateTransform attributeName="transform" type="rotate" from="360 0 0" to="0 0 0" dur="1s" repeatCount="indefinite" />
-     </path>
-    </g>
-    <path d="M 50,0 A 50,50 0 0,0 -50,0Z" transform="matrix(0.866, -0.5, 0.5, 0.866, 80, 80)" fill='rgb(36, 142, 194)' />
-   </svg>
-  </div>
-  <ps-tabpanel style='display:none;'>
+ <main class='waitload'>
+  <ps-tabpanel>
    <ps-panel icon='bubble_chart'>
     <h1>Force</h1>
     <ps-forcedirected id='forcechart'></ps-forcedirected>
