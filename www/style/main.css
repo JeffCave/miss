@@ -142,6 +142,19 @@ ps-filedrop{
 	display:none;
 }
 
+.preload{
+	display:block;
+	animation: heartbeat 1.5s infinite;
+	animation-delay: 0s;
+	color: var(--main-color);
+	text-align: center;
+}
+
+.waitload{
+	display:none;
+	opacity:0;
+}
+
 @media all and (min-width: 400px) {
 	main {
 		flex: 10 0px;

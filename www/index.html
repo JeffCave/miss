@@ -51,7 +51,7 @@
    <span>Students</span>
   </h1>
   <button title='Donate' onclick='window.location="https://www.patreon.com/plaidsheep"'><a class='marketing' href='https://www.patreon.com/plaidsheep'>&#9829;</a></button>
-  <nav>
+  <nav class='waitload'>
    <button id='Bug' title='Report a Bug' onclick='window.location="https://gitlab.com/jefferey-cave/miss/issues"'>&#128027;</button>
    <button id='Exception' title='Cause an error' class='experimental' onclick='throw new Error("Test Exception")'>&#128163;</button>
    <button id='Epub' title='Epub' class='experimental'>&#128366;</button>
@@ -65,7 +65,8 @@
   </nav>
   <ps-alert></ps-alert>
  </header>
- <section>
+ <h1 class='preload'>&hellip;</h1>
+ <section class='waitload'>
   <ps-panel icon='settings' can-maximize='false'>
    <form is='deepdiff-opts'>
 
@@ -86,7 +87,7 @@
    <ps-submission-list id='submissions'></ps-submission-list>
   </ps-panel>
  </section>
- <main>
+ <main class='waitload'>
   <ps-tabpanel>
    <ps-panel icon='bubble_chart'>
     <h1>Force</h1>
