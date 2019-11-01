@@ -59,7 +59,7 @@ export default class psSimilarityMap extends HTMLElement {
 		let subNames = this.result.submissions.map(sub=>{return sub.name;});
 		let elems = Array.from(this.shadowRoot.querySelectorAll('article'));
 		let submissions = await this.DeepDiff.Submissions;
-		let chainLabels = new Set();
+		let chainLabels = new Map();
 		submissions = submissions
 			.filter((sub)=>{
 				return subNames.includes(sub.name);
@@ -83,7 +83,7 @@ export default class psSimilarityMap extends HTMLElement {
 
 				let block = null;
 				let list = this.result.submissions[i].finalList.slice()
-				let range = [content.blob.length-1,content.blob.length-1];
+				let range = [content.blob.length-1, 0];
 				let span = document.createTextNode('');
 				body.prepend(span);
 				for(let lex = list.pop() ; list.length > 0; lex = list.pop()){
@@ -94,15 +94,17 @@ export default class psSimilarityMap extends HTMLElement {
 						}
 						if(share){
 							span = document.createElement('span');
-							span.dataset.chain = share;
+							if(!chainLabels.has(share)){
+								chainLabels.set(share,chainLabels.size+1);
+							}
+							span.dataset.chain = chainLabels.get(share);
 						}
 						else {
 							span = document.createTextNode('');
 						}
 						body.prepend(span);
 						block = share;
-						chainLabels.add(share);
-						range[1] = range[0];
+						range[1] = range[0]+1;
 					}
 					range[0] = lex.range[0];
 				}
@@ -172,14 +174,16 @@ ${pallette}
 details{
 	border-bottom:1px solid darkgray;
 }
-ul {
+ul{
 	list-style:none;
+}
+:host > ul {
 	color:rgba(255,255,255,0);
 	font-size:0.75em;
 	margin-top:0;
 	padding-top:0;
 }
-li{
+:host > ul > li{
 	border:0.1em solid darkgray;
 	display:inline-block;
 	position:relative;
