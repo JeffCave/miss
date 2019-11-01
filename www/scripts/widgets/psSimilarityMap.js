@@ -80,8 +80,35 @@ export default class psSimilarityMap extends HTMLElement {
 					'</ul>',
 				].join('\n');
 
+				let block = null;
+				let list = this.result.submissions[i].finalList.slice()
+				let range = [content.blob.length-1,content.blob.length-1];
+				let span = document.createTextNode('');
+				body.prepend(span);
+				for(let lex = list.pop() ; list.length > 0; lex = list.pop()){
+					let share = lex.shared || null;
+					if(share !== block){
+						if(span){
+							span.textContent = content.blob.substring(...range);
+						}
+						if(share){
+							span = document.createElement('span');
+							span.dataset.chunk = share;
+						}
+						else {
+							span = document.createTextNode('');
+						}
+						body.prepend(span);
+						block = share;
+						range[1] = range[0];
+					}
+					range[0] = lex.range[0];
+				}
+				range[0] = 0;
+				span.textContent = content.blob.substr(...range);
+
+
 				body.dataset.file = section;
-				body.innerText = content.blob;
 				element.append(header);
 				element.append(body);
 			}
@@ -118,8 +145,12 @@ article:last-of-type{
 	border-left:0;
 }
 article > pre {
+	display:block;
 	font-size:0.8em;
 	padding:1em;
+}
+article > pre > span[data-chunk]{
+	background-color:var(--data-pallette-0);
 }
 details{
 	border-bottom:1px solid darkgray;
