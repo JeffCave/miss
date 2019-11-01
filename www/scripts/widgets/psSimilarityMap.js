@@ -59,6 +59,7 @@ export default class psSimilarityMap extends HTMLElement {
 		let subNames = this.result.submissions.map(sub=>{return sub.name;});
 		let elems = Array.from(this.shadowRoot.querySelectorAll('article'));
 		let submissions = await this.DeepDiff.Submissions;
+		let chainLabels = new Set();
 		submissions = submissions
 			.filter((sub)=>{
 				return subNames.includes(sub.name);
@@ -93,13 +94,14 @@ export default class psSimilarityMap extends HTMLElement {
 						}
 						if(share){
 							span = document.createElement('span');
-							span.dataset.chunk = share;
+							span.dataset.chain = share;
 						}
 						else {
 							span = document.createTextNode('');
 						}
 						body.prepend(span);
 						block = share;
+						chainLabels.add(share);
 						range[1] = range[0];
 					}
 					range[0] = lex.range[0];
@@ -107,13 +109,21 @@ export default class psSimilarityMap extends HTMLElement {
 				range[0] = 0;
 				span.textContent = content.blob.substr(...range);
 
-
 				body.dataset.file = section;
 				element.append(header);
 				element.append(body);
 			}
+
 		}
 
+		let pallette = this.shadowRoot.querySelector('ul');
+		chainLabels.delete(null);
+		for(let label of chainLabels.values()){
+			let li = document.createElement('li');
+			li.dataset.chain = label;
+			li.innerHTML = '&#9679;';
+			pallette.append(li);
+		}
 	}
 
 	get Template(){
@@ -131,6 +141,12 @@ export default class psSimilarityMap extends HTMLElement {
 	}
 
 	static get InitialCss(){
+		let pallette = new Array(9)
+			.fill(0)
+			.map((d,i)=>{
+				return `*[data-chain='${i}']{background-color:var(--data-pallette-${i});}`
+			})
+			.join('\n');
 		return`
 article {
 	position:relative;
@@ -152,15 +168,25 @@ article > pre {
 article > pre > span[data-chunk]{
 	background-color:var(--data-pallette-0);
 }
+${pallette}
 details{
 	border-bottom:1px solid darkgray;
 }
 ul {
 	list-style:none;
-	color:darkgray;
+	color:rgba(255,255,255,0);
 	font-size:0.75em;
 	margin-top:0;
 	padding-top:0;
+}
+li{
+	border:0.1em solid darkgray;
+	display:inline-block;
+	position:relative;
+	width:1em;
+	height:1em;
+	border-radius:0.55em;
+	text-align:center;
 }
 		`;
 	}
