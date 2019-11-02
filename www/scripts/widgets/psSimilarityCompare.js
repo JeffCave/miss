@@ -59,12 +59,36 @@ export default class psSimilarityCompare extends HTMLElement{
 		}
 	}
 
-
+	get isFlipped(){
+		let a = [this.subA,this.subB].sort().join('.');
+		let b = [this.subA,this.subB].join('.');
+		return (a !== b);
+	}
 	get result(){
-		return this._.resultSelector.value;
+		let a = [this.subA,this.subB].sort().join('.');
+		if(a === '.'){
+			a = '';
+		}
+		return a;
 	}
 	set result(value){
-		let opt = this._.resultSelector.querySelector(`option[value='${name}']`);
+		let result = this.DeepDiff.report.results[value];
+		this.subA = result.submissions[0].name;
+		this.subB = result.submissions[1].name;
+	}
+
+	get subA(){
+		return this._.subSelector[0].value;
+	}
+	set subA(value){
+		let opt = this._.subSelector[0].querySelector(`option[value='${value}']`);
+		opt.selected = true;
+	}
+	get subB(){
+		return this._.subSelector[1].value;
+	}
+	set subB(value){
+		let opt = this._.subSelector[1].querySelector(`option[value='${value}']`);
 		opt.selected = true;
 	}
 
@@ -83,21 +107,27 @@ export default class psSimilarityCompare extends HTMLElement{
 				'<style>'+psSimilarityCompare.DefaultCss+'</style>' +
 				psSimilarityCompare.Template
 				;
-			this._.resultSelector = this.shadowRoot.querySelector("select[name='results']");
+			this._.subSelector = Array.from(this.shadowRoot.querySelectorAll("select[name='submission']"));
 			let display = new psSimilarityMap(this.DeepDiff);
 			this.shadowRoot.append(display);
-			this._.resultSelector.addEventListener('change',async ()=>{
-				let results = this.DeepDiff.report.results[this.result];
+			let selectorHandler = async ()=>{
+				let r = this.result;
+				let results = this.DeepDiff.report.results[r] || null;
 				if(results){
 					results = await this.DeepDiff.Results
-					let result = results
+					results = results
 						.filter((d)=>{
-							return d.name === this.result;
+							return d.name === r;
 						})
 						.pop()
 						;
-					display.result = result;
 				}
+				display.flip = this.isFlipped;
+				display.result = results;
+
+			};
+			Array.from(this._.subSelector).forEach((d)=>{
+				d.addEventListener('change',selectorHandler);
 			});
 
 			if(this.DeepDiff){
@@ -105,7 +135,7 @@ export default class psSimilarityCompare extends HTMLElement{
 				for(let result of results){
 					this.add(result);
 				}
-				this._.resultSelector.dispatchEvent(new Event('change'));
+				this._.subSelector[0].dispatchEvent(new Event('change'));
 			}
 
 		};
@@ -115,10 +145,25 @@ export default class psSimilarityCompare extends HTMLElement{
 	}
 
 	add(result){
-		let opt = document.createElement('option');
-		opt.value = result.name;
-		opt.innerText = result.name;
-		this._.resultSelector.append(opt);
+		let submissions = result.submissions;
+		for(let sub of submissions){
+			let opt = document.createElement('option');
+			opt.value = sub.name;
+			opt.textContent = sub.name;
+			let marker = null;
+			Array.from(this._.subSelector[0].children).every((child)=>{
+				if(opt.value === child.value){
+					opt = null;
+					return false; // terminate early
+				}
+				if(opt.value < child.value){
+					marker = child;
+				}
+				return true;
+			});
+			if (opt) this._.subSelector[0].insertBefore(opt,marker);
+		}
+		this._.subSelector[1].innerHTML = this._.subSelector[0].innerHTML;
 	}
 
 	remove(result){
@@ -141,7 +186,8 @@ export default class psSimilarityCompare extends HTMLElement{
 		return `
 <fieldset>
 <label>Comparison</label>
-<select name='results'></select>
+<select name='submission'></select>
+<select name='submission'></select>
 </fieldset>
 		`;
 	}

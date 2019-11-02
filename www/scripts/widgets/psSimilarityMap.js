@@ -23,13 +23,22 @@ export default class psSimilarityMap extends HTMLElement {
 		return icons.visibility_off;
 	}
 
+	get flip(){
+		return this._.flip == true;
+	}
+	set flip(value){
+		value = value == true;
+		this._.flip = value;
+	}
 	get result(){
 		return this._.result;
 	}
 	set result(value){
-		if(!value) return;
-		if(this._.result === value) return;
+		value = value || null;
+		if(this._.result && value && this._.result.name === value.name) return;
 
+		let elems = Array.from(this.shadowRoot.querySelectorAll('article'));
+		elems.forEach(e=>{ e.innerHTML = ''; });
 		this._.result = value;
 		this.Render();
 	}
@@ -55,6 +64,7 @@ export default class psSimilarityMap extends HTMLElement {
 			'</style>'+
 			this.Template
 			;
+		if(!this.result) return;
 
 		let subNames = this.result.submissions.map(sub=>{return sub.name;});
 		let elems = Array.from(this.shadowRoot.querySelectorAll('article'));
@@ -65,6 +75,9 @@ export default class psSimilarityMap extends HTMLElement {
 				return subNames.includes(sub.name);
 			})
 			;
+		if(this.flip){
+			submissions.reverse();
+		}
 		for(let i=0; i<2; i++){
 			let submission = submissions[i];
 			let element = elems[i];
