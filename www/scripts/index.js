@@ -94,14 +94,12 @@ class indexPage {
 		['#forcechart','#tornadochart','#matrixmap','#submissions','#simcompare'].forEach(async (selector)=>{
 			let chart = document.querySelector(selector);
 			chart.DeepDiff = this.runner;
-		});
-
-		let tornado = document.querySelector('#tornadochart');
-		tornado.addEventListener('select',(e)=>{
-			let simcompare = document.querySelector('#simcompare');
-			simcompare.result = e.detail;
-			let tabs = document.querySelector('ps-tabpanel');
-			tabs.activate('3,compare');
+			chart.addEventListener('select',(e)=>{
+				let simcompare = document.querySelector('#simcompare');
+				simcompare.result = e.detail;
+				let tabs = document.querySelector('ps-tabpanel');
+				tabs.activate('3,compare');
+			});
 		});
 
 		print.addEventListener('click',()=>{
