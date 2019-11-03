@@ -11,30 +11,34 @@ export default class psSimilarityCompare extends HTMLElement{
 	constructor(){
 		super();
 
-		this._ = {
-			delay: 1000,
-			handler: (e)=>{
-				if(!e.detail){
-					this.Render();
-				}
-				else if(e.detail.id.startsWith('result.')){
-					if(e.detail.deleted){
-						this.remove(e.detail.doc);
-					}
-					else{
-						this.add(e.detail.doc);
-					}
+		this._ = {};
+		this._.delay = 1000;
+		this._.result = localStorage.getItem("activecompare");
+		this._.handler = (e)=>{
+			if(!e.detail){
+				this.Render();
+				setTimeout(()=>{
+					//this.Render();
+					this.result = this._.result;
+				},100);
+			}
+			else if(e.detail.id.startsWith('result.')){
+				if(e.detail.deleted){
+					this.remove(e.detail.doc);
 				}
 				else{
-					try{
-						throw new Error("Invalid data event: received a non-result event emitter");
-					}
-					catch(e){
-						ga('send', 'exception', {
-							'exFatal': false,
-							'exDescription': e.message,
-						});
-					}
+					this.add(e.detail.doc);
+				}
+			}
+			else{
+				try{
+					throw new Error("Invalid data event: received a non-result event emitter");
+				}
+				catch(e){
+					ga('send', 'exception', {
+						'exFatal': false,
+						'exDescription': e.message,
+					});
 				}
 			}
 		};
@@ -73,8 +77,10 @@ export default class psSimilarityCompare extends HTMLElement{
 	}
 	set result(value){
 		let result = this.DeepDiff.report.results[value];
-		this.subA = result.submissions[0].name;
-		this.subB = result.submissions[1].name;
+		if(result){
+			this.subA = result.submissions[0].name;
+			this.subB = result.submissions[1].name;
+		}
 	}
 
 	get subA(){
@@ -82,14 +88,20 @@ export default class psSimilarityCompare extends HTMLElement{
 	}
 	set subA(value){
 		let opt = this._.subSelector[0].querySelector(`option[value='${value}']`);
+		if(!opt || opt.selected) return;
+
 		opt.selected = true;
+		this._.subSelector[0].dispatchEvent(new Event('change'));
 	}
 	get subB(){
 		return this._.subSelector[1].value;
 	}
 	set subB(value){
 		let opt = this._.subSelector[1].querySelector(`option[value='${value}']`);
+		if(!opt || opt.selected) return;
+
 		opt.selected = true;
+		this._.subSelector[1].dispatchEvent(new Event('change'));
 	}
 
 
@@ -110,7 +122,7 @@ export default class psSimilarityCompare extends HTMLElement{
 			this._.subSelector = Array.from(this.shadowRoot.querySelectorAll("select[name='submission']"));
 			let display = new psSimilarityMap(this.DeepDiff);
 			this.shadowRoot.append(display);
-			let selectorHandler = async ()=>{
+			let selectorHandler = _.debounce(async ()=>{
 				let r = this.result;
 				let results = this.DeepDiff.report.results[r] || null;
 				if(results){
@@ -122,10 +134,13 @@ export default class psSimilarityCompare extends HTMLElement{
 						.pop()
 						;
 				}
+				if(results){
+					localStorage.setItem("activecompare", results.name);
+				}
 				display.flip = this.isFlipped;
 				display.result = results;
 
-			};
+			},10);
 			Array.from(this._.subSelector).forEach((d)=>{
 				d.addEventListener('change',selectorHandler);
 			});
@@ -184,6 +199,7 @@ export default class psSimilarityCompare extends HTMLElement{
 
 	static get Template(){
 		return `
+<link rel='stylesheet' href='style/main.css' />
 <fieldset>
 <label>Comparison</label>
 <select name='submission'></select>

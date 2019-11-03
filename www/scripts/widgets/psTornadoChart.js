@@ -66,6 +66,12 @@ export default class psTornadoChart extends HTMLElement {
 	get ReSync(){
 		if(this._ReSync) return this._ReSync;
 
+		let self = this;
+		function RowClickHandler(e){
+			let result = e.currentTarget.dataset.result;
+			self.dispatchEvent(new CustomEvent('select',{detail:result}));
+		}
+
 		let syncer = function(){
 			let results = this.ordered();
 			let body = this._.tbody;
@@ -77,6 +83,7 @@ export default class psTornadoChart extends HTMLElement {
 				row.innerHTML = [cell,cell].join('');
 				body.append(row);
 				isChanged = true;
+				row.addEventListener('click',RowClickHandler);
 			}
 			while(body.rows.length > results.length){
 				let row = Array.from(body.rows).pop();
@@ -103,6 +110,7 @@ export default class psTornadoChart extends HTMLElement {
 						row.classList.add('significant');
 					}
 				}
+				row.dataset.result = result.name;
 
 				// update the cells
 				result.submissions.forEach((submission,i)=>{

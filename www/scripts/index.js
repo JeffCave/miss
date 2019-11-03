@@ -96,6 +96,14 @@ class indexPage {
 			chart.DeepDiff = this.runner;
 		});
 
+		let tornado = document.querySelector('#tornadochart');
+		tornado.addEventListener('select',(e)=>{
+			let simcompare = document.querySelector('#simcompare');
+			simcompare.result = e.detail;
+			let tabs = document.querySelector('ps-tabpanel');
+			tabs.activate('3,compare');
+		});
+
 		print.addEventListener('click',()=>{
 			let html = new psStaticHtml();
 			html.MISS = this.runner;
