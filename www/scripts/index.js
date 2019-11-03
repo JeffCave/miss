@@ -274,11 +274,13 @@ Alternately, you can <a href='?CompatCheck=wimp'>just proceed</a> &hellip; nothi
 
 let nexterrorreport = Date.now();
 window.addEventListener('error', async function(event) {
+	let errormsg = new URL(event.filename);
+	errormsg = `${event.message}\n[${errormsg.pathname}@${event.lineno}:${event.colno}]`;
 	ga('send', 'exception', {
-		'exDescription': event.message,
+		'exDescription': errormsg,
 		'exFatal': false
 	});
-	let message = `
+	let usermsg = `
 <p>
 This is embarrassing. An error occured that I failed to anticipate.
 <p>
@@ -288,10 +290,10 @@ report</a>. Sometimes it's nice to talk the problem out with the person
 that experienced it.
 </p>
 <p>Reference Message:</p>
-<blockquote><pre style='border-left:0.3em;'>${event.message}</pre></blockquote>
+<blockquote><code style='border-left:0.3em;'>${errormsg}</code></blockquote>
 	`;
 	if(Date.now() > nexterrorreport ){
-		window.alert(message,'fail');
+		window.alert(usermsg,'fail');
 		nexterrorreport = Date.now() + 1000 * 60 * 5;
 	}
 });
