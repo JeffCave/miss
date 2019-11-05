@@ -33,13 +33,13 @@ import {psFile} from '../util/psFile.js';
 export default class Submission extends EventTarget{
 
 	/**
-	 * Construct a new Concrete Submission with given name and contents.
+	 * Construct a new Submission with given name and contents.
 	 *
 	 * Token content should be the result of tokenizing the string
 	 * content of the submission with some tokenizer. This invariant is
 	 * maintained throughout the project, but not enforced here for
 	 * performance reasons. It is thus possible to create a
-	 * ConcreteSubmission with Token contents not equal to tokenized
+	 * Submission with Token contents not equal to tokenized
 	 * String contents. This is not recommended and will most likely
 	 * break, at the very least, Preprocessors.
 	 */
@@ -49,10 +49,10 @@ export default class Submission extends EventTarget{
 		this.common = PreprocessorRegistry.processors.null;
 
 		if(name instanceof Submission){
-			this.allContent = name.allContent;
+			this._.allContent = name.allContent;
 			this.content = name.content;
 			this.name = name.name;
-			this.typedContent = name.typedContent;
+			this._.typedContent = name.typedContent;
 
 			return;
 		}
@@ -67,8 +67,38 @@ export default class Submission extends EventTarget{
 			delete files[''];
 		}
 
+		this.content = files;
+		this.name = name;
+	}
+
+	fetchSegment(path,start=0,finish=null){
+		if((typeof path) === 'number' && (typeof finish) === 'string'){
+			let tmp = path;
+			path = finish;
+			finish = start;
+			start = tmp;
+		}
+		if(typeof path === 'object'){
+			return this.fetchSegment(path.path,path.start,path.end);
+		}
+		let file = this.content[path];
+		if(!file){
+			return '[undefined]';
+		}
+		let blob = file.blob;
+
+		start = start || 0;
+		finish = finish || blob.length;
+
+		let segment = blob.substring(start,finish);
+		return segment;
+	}
+
+	get typedContent(){
+		if(this._.typedContent) return this._.typedContent;
+
 		// Group the files by the various types we handle
-		let content = Object.entries(files)
+		let content = Object.entries(this.content)
 			.filter(function(d){
 				let fname = d[0];
 				let anyIgnores = ContentHandlers.ignores.some(function(e){
@@ -82,31 +112,22 @@ export default class Submission extends EventTarget{
 				let content = file[1];
 				let ext = name.split('.').pop();
 				let handler = ContentHandlers.lookupHandlerByExt(ext);
+				let range = {
+					'path': name,
+					'start': 0,
+					'end': content.blob.length,
+					'file': file[1],
+					'type': handler.type
+				};
 				if(!agg[handler.type]){
-					agg[handler.type] = {files:{}};
+					agg[handler.type] = {};
 				}
-				agg[handler.type].files[name] = content;
+				agg[handler.type][name] = range;
 				return agg;
 			},{})
 			;
-		// now that they are grouped, create a promise to join them
-		// all together into a single block of content
-		let allContent = [];
-		Object.values(content).forEach((d)=>{
-			d.content = Object.entries(d.files)
-				.sort((entry)=>{return entry[0];})
-				.map((entry)=>{
-					return entry[1].blob;
-				})
-				.join('\n')
-				;
-			allContent.push(d.content);
-		});
-
-		this.allContent = allContent;
-		this.typedContent = content;
-		this.content = files;
-		this.name = name;
+		this._.typedContent = content;
+		return content;
 	}
 
 	set Common(common){
@@ -117,64 +138,30 @@ export default class Submission extends EventTarget{
 		return this.common;
 	}
 
+	get tokens(){
+		if('tokens' in this._) return this._.tokens;
+		let tokenlist = [];
 
-	get ContentAsTokens() {
-		if(!('_tokenList' in this)){
-			let self = this;
-			let tokenlists = {};
-			Object.entries(this.typedContent).forEach(function(d){
-				let handler = ContentHandlers.handlers[d[0]];
-				let tokenizer = handler.tokenizer;
-				let preprocessors = handler.preprocessors.map(function(p){
-						let proc = PreprocessorRegistry.processors[p];
-						return proc;
-					})
-					;
-				preprocessors.unshift(self.Common);
-				let content = d[1].content;
-				tokenlists[tokenizer.tokentype] = Promise.resolve(content)
-					.then(async (contentString)=>{
-						for(let p=0; p<preprocessors.length; p++){
-							let processor = preprocessors[p];
-							contentString = await processor(contentString);
-						}
-						return contentString;
-					})
-					.then(function(contentString){
-						let tokens = tokenizer.split(contentString);
-						if(tokens.length > 7500) {
-							console.warn("Warning: Submission " + self.name + " has very large token count (" + tokens.length + ")");
-						}
-						return tokens;
-					});
-			});
-			tokenlists = Object.values(tokenlists);
-			this._tokenList = Promise.all(tokenlists)
-				.then(function(tokens){
-					let tokenlist = new TokenList('mixed',[]);
-					tokens.forEach((t)=>{
-						t.forEach((d)=>{
-							tokenlist.push(d);
-						});
-					});
-					return tokenlist;
-				});
-
+		for(let type of Object.entries(this.typedContent)){
+			let files=type[1];
+			type = type[0];
+			let handler = ContentHandlers.handlers[type]
+			for(let key of Object.entries(files)){
+				let segment = key[1];
+				key = key[0];
+				let blob = this.fetchSegment(segment);
+				let tokens = handler.tokenizer.split(blob,key);
+				for(let token of tokens){
+					token.range[0] += segment.start;
+					token.range[1] += segment.start;
+				}
+				tokenlist = tokenlist.concat(tokens);
+			}
 		}
-		return this._tokenList;
-	}
 
-	get ContentAsString() {
-		if(!('_content' in this)){
-			let self = this;
-			this._content = Promise.all(self.allContent)
-				.then(function(fileContent){
-					let contentString = fileContent.join('\n');
-					return contentString;
-				})
-				;
-		}
-		return this._content;
+		tokenlist = new TokenList('mixed',tokenlist);
+		this._.tokens = tokenlist;
+		return tokenlist;
 	}
 
 	get Name(){
@@ -182,22 +169,18 @@ export default class Submission extends EventTarget{
 	}
 
 	get hash(){
-		return this.getHash();
-	}
-
-	async getHash(){
 		if(this._.hash){
 			return this._.hash;
 		}
-		let content = await this.content;
-		let hash = await hasher(content);
+		let content = this.content;
+		let hash = hasher(content);
 
 		this._.hash = hash;
-		return this._.hash;
+		return hash;
 	}
 
 	get totalTokens(){
-		return this.ContentAsTokens.then(function(tokens){return tokens.length;});
+		return this.tokens.length;
 	}
 
 	toString() {
@@ -210,17 +193,17 @@ export default class Submission extends EventTarget{
 		return JSON.stringify(json);
 	}
 
-	async toJSON() {
+	toJSON() {
 		let json = {
 			type : 'Submission',
 			name : this.name,
 			content : {},
-			hash : await this.hash,
-			totalTokens : await this.totalTokens,
+			hash : this.hash,
+			totalTokens : this.totalTokens,
 		};
 		json = JSON.parse(JSON.stringify(json));
 		for(let key in this.content){
-			json.content[key] = await this.content[key];
+			json.content[key] = this.content[key];
 		}
 		if(this.visibility === false){
 			json.visibility = false;
@@ -266,13 +249,13 @@ export default class Submission extends EventTarget{
 	/**
 	 * Parses Submission from string
 	 */
-	static async fromJSON(json){
+	static fromJSON(json){
 		let content = {};
 		for(let key in json.content){
 			let val = json.content[key];
 			if(val instanceof Blob){
 				val = new psFile(val,key);
-				val = await val.toJSON();
+				val = val.toJSON();
 			}
 			content[key] = val;
 		}
