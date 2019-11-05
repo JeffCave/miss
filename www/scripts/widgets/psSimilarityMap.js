@@ -96,14 +96,14 @@ export default class psSimilarityMap extends HTMLElement {
 
 				let block = null;
 				let list = this.result.submissions[i].finalList.slice()
-				let range = [content.blob.length-1, 0];
+				let range = [content.blob.length-1, 0,content.relativePath];
 				let span = document.createTextNode('');
 				body.prepend(span);
 				for(let lex = list.pop() ; list.length > 0; lex = list.pop()){
 					let share = lex.shared || null;
-					if(share !== block){
+					if(share !== block || range[2] !== lex.range[2]){
 						if(span){
-							span.textContent = content.blob.substring(...range);
+							span.textContent = submission.fetchSegment(...range);
 						}
 						if(share){
 							span = document.createElement('span');
@@ -117,12 +117,13 @@ export default class psSimilarityMap extends HTMLElement {
 						}
 						body.prepend(span);
 						block = share;
+						range[2] = lex.range[2];
 						range[1] = range[0]+1;
 					}
 					range[0] = lex.range[0];
 				}
 				range[0] = 0;
-				span.textContent = content.blob.substr(...range);
+				span.textContent = submission.fetchSegment(...range);
 
 				body.dataset.file = section;
 				element.append(header);
