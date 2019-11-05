@@ -277,7 +277,7 @@ Alternately, you can <a href='?CompatCheck=wimp'>just proceed</a> &hellip; nothi
 });
 
 let nexterrorreport = Date.now();
-window.addEventListener('error', async function(event) {
+async function reporterror(event){
 	let errormsg = new URL(event.filename);
 	errormsg = `${event.message}\n[${errormsg.pathname}@${event.lineno}:${event.colno}]`;
 	ga('send', 'exception', {
@@ -300,4 +300,19 @@ that experienced it.
 		window.alert(usermsg,'fail');
 		nexterrorreport = Date.now() + 1000 * 60 * 5;
 	}
+
+}
+
+window.addEventListener('error',reporterror);
+window.addEventListener("unhandledrejection", function(promiseRejectionEvent) {
+	let err = promiseRejectionEvent.reason.stack.split('\n')[1];
+	err = err.split('(').pop().split(')').shift();
+	err = err.split(':');
+	let msg = {
+		message: promiseRejectionEvent.reason.message,
+	};
+	msg.colno = err.pop();
+	msg.lineno = err.pop();
+	msg.filename = err.join(':');
+	reporterror(msg);
 });
