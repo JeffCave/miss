@@ -76,19 +76,8 @@ export default class DeepDiff extends EventTarget{
 				return {};
 			})
 			;
-		let submission = await this.Submissions;
-		this.report.submissions = submission.reduce((a,d)=>{
-			d.tokens = Object.entries(d.content).reduce((a,d)=>{
-				let key = d[0];
-				let content = d[1];
-				let ext = key.split('.').pop();
-				let handler = ContentHandlers.lookupHandlerByExt(ext);
-				a[key] = handler.tokenizer.split(content.blob,key);
-				return a;
-			},{});
-			a[d.name] = d;
-			return a;
-		},{});
+		let submissions = await this.Submissions;
+		this.report.submissions = submissions;
 		let results = await this.Results;
 		this.report.results = results.reduce((a,d)=>{
 			a[d.name] = d;
@@ -406,7 +395,7 @@ export default class DeepDiff extends EventTarget{
 		let puts = [];
 		for(let d=0; d<newSubmissions.length; d++){
 			let newSub = newSubmissions[d];
-			let newDoc = await newSub.toJSON();
+			let newDoc = newSub.toJSON();
 			let put = this.db.upsert('submission.'+newSub.name,function(oldDoc){
 				if(utils.docsEqual(newDoc,oldDoc)){
 					return false;
@@ -615,28 +604,20 @@ export default class DeepDiff extends EventTarget{
 		}
 
 		if(pair.submissions[0].finalList.length === 0){
-			let common = await this.CommonCode;
-			common = CommonCodeLineRemovalPreprocessor(common);
 			let tokens = pair.submissions.map(function(submission){
 				return 'submission.'+submission.submission;
 			});
-			tokens = await this.db
-				.allDocs({keys:tokens,include_docs:true})
-				.then(subs=>{
-					return subs.rows
-						.filter(s=>{
-							return s.doc;
-						})
-						.map(async s=>{
-							s = s.doc;
-							s = await Submission.fromJSON(s);
-							s.Common = common;
-
-							s = await s.ContentAsTokens;
-							return s;
-						});
+			let subs = await this.db.allDocs({keys:tokens,include_docs:true});
+			tokens = subs.rows
+				.filter(s=>{
+					return s.doc;
+				})
+				.map(s=>{
+					s = s.doc;
+					s = Submission.fromJSON(s);
+					s = s.tokens;
+					return s;
 				});
-			tokens = await Promise.all(tokens);
 
 			if(tokens.length < 2){
 				let result = await AlgorithmResults.Create(pair.submissions[0], pair.submissions[1], [], [], {error:'Invalid Token Length'});
@@ -678,70 +659,68 @@ export default class DeepDiff extends EventTarget{
 	}
 
 	/**
-	 * .
 	 *
-	 * @param config Configuration defining how DeepDiff will be run
-	 * @return Map containing output of all output printers requested. Keys are name of output printer.
-	 * @throws DeepDiffException Thrown on error performing similarity detection
 	 */
 	async runAllCompares(){
-		// Perform parallel analysis of all submission pairs to generate a results list
-		if(!this.runAllComparesIsRunning){
-			this.runAllComparesIsRunning = true;
-			let allPairs = await this.Results;
+		if(this.runAllComparesIsRunning) return;
 
-			let results = allPairs
-				.filter((pair)=>{
-					if (!pair) return false;
-					if (pair.complete === pair.totalTokens) return false;
-					return true;
-				})
-				.sort((a,b)=>{
-					let compare = 0;
-					let compareSizeA = 0;
-					let compareSizeB = 0;
+		this.runAllComparesIsRunning = true;
+		let allPairs = await this.Results;
 
-					// put the ones that have the nearest number of tokens first
-					// ones that look similar?
-					compareSizeA = Math.abs(a.submissions[0].totalTokens - a.submissions[1].totalTokens);
-					compareSizeB = Math.abs(b.submissions[0].totalTokens - b.submissions[1].totalTokens);
-					compare = compareSizeB - compareSizeA;
-					if(compare !== 0){
-						return compare;
-					}
+		let results = allPairs
+			.filter((pair)=>{
+				// if its null for some reason
+				if (!pair) return false;
+				// if it has already been processed
+				if (pair.complete === pair.totalTokens) return false;
+				return true;
+			})
+			.sort((a,b)=>{
+				let compare = 0;
+				let compareSizeA = 0;
+				let compareSizeB = 0;
 
-					// if its the same, do the smaller of the two
-					compareSizeA = a.submissions[0].totalTokens * a.submissions[1].totalTokens;
-					compareSizeB = b.submissions[0].totalTokens * b.submissions[1].totalTokens;
-					compare = compareSizeB - compareSizeA;
-					if(compare !== 0){
-						return compare;
-					}
+				// put the ones that have the nearest number of tokens first
+				// ones that look similar?
+				compareSizeA = Math.abs(a.submissions[0].totalTokens - a.submissions[1].totalTokens);
+				compareSizeB = Math.abs(b.submissions[0].totalTokens - b.submissions[1].totalTokens);
+				compare = compareSizeB - compareSizeA;
+				if(compare !== 0){
+					return compare;
+				}
 
-					// at this point I don't care
-					return 0;
-				})
-				;
+				// if its the same, do the smaller of the two
+				compareSizeA = a.submissions[0].totalTokens * a.submissions[1].totalTokens;
+				compareSizeB = b.submissions[0].totalTokens * b.submissions[1].totalTokens;
+				compare = compareSizeB - compareSizeA;
+				if(compare !== 0){
+					return compare;
+				}
 
-			if(results.length === 0){
-				this.runAllComparesIsRunning = false;
-				return Promise.resolve();
-			}
-			console.log("Discovered " + results.length + " oustanding pairs");
-			// Turns out it's better to do them sequentially
-			//results = await Promise.all(results);
-			// Try #2
-			//for(let i=results.length-1; i>=0; i--){
-			//	let result = await this.Compare(results[i]);
-			//	console.log('Finished ' + result.name);
-			//}
-			// Try #3
-			let result = await this.Compare(results.pop());
-			console.log('Finished ' + result.name);
+				// at this point I don't care
+				return 0;
+			})
+			;
 
+		if(results.length === 0){
 			this.runAllComparesIsRunning = false;
-			utils.defer(()=>{this.runAllCompares();});
+			return;
 		}
+		console.log("Discovered " + results.length + " oustanding pairs");
+		// Turns out it's better to do them sequentially
+		//results = await Promise.all(results);
+		// Try #2
+		//for(let i=results.length-1; i>=0; i--){
+		//	let result = await this.Compare(results[i]);
+		//	console.log('Finished ' + result.name);
+		//}
+		// Try #3
+		let result = await this.Compare(results.pop());
+		console.log('Finished ' + result.name);
+
+		this.runAllComparesIsRunning = false;
+		setTimeout(()=>{this.runAllCompares();});
 	}
+
 
 }

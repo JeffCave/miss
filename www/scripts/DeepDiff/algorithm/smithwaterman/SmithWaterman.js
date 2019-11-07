@@ -80,23 +80,10 @@ async function ProcSW(req, progHandler=()=>{}) {
 
 	let a = req.submissions[0];
 	let b = req.submissions[1];
-
 	let aTokens = a.finalList;
 	let bTokens = b.finalList;
 
 	//console.debug('Creating a SmithWaterman for ' + a.Name + ' and ' + b.Name);
-
-	// Test for token type mismatch
-	if(aTokens.type !== bTokens.type) {
-		throw new Error("Token list type mismatch: submission " + a.Name + " has type " +
-			aTokens.type + ", while submission " + b.Name + " has type "
-			+ bTokens.type);
-	}
-
-	//let aText = await a.ContentAsString;
-	//let bText = await b.ContentAsString;
-	//console.debug(aText);
-	//console.debug(bText);
 
 	// Handle a 0-token submission (no similarity)
 	if(aTokens.length === 0 || bTokens.length === 0) {
@@ -110,7 +97,7 @@ async function ProcSW(req, progHandler=()=>{}) {
 	let notes = {
 		algorithm: 'smithwaterman-'+SmithWaterman
 	};
-	if(aTokens.length * bTokens.length > SmithWaterman.MAXAREA){
+	if(aTokens.length * bTokens.length > SmithWatermanBase.MAXAREA){
 		notes.isMassive = true;
 	}
 
