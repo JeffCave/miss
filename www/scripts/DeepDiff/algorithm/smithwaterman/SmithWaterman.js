@@ -97,7 +97,7 @@ async function ProcSW(req, progHandler=()=>{}) {
 	let notes = {
 		algorithm: 'smithwaterman-'+SmithWaterman
 	};
-	if(aTokens.length * bTokens.length > SmithWaterman.MAXAREA){
+	if(aTokens.length * bTokens.length > SmithWatermanBase.MAXAREA){
 		notes.isMassive = true;
 	}
 

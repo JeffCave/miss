@@ -96,7 +96,7 @@ export default class psSimilarityMap extends HTMLElement {
 
 				let block = null;
 				let list = this.result.submissions[i].finalList.slice()
-				let range = [content.blob.length-1, 0,content.relativePath];
+				let range = [content.blob.length-1, 0,content.name];
 				let span = document.createTextNode('');
 				body.prepend(span);
 				for(let lex = list.pop() ; list.length > 0; lex = list.pop()){
