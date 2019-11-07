@@ -88,7 +88,7 @@ async function ProcSW(req, progHandler=()=>{}) {
 	// Handle a 0-token submission (no similarity)
 	if(aTokens.length === 0 || bTokens.length === 0) {
 		//TODO: return req
-		let result = await AlgorithmResults.Create(a, b, aTokens, bTokens, {error:'0 token submission'});
+		let result = await AlgorithmResults.Create(a, b, aTokens, bTokens, [], {error:'0 token submission'});
 		result.complete = result.totalTokens;
 		return result;
 	}
@@ -155,8 +155,8 @@ async function ProcSW(req, progHandler=()=>{}) {
 		return null;
 	}
 
-	endLists = endLists.data.submissions;
-	let results = await AlgorithmResults.Create(a, b, endLists[0], endLists[1], notes);
+	endLists = endLists.data;
+	let results = await AlgorithmResults.Create(a, b, endLists.submissions[0], endLists.submissions[1], endLists.chains, notes);
 	results.complete = results.totalTokens;
 
 	return results;

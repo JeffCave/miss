@@ -19,7 +19,7 @@ import {checkNotNull,hasher} from '../util/misc.js';
 	 * @param finalListA Token list from submission A, with matched tokens set invalid
 	 * @param finalListB Token list from submission B, with matched tokens set invalid
 	 */
-export default async function Create(a, b, finalListA = null, finalListB = null, notes = null) {
+export default async function Create(a, b, finalListA = null, finalListB = null, chains = [], notes = null) {
 	if(a.type === 'result'){
 		return a;
 	}
@@ -63,6 +63,7 @@ export default async function Create(a, b, finalListA = null, finalListB = null,
 
 	results.hash = hasher(a.hash + b.hash);
 	results.complete = 0;
+	results.chains = chains;
 
 	results.name = [];
 	results.totalTokens = 0;
@@ -105,4 +106,3 @@ function toJSON(result){
 	json.type = 'result';
 	return json;
 }
-
