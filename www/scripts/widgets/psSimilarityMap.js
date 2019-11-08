@@ -79,6 +79,25 @@ export default class psSimilarityMap extends HTMLElement {
 			submissions.reverse();
 		}
 		for(let i=0; i<2; i++){
+			let chains = JSON.clone(this.result.chains.slice(0,9))
+				.map((d)=>{
+					return d.submissions[i].map((s)=>{
+						s.chain = d.id;
+						return s;
+					});
+				})
+				.reduce((a,d)=>{
+					for(let i of d){
+						a[i.path] = a[i.path] || [];
+						a[i.path].push(i);
+					}
+					return a;
+				},{})
+				;
+			for(let seg of Object.values(chains)){
+				seg.sort((a,b)=>{return a.start-b.start;});
+			};
+
 			let submission = submissions[i];
 			let element = elems[i];
 			for(let section in submission.content){
@@ -94,36 +113,25 @@ export default class psSimilarityMap extends HTMLElement {
 					'</ul>',
 				].join('\n');
 
-				let block = null;
-				let list = this.result.submissions[i].finalList.slice()
-				let range = [content.blob.length-1, 0,content.name];
-				let span = document.createTextNode('');
-				body.prepend(span);
-				for(let lex = list.pop() ; list.length > 0; lex = list.pop()){
-					let share = lex.shared || null;
-					if(share !== block || range[2] !== lex.range[2]){
-						if(span){
-							span.textContent = submission.fetchSegment(...range);
-						}
-						if(share){
-							span = document.createElement('span');
-							if(!chainLabels.has(share)){
-								chainLabels.set(share,chainLabels.size+1);
-							}
-							span.dataset.chain = chainLabels.get(share);
-						}
-						else {
-							span = document.createTextNode('');
-						}
-						body.prepend(span);
-						block = share;
-						range[2] = lex.range[2];
-						range[1] = range[0]+1;
-					}
-					range[0] = lex.range[0];
+				let segments = chains[section];
+				let range = {
+					start: content.blob.length-1,
+					path: section
+				};
+				for(let seg = segments.pop() ; segments.length > 0; seg = segments.pop()){
+					let span = document.createTextNode('');
+					range.end = range.start;
+					range.start = seg.end;
+					span.textContent = submission.fetchSegment(range);
+					body.prepend(span);
+					span = document.createElement('span');
+					span.textContent = submission.fetchSegment(seg);
+					span.dataset.chain = seg.chain;
+					body.prepend(span);
 				}
-				range[0] = 0;
-				span.textContent = submission.fetchSegment(...range);
+				let span = document.createTextNode('');
+				range.start = 0;
+				span.textContent = submission.fetchSegment(range);
 
 				body.dataset.file = section;
 				element.append(header);

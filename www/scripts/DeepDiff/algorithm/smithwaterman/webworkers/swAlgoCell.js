@@ -414,6 +414,8 @@ class Matrix{
 		this.resetShareMarkers(Number.MAX_VALUE);
 		for(let c=1; c<=resolved.length; c++){
 			let chain = resolved[c-1];
+			chain.id = c;
+			chain.submissions = [[],[]];
 			for(let i=0; i<chain.history.length; i++){
 				let coords = chain.history[i];
 				let x = coords[0];
@@ -422,7 +424,33 @@ class Matrix{
 				let b = this.submissions[1][y];
 				a.shared = c;
 				b.shared = c;
+
+				let segA = chain.submissions[0][0];
+				if(!segA || segA.path !== a.range[2]){
+					segA = {
+						path: a.range[2],
+						start: Number.POSITIVE_INFINITY,
+						end: Number.NEGATIVE_INFINITY,
+					};
+					chain.submissions[0].unshift(segA);
+				}
+				segA.start = Math.min(a.range[0], segA.start);
+				segA.end   = Math.max(a.range[1], segA.end);
+
+				let segB = chain.submissions[1][0];
+				if(!segB || segB.path !== b.range[2]){
+					segB = {
+						path: b.range[2],
+						start: Number.POSITIVE_INFINITY,
+						end: Number.NEGATIVE_INFINITY,
+					};
+					chain.submissions[1].unshift(segB);
+				}
+				segB.start = Math.min(b.range[0], segB.start);
+				segB.end   = Math.max(b.range[1], segB.end);
 			}
+			chain.submissions[0].reverse();
+			chain.submissions[1].reverse();
 		}
 
 		return resolved;
