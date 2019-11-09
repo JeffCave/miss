@@ -78,7 +78,7 @@ export default class psSimilarityMap extends HTMLElement {
 			submissions.reverse();
 		}
 		for(let i=0; i<2; i++){
-			let chains = JSON.clone(this.result.chains.slice(0,9))
+			let chains = JSON.clone(this.result.chains.slice(0,this.PalletteSize-1))
 				.map((d)=>{
 					return d.submissions[i].map((s)=>{
 						s.chain = d.id;
@@ -143,7 +143,9 @@ export default class psSimilarityMap extends HTMLElement {
 		}
 
 		let pallette = this.shadowRoot.querySelector('ul');
-		for(let i=1; i<=this.result.chains.length; i++){
+		pallette.innerHTML = '';
+		let chainsize = Math.min(this.result.chains.length, this.PalletteSize);
+		for(let i=1; i<chainsize; i++){
 			let li = document.createElement('li');
 			li.dataset.chain = i;
 			li.innerHTML = '&#9679;';
@@ -161,12 +163,20 @@ export default class psSimilarityMap extends HTMLElement {
 		`;
 	}
 
+	get PalletteSize(){
+		return psSimilarityMap.PalletteSize;
+	}
+
+	static get PalletteSize(){
+		return 9;
+	}
+
 	get InitialCss(){
 		return psSimilarityMap.InitialCss;
 	}
 
 	static get InitialCss(){
-		let pallette = new Array(9)
+		let pallette = new Array(this.PalletteSize)
 			.fill(0)
 			.map((d,i)=>{
 				return `*[data-chain='${i}']{background-color:var(--data-pallette-${i});}`
