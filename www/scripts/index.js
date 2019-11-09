@@ -305,14 +305,22 @@ that experienced it.
 
 window.addEventListener('error',reporterror);
 window.addEventListener("unhandledrejection", function(promiseRejectionEvent) {
-	let err = promiseRejectionEvent.reason.stack.split('\n')[1];
-	err = err.split('(').pop().split(')').shift();
-	err = err.split(':');
 	let msg = {
-		message: promiseRejectionEvent.reason.message,
+		message: JSON.stringify(promiseRejectionEvent.reason),
+		colno: 0,
+		lineno: 0,
+		filename: window.location.href
 	};
-	msg.colno = err.pop();
-	msg.lineno = err.pop();
-	msg.filename = err.join(':');
+	let err = promiseRejectionEvent.reason;
+	if(err.stack){
+		err = err.stack.split('\n')[1].split('(').pop().split(')').shift().split(':');
+		msg.message = promiseRejectionEvent.reason.message;
+		msg.colno = err.pop();
+		msg.lineno = err.pop();
+		msg.filename = err.join(':');
+	}
+	else if(err.docId){
+		msg.message = `${err.status} ${err.message}: ${err.docId}`;
+	}
 	reporterror(msg);
 });
