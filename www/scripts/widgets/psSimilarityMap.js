@@ -80,7 +80,7 @@ export default class psSimilarityMap extends HTMLElement {
 		for(let i=0; i<2; i++){
 			let chains = JSON.clone(this.result.chains.slice(0,this.PalletteSize-1))
 				.map((d)=>{
-					return d.submissions[i].map((s)=>{
+					return d.submissions[i].blocks.map((s)=>{
 						s.chain = d.id;
 						return s;
 					});

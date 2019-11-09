@@ -55,9 +55,9 @@ const scores = {
 	// Once it drops by the points specified by the terminator, we can assume
 	// it has dropped off.
 	terminus: 5,
-	// the number of lexemes that need to match for a chain to be considered
-	// of significant length.
-	significant: 5,
+	// the final score that is considered
+	// significant length.
+	significant: 20,
 };
 
 

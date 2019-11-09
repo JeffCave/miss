@@ -318,7 +318,10 @@ class Matrix{
 
 		// sort the chains to get the best scoring ones first
 		let totalChains = this.finishedChains.length;
-		this.finishedChains.sort((a,b)=>{return a.score-b.score;});
+		this.finishedChains = this.finishedChains
+			.filter(c=>{return c.score >= this.opts.scores.significant})
+			.sort((a,b)=>{return a.score-b.score;})
+			;
 		for(let c=1; this.finishedChains.length > 0; c++){
 			this.progress((totalChains-c)/totalChains);
 			let chain = this.finishedChains.pop();
@@ -400,7 +403,7 @@ class Matrix{
 
 				// put it back in processing queue (at the end because it is
 				// now going to be almost worthless?)
-				if(chain.history.length >= this.opts.scores.significant){
+				if(chain.score >= this.opts.scores.significant){
 					this.finishedChains.push(chain);
 					// we may have changed the scoring due to this
 					this.finishedChains.sort((a,b)=>{return a.score-b.score;});
@@ -415,42 +418,48 @@ class Matrix{
 		for(let c=1; c<=resolved.length; c++){
 			let chain = resolved[c-1];
 			chain.id = c;
-			chain.submissions = [[],[]];
+			chain.submissions = [{tokens:0,blocks:[]},{tokens:0,blocks:[]}];
 			for(let i=0; i<chain.history.length; i++){
 				let coords = chain.history[i];
 				let x = coords[0];
 				let y = coords[1];
 				let a = this.submissions[0][x];
 				let b = this.submissions[1][y];
-				a.shared = c;
-				b.shared = c;
+				if(!a.shared){
+					a.shared = c;
+					chain.submissions[0].tokens++;
+				}
+				if(!b.shared){
+					b.shared = c;
+					chain.submissions[1].tokens++;
+				}
 
-				let segA = chain.submissions[0][0];
+				let segA = chain.submissions[0].blocks[0];
 				if(!segA || segA.path !== a.range[2]){
 					segA = {
 						path: a.range[2],
 						start: Number.POSITIVE_INFINITY,
 						end: Number.NEGATIVE_INFINITY,
 					};
-					chain.submissions[0].unshift(segA);
+					chain.submissions[0].blocks.unshift(segA);
 				}
 				segA.start = Math.min(a.range[0], segA.start);
 				segA.end   = Math.max(a.range[1], segA.end);
 
-				let segB = chain.submissions[1][0];
+				let segB = chain.submissions[1].blocks[0];
 				if(!segB || segB.path !== b.range[2]){
 					segB = {
 						path: b.range[2],
 						start: Number.POSITIVE_INFINITY,
 						end: Number.NEGATIVE_INFINITY,
 					};
-					chain.submissions[1].unshift(segB);
+					chain.submissions[1].blocks.unshift(segB);
 				}
 				segB.start = Math.min(b.range[0], segB.start);
 				segB.end   = Math.max(b.range[1], segB.end);
 			}
-			chain.submissions[0].reverse();
-			chain.submissions[1].reverse();
+			chain.submissions[0].blocks.reverse();
+			chain.submissions[1].blocks.reverse();
 		}
 
 		return resolved;

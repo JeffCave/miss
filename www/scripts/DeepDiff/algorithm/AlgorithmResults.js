@@ -79,10 +79,10 @@ export default async function Create(a, b, finalListA = null, finalListB = null,
 		d.finalList = await TokenList.cloneTokenList(d.finalList);
 		d.totalTokens = await d.totalTokens;
 
-		d.identicalTokens = Array.from(d.finalList).reduce((sum,token)=>{
-			sum += (token.shared || token.shared === 0) ? 1 : 0;
-			return sum;
+		d.identicalTokens = chains.reduce((a,c)=>{
+			return a + c.submissions[r].tokens
 		},0);
+
 
 		let pct = (d.totalTokens === 0) ? 0 : d.identicalTokens / d.totalTokens;
 		d.percentMatched = pct;
