@@ -88,7 +88,10 @@ export default class Submission extends EventTarget{
 		let blob = file.blob;
 
 		start = start || 0;
-		finish = finish || blob.length;
+		if(!finish && finish!==0){
+			finish = blob.length;
+		}
+		finish = Math.max(finish,start);
 
 		let segment = blob.substring(start,finish);
 		return segment;

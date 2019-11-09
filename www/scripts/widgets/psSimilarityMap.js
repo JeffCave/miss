@@ -69,7 +69,6 @@ export default class psSimilarityMap extends HTMLElement {
 		let subNames = this.result.submissions.map(sub=>{return sub.name;});
 		let elems = Array.from(this.shadowRoot.querySelectorAll('article'));
 		let submissions = await this.DeepDiff.Submissions;
-		let chainLabels = new Map();
 		submissions = submissions
 			.filter((sub)=>{
 				return subNames.includes(sub.name);
@@ -113,12 +112,13 @@ export default class psSimilarityMap extends HTMLElement {
 					'</ul>',
 				].join('\n');
 
-				let segments = chains[section];
+				let segments = chains[section] || [];
 				let range = {
 					start: content.blob.length-1,
 					path: section
 				};
-				for(let seg = segments.pop() ; segments.length > 0; seg = segments.pop()){
+				for(let seg = segments.pop() ; seg; seg = segments.pop()){
+					seg.end++;
 					let span = document.createTextNode('');
 					range.end = range.start;
 					range.start = seg.end;
@@ -128,8 +128,10 @@ export default class psSimilarityMap extends HTMLElement {
 					span.textContent = submission.fetchSegment(seg);
 					span.dataset.chain = seg.chain;
 					body.prepend(span);
+					range = seg;
 				}
 				let span = document.createTextNode('');
+				range.end = range.start;
 				range.start = 0;
 				span.textContent = submission.fetchSegment(range);
 
@@ -141,10 +143,9 @@ export default class psSimilarityMap extends HTMLElement {
 		}
 
 		let pallette = this.shadowRoot.querySelector('ul');
-		chainLabels.delete(null);
-		for(let label of chainLabels.values()){
+		for(let i=1; i<=this.result.chains.length; i++){
 			let li = document.createElement('li');
-			li.dataset.chain = label;
+			li.dataset.chain = i;
 			li.innerHTML = '&#9679;';
 			pallette.append(li);
 		}
