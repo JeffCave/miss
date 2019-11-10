@@ -278,7 +278,13 @@ Alternately, you can <a href='?CompatCheck=wimp'>just proceed</a> &hellip; nothi
 
 let nexterrorreport = Date.now();
 async function reporterror(event){
-	let errormsg = new URL(event.filename);
+	let errormsg = '';
+	try{
+		errormsg = new URL(event.filename);
+	}
+	catch(e){
+		errormsg = new URL(window.location.href);
+	}
 	errormsg = `${event.message}\n[${errormsg.pathname}@${event.lineno}:${event.colno}]`;
 	ga('send', 'exception', {
 		'exDescription': errormsg,

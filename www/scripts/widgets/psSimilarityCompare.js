@@ -182,9 +182,6 @@ export default class psSimilarityCompare extends HTMLElement{
 	}
 
 	remove(result){
-		let name = result.name;
-		let opt = this._.resultSelector.querySelector(`option[value='${name}']`);
-		opt.remove();
 	}
 
 	connectedCallback(){
