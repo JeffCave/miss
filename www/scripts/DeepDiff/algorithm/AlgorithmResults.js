@@ -96,7 +96,7 @@ export default async function Create(a, b, finalListA = null, finalListB = null,
 		return b.percentMatched - a.percentMatched;
 	});
 	results.percentMatched /= results.submissions.length;
-	results.name = results.name.join('.');
+	results.name = results.name.sort().join('.');
 
 	return results;
 }

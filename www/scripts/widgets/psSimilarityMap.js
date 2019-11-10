@@ -80,10 +80,13 @@ export default class psSimilarityMap extends HTMLElement {
 		for(let i=0; i<2; i++){
 			let chains = JSON.clone(this.result.chains.slice(0,this.PalletteSize-1))
 				.map((d)=>{
-					return d.submissions[i].blocks.map((s)=>{
+					let chain = d.submissions;
+					if (this.flip) d.submissions.reverse();
+					chain = chain[i].blocks.map((s)=>{
 						s.chain = d.id;
 						return s;
 					});
+					return chain;
 				})
 				.reduce((a,d)=>{
 					for(let i of d){
@@ -145,7 +148,7 @@ export default class psSimilarityMap extends HTMLElement {
 		let pallette = this.shadowRoot.querySelector('ul');
 		pallette.innerHTML = '';
 		let chainsize = Math.min(this.result.chains.length, this.PalletteSize);
-		for(let i=1; i<chainsize; i++){
+		for(let i=1; i<=chainsize; i++){
 			let li = document.createElement('li');
 			li.dataset.chain = i;
 			li.innerHTML = '&#9679;';
