@@ -35,7 +35,14 @@ export default class psSimilarityMap extends HTMLElement {
 	}
 	set result(value){
 		value = value || null;
+		if(!value) return;
 		if(this._.result && value && this._.result.name === value.name) return;
+		// TODO: temporary solution to problem [#33]
+		if(!value.chains){
+			this.DeepDiff.Refresh(value.name ,true);
+			return;
+		}
+
 
 		let elems = Array.from(this.shadowRoot.querySelectorAll('article'));
 		elems.forEach(e=>{ e.innerHTML = ''; });

@@ -220,18 +220,9 @@ export default class DeepDiff extends EventTarget{
 						return !isMatch;
 					})
 					.map(d=>{
-						let result = AlgorithmResults.Create(e.detail.doc,d.doc)
-							.then((result)=>{
-								let newDoc = AlgorithmResults.toJSON(result);
-								let upsert = this.db.upsert('result.'+result.name,(oldDoc)=>{
-										if(oldDoc.hash === newDoc.hash){
-											return false;
-										}
-										return newDoc;
-									});
-								return upsert;
-							});
-						return result;
+						AlgorithmResults.Create(e.detail.doc,d.doc).then(result=>{
+							this.Refresh(result);
+						})
 					})
 					;
 				results = await Promise.all(results);
@@ -339,6 +330,40 @@ export default class DeepDiff extends EventTarget{
 				return rows;
 			})
 			;
+	}
+
+	async Refresh(key,force=false){
+		if(typeof key === 'boolean'){
+			force = key;
+			key = null;
+		}
+		force = force === true;
+
+		let results = Object.values(this.report.results);
+		if(typeof key === 'string'){
+			key = this.report.results[key];
+		}
+		if(key && typeof key === 'object'){
+			results = [key];
+		}
+		let newResults = [];
+		for(let result of results){
+			result = await AlgorithmResults.Create(result.submissions[0],result.submissions[1]);
+			let newDoc = AlgorithmResults.toJSON(result);
+			let upsert = await this.db.upsert('result.'+result.name,(oldDoc)=>{
+				if(force){
+					return newDoc;
+				}
+				if(oldDoc.hash === newDoc.hash){
+					return false;
+				}
+				return newDoc;
+			});
+			if(upsert.updated){
+				newResults.push(upsert.id);
+			}
+		}
+		return newResults;
 	}
 
 	async Clear(){
