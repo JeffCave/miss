@@ -102,11 +102,15 @@
     <ps-matrixmap id='matrixmap'></ps-matrixmap>
    </ps-panel>
    <ps-panel id='compare' icon='compare' class='experimental'>
-	<h1>Comparison</h1>
-	<ps-similaritycompare id='simcompare'></ps-similaritycompare>
+    <h1>Comparison</h1>
+    <ps-similaritycompare id='simcompare'></ps-similaritycompare>
    </ps-panel>
    <ps-panel id='help' icon='help'>
     <h1>FAQ</h1>
+    <ul>
+     <li><a target="_blank" href='https://gitlab.com/jefferey-cave/miss/wikis/home'>Wiki</a></li>
+     <li><a target="_blank" href='https://gitlab.com/jefferey-cave/miss/issues'>Issues</a></li>
+    </ul>
     <details open>
      <summary>Quick Start</summary>
      <p>
@@ -114,13 +118,24 @@
       check? Are they in a ZIP file? Perfect. (If you don't, you can <a href='./samples/sampleassignment.zip' alt='Download a sample if you '>download a sample</a>)
      </p>
      <ol>
-      <li>Click that button over to the left. (the one called <c>Upload a bundle</c>)</li>
+      <li>Click that button over to the left. (the one called <code>`Add Files`</code>)</li>
       <li>Upload the file</li>
       <li>Watch the pretty charts</li>
      </ol>
      <p>
       If everything is working properly, you should be able to upload the file
       the way you downloaded it from your <abbr title='Learning Management System'>LMS</abbr>
+     </p>
+    </details>
+    <details>
+     <summary>Browser Support</summary>
+     <p>
+      Use Google Chrome.
+     </p>
+     <p>
+      There are some issues with browswer support. If you are interested, you
+      can view the <a href='browsercheck.html'>browser support page</a> which
+      has information on how to turn on and off advanced features.
      </p>
     </details>
     <details>
@@ -139,39 +154,7 @@
       Files are tokenized based on their file type (identified by extension)
       which gives them some contextual interpretation.
      </p>
-     <h3>Sample Files</h3>
-     <dl>
-      <dt><a href='./samples/sampleassignment.zip'>Sample Assignments</a></dt>
-       <dd>
-        A few demo files that I have used in classes. Formatted
-        appropriately for student submission, and copied a couple of way.
-        Gives some data that will match and some data that will not match.
-       </dd>
-      <dt><a href='./samples/smallcompares.zip'>Small Compares</a></dt>
-       <dd>
-        <p>
-        Two files with a very small comparison dataset. Suitable for debugging,
-        and manually tracing of the algorithm.
-        <ol>
-         <li><pre><a href="https://en.wikipedia.org/wiki/Coelacanth">C O E L A C A N T H</a></pre></li>
-         <li><pre>  P E L I C A N</pre></li>
-        </ol>
-        From a bioinformatics class slides I <a href="http://slideplayer.com/slide/5142106/16/images/21/Smith-Waterman-Algorithm.jpg">found online</a>
-        </p>
-        <p>
-         A better dataset would be one that matches multiple times.
-         <ol>
-          <li><pre><a href="https://www.youtube.com/watch?v=iCclS78a7P0">H <span style='background-color:lightblue;'>E L L O</span> J <span style='background-color:lightblue;'>E L L O</span></a></pre></li>
-          <li><pre>B <span style='background-color:lightblue;'>E L L O</span> W , B <span style='background-color:lightblue;'>E L O</span> W</pre></li>
-         </ol>
-        </p>
-       </dd>
-      <dt><a href='./samples/bigcompares.zip'>Big Compares</a></dt>
-       <dd>
-        Genome of E.Coli, and Y.Pestarius. Makes for a really big compare,
-        and is know to currently break the application.
-       </dd>
-     </dl>
+     <p>see also <a href='https://gitlab.com/jefferey-cave/miss/wikis/Parsing'>Parsing</a></p>
     </details>
     <details>
      <summary>How do you protect my data?</summary>
@@ -179,51 +162,17 @@
       Very simply: I don't store any.
      </p>
      <p>
-      One of the primary impetus for the project was to address concerns of
-      <a href='https://en.wikipedia.org/wiki/Turnitin#Reception' title='Turnitin Controversies'>retaliation from students</a>.
-      An instructor expressed concerns about transmitting data across
-      international boundaries, and having it stored in data-centers not
-      in the institutions control. To overcome these objectives, MISS was
-      created to work <em>entirely from within the local browser</em>.
+      No data is transferred off you computer (aside from some basic usage stats).
      </p>
      <p>
-      No data is transferred off you computer.
-     </p>
-     <p>
-      Having said that, I do collect anonymous usage data about your use of
-      the site. It is hoped this information will give insight into what new
-      features should be implemented.
+      see also <a href='https://gitlab.com/jefferey-cave/miss/wikis/Goals'>Project Goals</a>
      </p>
     </details>
     <details>
      <summary>So this program tells me who is cheating?</summary>
-     <p><strong>No! Used properly it will tell you who is not cheating.</strong></p>
-     <p>
-      This program does a blind comparison, but like any creative work,
-      software will have common elements to it. Good solutions will be
-      independantly discovered. This program does not catch cheaters.
-     </p>
-     <p>
-      Rather, this program gives you a place to begin your search. Do you have
-      120 papers to grade? You probably only need to investigate about 15%.
-      Rather than having to search through hundreds of submissions, this can
-      narrow your search down to things that <i>look similar</i>. MISS
-      identifies the point where similarity becomes abnormally high for the
-      group.
-     </p>
-     <p>
-      In fact, this tool, in its first iteration, found someone suspected of
-      cheating to have done nothing wrong.
-     </p>
-     <p>
-      The student had been given a second chance to submit an assignment late
-      and had submitted a program that was suspicously similar to a unique
-      solution presented by a strong student. Events led to a more intensive
-      inspection than was warranted. The fact that computers have no passion
-      means they never analyze with bias, and instead showed that the level of
-      similarity was high, but normal for the class (and was actually just
-      tutoring).
-     </p>
+     <p><strong>No!</strong> Used properly it will tell you who is <strong>not</strong> cheating.</p>
+     <p>If you already suspect students of cheating, this may demonstrate they aren't.</p>
+     <p>see also <a href='https://gitlab.com/jefferey-cave/miss/wikis/Interpreting-Results'>Interpreting Results</a></p>
     </details>
     <details>
      <summary>Licenses</summary>
@@ -232,27 +181,12 @@
      </p>
      <p>
       If you find this useful, do feel free to give a leave a
-      <a href=''>tip or donation</a> If you use it regularily, consider
-      taking out a subscription. If your organization uses it regularily,
-      please contact me to discuss enterprise features.
-     </p>
-     <p>
-      The idea of using software to scan large numbers of student assignments
-      is not new. In particular
-      <a href='https://theory.stanford.edu/~aiken/moss/'>MOSS</a>
-      has served as the direct inspiration for MISS.
+      <a href=''>tip or donation</a> If you use it regularily,
+      consider getting in touch so we can talk about your successes
+      and failures. If your organization uses it regularily, please
+      contact me to discuss some potentially enterprise features.
      </p>
     </details>
-    <details>
-     <summary>Browser Support</summary>
-     <p>
-      Use Google Chrome.
-     </p>
-     <p>
-      There are some issues with browswer support. If you are interested, you
-      can view the <a href='browsercheck.html'>browser support page</a> which
-      has information on how to turn on and off advanced features.
-     </p>
    </ps-panel>
   </ps-tabpanel>
 
