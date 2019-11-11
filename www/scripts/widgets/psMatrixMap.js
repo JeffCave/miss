@@ -208,6 +208,7 @@ table.matrixmap td > span{
 	border: 1px solid black;
 	top: -0.25em;
 	left: -0.1em;
+	cursor: pointer;
 }
 
 table.matrixmap td, table.matrixmap td.complete {

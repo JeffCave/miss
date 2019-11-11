@@ -179,7 +179,8 @@ table.tornado thead {
 table.tornado tbody {
 	border:0;
 }
-table.tornado tr {
+table.tornado tr:hover {
+	cursor:pointer;
 }
 table.tornado td {
 	border: 0;
@@ -281,14 +282,14 @@ table.tornado tr.deleting{
 	height:1px;
 	transition:
 		opacity 1s,
-		height:1s;
+		height 1s;
 }
 table.tornado tr.deleting > td{
 	position:relative;
 	height:1px;
 	transition:
 		opacity 1s,
-		height:1s;
+		height 1s;
 }
 		`;
 		if(window.BrowserCheck.browser === 'gecko'){

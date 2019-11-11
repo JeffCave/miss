@@ -115,10 +115,7 @@ export default class psSimilarityCompare extends HTMLElement{
 		if(this._Render) return this._Render;
 
 		let renderer = ()=>{
-			this.shadowRoot.innerHTML =
-				'<style>'+psSimilarityCompare.DefaultCss+'</style>' +
-				psSimilarityCompare.Template
-				;
+			this.shadowRoot.innerHTML = psSimilarityCompare.Template;
 			this._.subSelector = Array.from(this.shadowRoot.querySelectorAll("select[name='submission']"));
 			let display = new psSimilarityMap(this.DeepDiff);
 			this.shadowRoot.append(display);
@@ -190,6 +187,10 @@ export default class psSimilarityCompare extends HTMLElement{
 
 	static get DefaultCss(){
 		return `
+:host > select {
+	display:inline-block;
+	width:49%;
+}
 		`;
 
 	}
@@ -197,11 +198,12 @@ export default class psSimilarityCompare extends HTMLElement{
 	static get Template(){
 		return `
 <link rel='stylesheet' href='style/main.css' />
-<fieldset>
+<style>
+${psSimilarityCompare.DefaultCss}
+</style>
 <label>Comparison</label>
 <select name='submission'></select>
 <select name='submission'></select>
-</fieldset>
 		`;
 	}
 }

@@ -147,12 +147,38 @@ export default class psSimilarityMap extends HTMLElement {
 
 		let pallette = this.shadowRoot.querySelector('ul');
 		pallette.innerHTML = '';
-		let chainsize = Math.min(this.result.chains.length, this.PalletteSize);
-		for(let i=1; i<=chainsize; i++){
+		let chainsize = Math.min(this.result.chains.length, this.PalletteSize-1);
+		for(let i=0; i<chainsize; i++){
 			let li = document.createElement('li');
-			li.dataset.chain = i;
-			li.innerHTML = '&#9679;';
+			li.dataset.chain = i+1;
+			let pct = this.result.chains[i].submissions.map((d,i)=>{
+				let pct = d.tokens;
+				pct /= this.result.submissions[i].totalTokens;
+				pct *= 100;
+				pct = Math.ceil(pct).toFixed();
+				pct = `<output name='side${i}'>${pct}</output>`;
+				return pct;
+			});
+			if(this.flip){
+				pct = pct.reverse();
+			}
+			li.innerHTML = '&nbsp;' + pct.join(' | ') + '&nbsp;';
 			pallette.append(li);
+			// we need to add a click handler to the output. The idea is
+			// to scroll down to the corresponding highlighted element
+			li.addEventListener('dblclick',()=>{
+				Array.from(li.querySelectorAll('output')).forEach((output,i)=>{
+					output.dispatchEvent(new Event('click'));
+				});
+
+			});
+			Array.from(li.querySelectorAll('output')).forEach((output,i)=>{
+				i++;
+				output.addEventListener('click',()=>{
+					let block = this.shadowRoot.querySelector(`article:nth-of-type(${i}) > pre > span[data-chain='${li.dataset.chain}']`);
+					block.scrollIntoView({behaviour:'smooth',block:'start'});
+				});
+			});
 		}
 	}
 
@@ -190,6 +216,7 @@ article {
 	position:relative;
 	display:inline-block;
 	width:49%;
+	height:80vh;
 	margin:0;
 	border:1px solid darkgray;
 	overflow:auto;
@@ -209,24 +236,40 @@ article > pre > span[data-chunk]{
 ${pallette}
 details{
 	border-bottom:1px solid darkgray;
+	text-align:right;
 }
-ul{
+details > ul{
 	list-style:none;
+	font-size:smaller;
 }
 :host > ul {
 	color:rgba(255,255,255,0);
 	font-size:0.75em;
 	margin-top:0;
 	padding-top:0;
+	list-style:none;
+	padding:0;
+	margin:auto;
+	margin-top:0.5em;
+	margin-bottom:0.5em;
+	text-align:center;
 }
 :host > ul > li{
 	border:0.1em solid darkgray;
 	display:inline-block;
 	position:relative;
-	width:1em;
-	height:1em;
-	border-radius:0.55em;
+	margin-right:0.3em;
+	padding: 0.1em;
+	border-radius:1em;
 	text-align:center;
+	color: white;
+	cursor:pointer;
+}
+:host > ul > li:hover{
+	box-shadow: 0px 0px 10px #888888;
+}
+:host > ul > li > output::after{
+	content:'%';
 }
 		`;
 	}
