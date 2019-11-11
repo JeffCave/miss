@@ -75,8 +75,7 @@ LexemeMap.CreateToken = function(token, type, valid=true, range=null) {
 		type: type,
 	};
 	if(Array.isArray(range)){
-		rtn.range = range.splice(0);
-		rtn.range = rtn.range.splice(0,2);
+		rtn.range = range.splice(0,3);
 	}
 	if(typeof token === 'number'){
 		rtn.lexeme = token;

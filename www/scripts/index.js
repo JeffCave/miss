@@ -22,9 +22,11 @@ import './widgets/psFileDrop.js';
 import './widgets/psForceDirected.js';
 import './widgets/psMatrixMap.js';
 import './widgets/psPanelElement.js';
+import './widgets/psSimilarityCompare.js';
 import './widgets/psSubmissions.js';
 import './widgets/psTabbedPanelElement.js';
 import './widgets/psTornadoChart.js';
+import psSimilarityCompare from './widgets/psSimilarityCompare.js';
 
 /*
 global File
@@ -89,14 +91,16 @@ class indexPage {
 		Array.from(document.querySelectorAll('form[is="deepdiff-opts"]')).forEach(opts=>{
 			opts.ddInstance = this.runner;
 		});
-		let forcechart = document.querySelector('#forcechart');
-		forcechart.results = this.runner;
-		let tornadochart = document.querySelector('#tornadochart');
-		tornadochart.DeepDiff = this.runner;
-		let matrixmap = document.querySelector('#matrixmap');
-		matrixmap.DeepDiff = this.runner;
-		let submissions = document.querySelector('#submissions');
-		submissions.DeepDiff = this.runner;
+		['#forcechart','#tornadochart','#matrixmap','#submissions','#simcompare'].forEach(async (selector)=>{
+			let chart = document.querySelector(selector);
+			chart.DeepDiff = this.runner;
+			chart.addEventListener('select',(e)=>{
+				let simcompare = document.querySelector('#simcompare');
+				simcompare.result = e.detail;
+				let tabs = document.querySelector('ps-tabpanel');
+				tabs.activate('3,compare');
+			});
+		});
 
 		print.addEventListener('click',()=>{
 			let html = new psStaticHtml();
@@ -273,8 +277,14 @@ Alternately, you can <a href='?CompatCheck=wimp'>just proceed</a> &hellip; nothi
 });
 
 let nexterrorreport = Date.now();
-window.addEventListener('error', async function(event) {
-	let errormsg = new URL(event.filename);
+async function reporterror(event){
+	let errormsg = '';
+	try{
+		errormsg = new URL(event.filename);
+	}
+	catch(e){
+		errormsg = new URL(window.location.href);
+	}
 	errormsg = `${event.message}\n[${errormsg.pathname}@${event.lineno}:${event.colno}]`;
 	ga('send', 'exception', {
 		'exDescription': errormsg,
@@ -296,4 +306,27 @@ that experienced it.
 		window.alert(usermsg,'fail');
 		nexterrorreport = Date.now() + 1000 * 60 * 5;
 	}
+
+}
+
+window.addEventListener('error',reporterror);
+window.addEventListener("unhandledrejection", function(promiseRejectionEvent) {
+	let msg = {
+		message: JSON.stringify(promiseRejectionEvent.reason),
+		colno: 0,
+		lineno: 0,
+		filename: window.location.href
+	};
+	let err = promiseRejectionEvent.reason;
+	if(err.stack){
+		err = err.stack.split('\n')[1].split('(').pop().split(')').shift().split(':');
+		msg.message = promiseRejectionEvent.reason.message;
+		msg.colno = err.pop();
+		msg.lineno = err.pop();
+		msg.filename = err.join(':');
+	}
+	else if(err.docId){
+		msg.message = `${err.status} ${err.message}: ${err.docId}`;
+	}
+	reporterror(msg);
 });

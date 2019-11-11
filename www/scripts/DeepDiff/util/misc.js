@@ -85,7 +85,7 @@ export function docsEqual (aDoc,bDoc){
 
 
 export function defer(func){
-	return setTimeout(func,10);
+	return setTimeout(func);
 }
 
 
@@ -143,7 +143,15 @@ String.prototype.hashCode = function(){
 };
 
 JSON.clone = function(obj){
-	return JSON.parse(JSON.stringify(obj));
+	let json = null;
+	try{
+		json = JSON.stringify(obj);
+		json = JSON.parse(json);
+	}
+	catch(e){
+		throw new Error(e.message);
+	}
+	return json;
 };
 
 JSON.merge = function(a){

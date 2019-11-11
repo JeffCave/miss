@@ -19,7 +19,7 @@ import {checkNotNull,hasher} from '../util/misc.js';
 	 * @param finalListA Token list from submission A, with matched tokens set invalid
 	 * @param finalListB Token list from submission B, with matched tokens set invalid
 	 */
-export default async function Create(a, b, finalListA = null, finalListB = null, notes = null) {
+export default async function Create(a, b, finalListA = null, finalListB = null, chains = [], notes = null) {
 	if(a.type === 'result'){
 		return a;
 	}
@@ -63,6 +63,7 @@ export default async function Create(a, b, finalListA = null, finalListB = null,
 
 	results.hash = hasher(a.hash + b.hash);
 	results.complete = 0;
+	results.chains = chains;
 
 	results.name = [];
 	results.totalTokens = 0;
@@ -78,10 +79,10 @@ export default async function Create(a, b, finalListA = null, finalListB = null,
 		d.finalList = await TokenList.cloneTokenList(d.finalList);
 		d.totalTokens = await d.totalTokens;
 
-		d.identicalTokens = Array.from(d.finalList).reduce((sum,token)=>{
-			sum += (token.shared || token.shared === 0) ? 1 : 0;
-			return sum;
+		d.identicalTokens = chains.reduce((a,c)=>{
+			return a + c.submissions[r].tokens
 		},0);
+
 
 		let pct = (d.totalTokens === 0) ? 0 : d.identicalTokens / d.totalTokens;
 		d.percentMatched = pct;
@@ -95,7 +96,7 @@ export default async function Create(a, b, finalListA = null, finalListB = null,
 		return b.percentMatched - a.percentMatched;
 	});
 	results.percentMatched /= results.submissions.length;
-	results.name = results.name.join('.');
+	results.name = results.name.sort().join('.');
 
 	return results;
 }
@@ -105,4 +106,3 @@ function toJSON(result){
 	json.type = 'result';
 	return json;
 }
-

@@ -55,9 +55,9 @@ const scores = {
 	// Once it drops by the points specified by the terminator, we can assume
 	// it has dropped off.
 	terminus: 5,
-	// the number of lexemes that need to match for a chain to be considered
-	// of significant length.
-	significant: 5,
+	// the final score that is considered
+	// significant length.
+	significant: 20,
 };
 
 
@@ -80,28 +80,15 @@ async function ProcSW(req, progHandler=()=>{}) {
 
 	let a = req.submissions[0];
 	let b = req.submissions[1];
-
 	let aTokens = a.finalList;
 	let bTokens = b.finalList;
 
 	//console.debug('Creating a SmithWaterman for ' + a.Name + ' and ' + b.Name);
 
-	// Test for token type mismatch
-	if(aTokens.type !== bTokens.type) {
-		throw new Error("Token list type mismatch: submission " + a.Name + " has type " +
-			aTokens.type + ", while submission " + b.Name + " has type "
-			+ bTokens.type);
-	}
-
-	//let aText = await a.ContentAsString;
-	//let bText = await b.ContentAsString;
-	//console.debug(aText);
-	//console.debug(bText);
-
 	// Handle a 0-token submission (no similarity)
 	if(aTokens.length === 0 || bTokens.length === 0) {
 		//TODO: return req
-		let result = await AlgorithmResults.Create(a, b, aTokens, bTokens, {error:'0 token submission'});
+		let result = await AlgorithmResults.Create(a, b, aTokens, bTokens, [], {error:'0 token submission'});
 		result.complete = result.totalTokens;
 		return result;
 	}
@@ -110,7 +97,7 @@ async function ProcSW(req, progHandler=()=>{}) {
 	let notes = {
 		algorithm: 'smithwaterman-'+SmithWaterman
 	};
-	if(aTokens.length * bTokens.length > SmithWaterman.MAXAREA){
+	if(aTokens.length * bTokens.length > SmithWatermanBase.MAXAREA){
 		notes.isMassive = true;
 	}
 
@@ -168,8 +155,8 @@ async function ProcSW(req, progHandler=()=>{}) {
 		return null;
 	}
 
-	endLists = endLists.data.submissions;
-	let results = await AlgorithmResults.Create(a, b, endLists[0], endLists[1], notes);
+	endLists = endLists.data;
+	let results = await AlgorithmResults.Create(a, b, endLists.submissions[0], endLists.submissions[1], endLists.chains, notes);
 	results.complete = results.totalTokens;
 
 	return results;

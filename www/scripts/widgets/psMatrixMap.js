@@ -105,6 +105,11 @@ export default class psMatrixMap extends HTMLElement{
 					let cell = document.createElement('td');
 					cell.innerHTML = '<span title="" >&#9608;</span>';
 					row.append(cell);
+					let span = document.querySelector('span');
+					cell.addEventListener('click',(e)=>{
+						let result = e.currentTarget.dataset.result;
+						if(result) this.dispatchEvent(new CustomEvent('select',{detail:result}));
+					});
 				}
 				while(row.cells.length > submissions.length+1){
 					let cell = Array.from(row.cells).pop();
@@ -122,8 +127,10 @@ export default class psMatrixMap extends HTMLElement{
 					let result = this.getResult(a,b);
 					if(r===c){
 						settings.title = '100% to itself';
+						cell.dataset.result = '';
 					}
 					else if(result){
+						cell.dataset.result = result.name;
 						settings.title = (result.percentMatched * 100).toFixed(1) + '% ';
 						if(result.complete !== result.totalTokens){
 							settings.style = 'active';
@@ -201,6 +208,7 @@ table.matrixmap td > span{
 	border: 1px solid black;
 	top: -0.25em;
 	left: -0.1em;
+	cursor: pointer;
 }
 
 table.matrixmap td, table.matrixmap td.complete {

@@ -75,7 +75,13 @@ class Matrix{
 		close();
 	}
 
-
+	progress(pct){
+		let msg = {type:'progress', data:this.toJSON()};
+		if(pct){
+			msg.data.remaining = Math.floor(pct * msg.data.totalSize);
+		}
+		postMessage(msg);
+	}
 
 	CoordToIndex(x,y){
 		return y * this.submissions[0].length + x;
@@ -173,8 +179,7 @@ class Matrix{
 			//console.log('=====');
 
 			// Periodically report it up
-			let msg = {type:'progress', data:this.toJSON()};
-			postMessage(msg);
+			this.progress();
 
 			// schedule the next processing cycle
 			if(this.matrix.length > 0){
@@ -276,7 +281,7 @@ class Matrix{
 			score = Number.MIN_SAFE_INTEGER;
 		}
 		//console.debug("scoring: " + JSON.stringify(chain.id) + ' (' + score + ') ' + this.remaining + ' of '+this.totalSize+'('+(100.0*this.remaining/this.totalSize).toFixed(0)+'%) ');
-		if(highscore - score >= this.opts.scores.terminus){
+		if(score === 0 || highscore - score >= this.opts.scores.terminus){
 			// rewind our chain to the highwater mark
 			while(history.length > 0 && highscore > history[0][2]){
 				history.shift();
@@ -312,9 +317,14 @@ class Matrix{
 		this.resetShareMarkers(Number.MAX_VALUE);
 
 		// sort the chains to get the best scoring ones first
-		this.finishedChains.sort((a,b)=>{return b.score-a.score;});
-		for(let c=0; this.finishedChains.length > 0; c++){
-			let chain = this.finishedChains.shift();
+		let totalChains = this.finishedChains.length;
+		this.finishedChains = this.finishedChains
+			.filter(c=>{return c.score >= this.opts.scores.significant})
+			.sort((a,b)=>{return a.score-b.score;})
+			;
+		for(let c=1; this.finishedChains.length > 0; c++){
+			this.progress((totalChains-c)/totalChains);
+			let chain = this.finishedChains.pop();
 
 			// walk the chain checking for coordinates we have already assigned
 			// to a previous chain
@@ -330,7 +340,7 @@ class Matrix{
 				 */
 				let a = this.submissions[0][x];
 				let b = this.submissions[1][y];
-				if(a.shared && b.shared){
+				if((a.shared && a.shared < c) || (b.shared && b.shared < c)){
 					truncated = true;
 					break;
 				}
@@ -354,10 +364,12 @@ class Matrix{
 				// the chain's values have possibly changed, so it will need
 				// to be recalcualted
 				for(i = chain.history.length-1; i>=0; i--){
-					if(chain.history[i][2] < truncatedScore){
-						truncatedScore = chain.history[i][2];
-					}
-					chain.history[i][2] -= truncatedScore;
+					let coords = chain.history[i];
+					let a = this.submissions[0][coords[0]];
+					let b = this.submissions[1][coords[1]];
+					if(a.shared === c) delete a.shared;
+					if(b.shared === c) delete b.shared;
+					coords[2] -= truncatedScore;
 				}
 				// having subtracted a value from the historical chain score,
 				// there is a reasonable chance we have changed the length of
@@ -377,43 +389,78 @@ class Matrix{
 				truncated = false;
 				chain.score = 0;
 				for(i = 0; i < chain.history.length; i++){
-					if(chain.history[i][2] === 0){
+					if(chain.history[i][2] <= 0){
 						truncated = true;
 						break;
 					}
-					chain.score = Math.max(chain.score, chain.history[i][2]);
 				}
 				if(truncated){
 					chain.history = chain.history.slice(0,i);
 				}
+				if(chain.history.length){
+					chain.score = chain.history[0][2];
+				}
 
 				// put it back in processing queue (at the end because it is
 				// now going to be almost worthless?)
-				if(chain.history.length >= this.opts.scores.significant){
+				if(chain.score >= this.opts.scores.significant){
 					this.finishedChains.push(chain);
+					// we may have changed the scoring due to this
+					this.finishedChains.sort((a,b)=>{return a.score-b.score;});
 				}
-
-				// we may have changed the scoring due to this
-				this.finishedChains.sort((a,b)=>{
-					let score = b.score-a.score;
-					if(score === 0){
-						score = b.history.length-a.history.length;
-					}
-					return score;
-				});
 			}
 		}
 
 
 		// we removed a bunch of chains, but may have marked lexemes as shared.
 		// they aren't anymore, so re-run the entire "shared" markers
-		this.submissions.forEach((sub)=>{
-			sub.forEach((lex)=>{
-				if(lex.shared > resolved.length){
-					lex.shared = null;
+		this.resetShareMarkers(Number.MAX_VALUE);
+		for(let c=1; c<=resolved.length; c++){
+			let chain = resolved[c-1];
+			chain.id = c;
+			chain.submissions = [{tokens:0,blocks:[]},{tokens:0,blocks:[]}];
+			for(let i=0; i<chain.history.length; i++){
+				let coords = chain.history[i];
+				let x = coords[0];
+				let y = coords[1];
+				let a = this.submissions[0][x];
+				let b = this.submissions[1][y];
+				if(!a.shared){
+					a.shared = c;
+					chain.submissions[0].tokens++;
 				}
-			});
-		});
+				if(!b.shared){
+					b.shared = c;
+					chain.submissions[1].tokens++;
+				}
+
+				let segA = chain.submissions[0].blocks[0];
+				if(!segA || segA.path !== a.range[2]){
+					segA = {
+						path: a.range[2],
+						start: Number.POSITIVE_INFINITY,
+						end: Number.NEGATIVE_INFINITY,
+					};
+					chain.submissions[0].blocks.unshift(segA);
+				}
+				segA.start = Math.min(a.range[0], segA.start);
+				segA.end   = Math.max(a.range[1], segA.end);
+
+				let segB = chain.submissions[1].blocks[0];
+				if(!segB || segB.path !== b.range[2]){
+					segB = {
+						path: b.range[2],
+						start: Number.POSITIVE_INFINITY,
+						end: Number.NEGATIVE_INFINITY,
+					};
+					chain.submissions[1].blocks.unshift(segB);
+				}
+				segB.start = Math.min(b.range[0], segB.start);
+				segB.end   = Math.max(b.range[1], segB.end);
+			}
+			chain.submissions[0].blocks.reverse();
+			chain.submissions[1].blocks.reverse();
+		}
 
 		return resolved;
 	}

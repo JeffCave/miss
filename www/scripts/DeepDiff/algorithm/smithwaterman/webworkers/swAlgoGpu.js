@@ -1,7 +1,7 @@
 /**
  * DO NOT IMPLEMENT AS MODULE
  *
- * This class is referenced by a webworker, which means it *must* not be 
+ * This class is referenced by a webworker, which means it *must* not be
  * implemented as a module until Firefox implements modules in webworkers.
  */
 
@@ -199,7 +199,7 @@ class swAlgoGpu extends SmithWatermanBase{
 		*/
 		let resolved = [];
 		let chain = {score:Number.MAX_VALUE};
-		this.resetShareMarkers(Number.MAX_VALUE);
+		this.resetShareMarkers();
 
 		while(index.size > 0 && resolved.length < this.MaxChains && chain.score >= this.ScoreSignificant){
 			chain = Array.from(index.values())
@@ -236,7 +236,7 @@ class swAlgoGpu extends SmithWatermanBase{
 				 */
 				let a = this.submissions[0][item.x];
 				let b = this.submissions[1][item.y];
-				if(a.shared < resolved.length || b.shared < resolved.length){
+				if(a.shared || b.shared){
 					item.prev = -1;
 					continue;
 				}
@@ -291,18 +291,58 @@ class swAlgoGpu extends SmithWatermanBase{
 			;
 		// we removed a bunch of chains, but may have marked lexemes as shared.
 		// they aren't anymore, so re-run the entire "shared" markers
-		this.remaining = this.submissions[0].length + this.submissions[1].length;
-		this.submissions.forEach((sub)=>{
-			this.postMessage({type:'progress', data:this.toJSON()});
-			sub.forEach((lex)=>{
-				this.remaining--;
-				if(lex.shared > resolved.length){
-					lex.shared = null;
+		this.resetShareMarkers();
+		for(let c=1; c<=resolved.length; c++){
+			let chain = resolved[c-1];
+			chain.id = c;
+			chain.submissions = [{tokens:0,blocks:[]},{tokens:0,blocks:[]}];
+			let history = chain.history;
+			for(let i=0; i<history.length; i++){
+				delete history[i].history;
+				history[i] = JSON.parse(JSON.stringify(history[i]));
+				let coords = history[i];
+				let a = this.submissions[0][coords.x];
+				let b = this.submissions[1][coords.y];
+				if(!a.shared){
+					a.shared = c;
+					chain.submissions[0].tokens++;
 				}
-			});
-		});
+				if(!b.shared){
+					b.shared = c;
+					chain.submissions[1].tokens++;
+				}
+
+				let segA = chain.submissions[0].blocks[0];
+				if(!segA || segA.path !== a.range[2]){
+					segA = {
+						path: a.range[2],
+						start: Number.POSITIVE_INFINITY,
+						end: Number.NEGATIVE_INFINITY,
+					};
+					chain.submissions[0].blocks.unshift(segA);
+				}
+				segA.start = Math.min(a.range[0], segA.start);
+				segA.end   = Math.max(a.range[1], segA.end);
+
+				let segB = chain.submissions[1].blocks[0];
+				if(!segB || segB.path !== b.range[2]){
+					segB = {
+						path: b.range[2],
+						start: Number.POSITIVE_INFINITY,
+						end: Number.NEGATIVE_INFINITY,
+					};
+					chain.submissions[1].blocks.unshift(segB);
+				}
+				segB.start = Math.min(b.range[0], segB.start);
+				segB.end   = Math.max(b.range[1], segB.end);
+			}
+			chain.submissions[0].blocks.reverse();
+			chain.submissions[1].blocks.reverse();
+			chain.history = history;
+		}
 		this.postMessage({type:'progress', data:this.toJSON()});
 
+		this.remaining = 0;
 		this._chains = resolved;
 		return resolved;
 	}
