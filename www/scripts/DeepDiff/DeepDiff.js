@@ -656,6 +656,7 @@ export default class DeepDiff extends EventTarget{
 		}
 		let algo = this.Algorithm;
 		console.log("Performing comparison on " + pair.name );
+		let timer = performance.now();
 		let result = await algo(pair,async (comparer)=>{
 			comparer = comparer.data;
 			let result = this.report.results[comparer.name];
@@ -676,9 +677,46 @@ export default class DeepDiff extends EventTarget{
 			});
 			//this.addResults(pair);
 		});
+		timer = performance.now() - timer;
 		if(result){
 			result = AlgorithmResults.toJSON(result);
 			this.addResults(result);
+			let size = result.submissions.reduce((a,r)=>{return a*r.totalTokens;},1);
+			size /= 1024**2;
+			this.ga('send', {
+				hitType: 'timing',
+				timingCategory: 'DeepDiff',
+				timingVar: 'compare-ms/mb',
+				timingValue: timer/size,
+			});
+			this.ga('send', {
+				hitType: 'timing',
+				timingCategory: 'DeepDiff',
+				timingVar: 'compare',
+				timingValue: timer,
+			});
+			this.ga('send', {
+				hitType: 'event',
+				eventCategory: 'DeepDiff',
+				eventAction: 'compare-size',
+				eventLabel: 'result.anonymous',
+				eventValue: size
+			});
+			/*
+			// TODO: Issue #35
+			// It's tempting to report this. However, this strays into
+			// gathering personal data (not by much, but a little). Given
+			// the hostility, and legal risks faced by users, we should
+			// probably ask permission (checkbox?) prior to transmitting
+			// this.
+			this.ga('send', {
+				hitType: 'event',
+				eventCategory: 'DeepDiff',
+				eventAction: 'compare-similarity',
+				eventLabel: 'result.anonymous',
+				eventValue: result.percentMatched * 1000
+			});
+			*/
 		}
 		return result;
 	}
@@ -745,6 +783,10 @@ export default class DeepDiff extends EventTarget{
 
 		this.runAllComparesIsRunning = false;
 		setTimeout(()=>{this.runAllCompares();});
+	}
+
+	get ga(){
+		return window.ga || (()=>{});
 	}
 
 

@@ -67,6 +67,13 @@ export default class psTabbedPanelElement extends HTMLElement {
 		panel = panel || Object.keys(this.panels)[0];
 		panel = panel.toLowerCase();
 		localStorage.setItem("tabbedpanel", panel);
+
+		let path = new URL(document.location.href);
+		path.hash = panel;
+		this.ga('set', 'location', path.href);
+		this.ga('send', 'pageview');
+
+
 		for(let p of this.keys){
 			if(p === panel){
 				this.panels[p].classList.add('active');
@@ -80,6 +87,10 @@ export default class psTabbedPanelElement extends HTMLElement {
 				this.panels[p].normal();
 			}
 		}
+	}
+
+	get ga(){
+		return window.ga || (()=>{});
 	}
 
 	get initialCSS(){
