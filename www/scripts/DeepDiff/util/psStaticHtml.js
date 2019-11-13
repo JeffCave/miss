@@ -81,47 +81,30 @@ export default class psStaticHtml extends EventTarget{
 	}
 
 	static get CSS(){
-		return `
-:root{
-	--main-color: rgb(36, 142, 194);
-	--main-color-contrast: white;
-	--main-highlight: var(--notice-info-low);
-	--corners:0.25em;
-
-	--notice-info-off:whitesmoke;
-	--notice-info-low:lightsteelblue;
-	--notice-info-high:steelblue;
-
-	--notice-fail-off:mistyrose;
-	--notice-fail-low:lightsalmon;
-	--notice-fail-high:darkred;
-
-	--notice-warn-off:gold;
-	--notice-warn-low:orange;
-	--notice-warn-high:orangered;
-
-	/*
-	--notice-pass-off:mistyrose;
-	--notice-pass-low:lightsalmon;
-	--notice-pass-high:darkred;
-	*/
-	--notice-pending-off:white;
-	--notice-pending-low:lightgray;
-	--notice-pending-high:darkgray;
-
-	/*
-	 https://www.mulinblog.com/a-color-palette-optimized-for-data-visualization/
-	*/
-	--data-pallette-0: #4d4d4d; /* grey   */
-	--data-pallette-1: #5da5da; /* blue   */
-	--data-pallette-2: #faa43a; /* orange */
-	--data-pallette-3: #60bd68; /* green  */
-	--data-pallette-4: #f17cb0; /* pink   */
-	--data-pallette-5: #b2912f; /* brown  */
-	--data-pallette-6: #b276b2; /* purple */
-	--data-pallette-7: #decf3f; /* yellow */
-	--data-pallette-8: #f15854; /* red    */
-}
-		`;
+		let css = Array.from(document.styleSheets);
+		css = css.map(sheet=>{
+			let rules = null;
+			try{
+				rules = Array.from(sheet.rules)
+					.filter(rule=>{
+						if(!rule.styleSheet) return true;
+						if(rule.styleSheet.ownerRule instanceof CSSImportRule) return false;
+						return true;
+					})
+					.map(rule=>{
+						let css = rule.cssText;
+						return css;
+					})
+					;
+				rules = rules.join('\n');
+			}
+			catch(e){ // if e instanceof DOMException){
+				console.debug(e);
+				rules = '';
+			}
+			return rules;
+		});
+		css = css.join('\n');
+		return css;
 	}
 }
