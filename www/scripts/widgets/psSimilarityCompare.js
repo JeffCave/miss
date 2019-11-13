@@ -181,6 +181,19 @@ export default class psSimilarityCompare extends HTMLElement{
 	remove(result){
 	}
 
+	get innerHTML(){
+		let results = Object.values(this.DeepDiff.report.results);
+		let mapper = new psSimilarityMap(this.DeepDiff);
+		let html = [];
+		for(let result of results){
+			mapper.result = result;
+			let h = mapper.innerHTML;
+			html.push(h);
+		}
+		html = html.join('\n');
+		return html;
+	}
+
 	connectedCallback(){
 		this.Render();
 	}

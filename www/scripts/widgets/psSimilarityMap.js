@@ -189,6 +189,15 @@ export default class psSimilarityMap extends HTMLElement {
 		}
 	}
 
+	get innerHTML(){
+		return this.html;
+	}
+
+	get html(){
+		let html = this.shadowRoot.innerHTML;
+		return html;
+	}
+
 	get Template(){
 		return psSimilarityMap.Template;
 	}
