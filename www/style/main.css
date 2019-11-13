@@ -173,3 +173,12 @@ ps-filedrop{
 		order: 4;
 	}
 }
+
+@media print {
+	h1, h2, h3 {
+		page-break-before: always;
+	}
+	h2:first-of-type{
+		page-break-before: avoid;
+	}
+}
