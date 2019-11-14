@@ -14,6 +14,8 @@ export default class psPanelElement extends HTMLElement {
 	constructor() {
 		super();
 
+		this._ = {};
+
 		this.classList.add('hide');
 		this.classList.add('maximize');
 		this.classList.add('minimize');
@@ -92,6 +94,12 @@ export default class psPanelElement extends HTMLElement {
 		let h1 = this.querySelector('h1');
 		let summary = this.domIcon.outerHTML + h1.outerHTML;
 		return summary;
+	}
+
+	get title(){
+		this._.title = this.querySelector('h1')
+		this._.title = this._.title.textContent;
+		return this._.title;
 	}
 
 	minimize(){

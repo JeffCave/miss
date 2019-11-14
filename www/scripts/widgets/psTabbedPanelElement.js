@@ -27,9 +27,9 @@ export default class psTabbedPanelElement extends HTMLElement {
 		let slot = document.createElement('slot');
 		shadow.append(slot);
 
-		this.tabs = {};
-		this.panels = {};
-		this.keys = [];
+		this.tabs = [];
+		this.panels = [];
+		this.keys = {};
 		let panel = localStorage.getItem("tabbedpanel");
 		Array.from(this.children).forEach((d,i)=>{
 			if(!(d instanceof psPanelElement) || d.state === 'hide'){
@@ -43,13 +43,14 @@ export default class psTabbedPanelElement extends HTMLElement {
 			li.innerHTML = d.summary;
 			menu.append(li);
 
-			let key = [i.toString(), d.id].join();
+			d.id = d.id || d.title;
+			let key = [i.toString(), d.id].join('=');
 			key = key.toLowerCase();
-			this.tabs[key] = li;
-			this.panels[key] = d;
-			this.keys.push(key);
+			this.tabs.push(li);
+			this.panels.push(d);
+			this.keys[key] = i;
 
-			this.tabs[key].addEventListener('click',tab=>{
+			this.tabs[i].addEventListener('click',()=>{
 				this.activate(key);
 			});
 			this.activate(key);
@@ -63,18 +64,38 @@ export default class psTabbedPanelElement extends HTMLElement {
 		this.activate(panel);
 	}
 
-	activate(panel){
-		panel = panel || Object.keys(this.panels)[0];
-		panel = panel.toLowerCase();
-		localStorage.setItem("tabbedpanel", panel);
+	activate(key){
+		key = key || Object.keys(this.keys)[0];
+		key = key.toLowerCase();
+		localStorage.setItem("tabbedpanel", key);
+
+		let panel = this.keys[key];
+		if(!panel && panel!==0){
+			key = key.replace(/[^0-9a-z]/,'=').split('=');
+			key[1] = key.slice(1).join('=');
+			for(let k in this.keys){
+				k = k.split('=');
+				if(k.includes(key[0]) || k.includes(key[1])){
+					key = k.join('=');
+					break;
+				}
+			}
+			panel = this.keys[key];
+			if(!panel && panel!==0){
+				return;
+			}
+		}
 
 		let path = new URL(document.location.href);
-		path.hash = panel;
-		this.ga('set', 'location', path.href);
+		path.hash = this.panels[panel].title;
+		path = path.href.replace('#','/');
+		path = new URL(path);
+		document.title = 'MISS: ' + this.panels[panel].title;
+		this.ga('set', 'page', path.pathname);
 		this.ga('send', 'pageview');
 
-
-		for(let p of this.keys){
+		for(let p in this.panels){
+			p = +p;
 			if(p === panel){
 				this.panels[p].classList.add('active');
 				this.tabs[p].classList.add('active');
