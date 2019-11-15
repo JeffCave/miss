@@ -87,6 +87,38 @@ class indexPage {
 			json = JSON.parse(json);
 			this.runner.Import(json);
 		});
+		print.addEventListener('click',async ()=>{
+			let name = this.runner.Title + ".html";
+			let html = new psStaticHtml();
+			html.MISS = this.runner;
+			html.charts['Force Directed'] = document.querySelector('#forcechart');
+			html.charts['Relationship Listing'] = document.querySelector('#tornadochart');
+			html.charts['Heatmap'] = document.querySelector('#matrixmap');
+			html.charts['Comparisons'] = document.querySelector('#simcompare');
+			html = await html.BuildDoc();
+			//html = new Blob([html],{type:'text/html'});
+			//window.saveAs(html,name);
+			let win = window.open('','missprint');
+			if(win){
+				win.document.write(html);
+				//win.print();
+			}
+			else{
+				window.saveAs(html,name);
+			}
+		});
+		let epub = document.querySelector('#Epub');
+		epub.addEventListener('click',async ()=>{
+			let name = this.runner.Title + ".epub";
+			let html = new psStaticEpub();
+			html.MISS = this.runner;
+			html.charts['Force Directed'] = document.querySelector('#forcechart');
+			html.charts['Relationship Listing'] = document.querySelector('#tornadochart');
+			html.charts['Heatmap'] = document.querySelector('#matrixmap');
+			html.charts['Comparisons'] = document.querySelector('#simcompare');
+			html = await html.BuildDoc();
+			window.saveAs(html,name);
+		});
 
 		Array.from(document.querySelectorAll('form[is="deepdiff-opts"]')).forEach(opts=>{
 			opts.ddInstance = this.runner;
@@ -98,31 +130,8 @@ class indexPage {
 				let simcompare = document.querySelector('#simcompare');
 				simcompare.result = e.detail;
 				let tabs = document.querySelector('ps-tabpanel');
-				tabs.activate('3,compare');
+				tabs.activate('compare');
 			});
-		});
-
-		print.addEventListener('click',()=>{
-			let html = new psStaticHtml();
-			html.MISS = this.runner;
-			html.charts['Force Directed'] = forcechart;
-			html.charts['Relationship Listing'] = tornadochart;
-			html.charts['Heatmap'] = matrixmap;
-			html = html.BuildDoc();
-			let name = this.runner.Title + ".html";
-			html = new Blob([html],{type:'text/html'});
-			window.saveAs(html,name);
-		});
-		let epub = document.querySelector('#Epub');
-		epub.addEventListener('click',async ()=>{
-			let name = this.runner.Title + ".epub";
-			let html = new psStaticEpub();
-			html.MISS = this.runner;
-			html.charts['Force Directed'] = forcechart;
-			html.charts['Relationship Listing'] = tornadochart;
-			//html.charts['Heatmap'] = matrixmap;
-			html = await html.BuildDoc();
-			window.saveAs(html,name);
 		});
 
 		/*

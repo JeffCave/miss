@@ -198,11 +198,13 @@ table.tornado tr > td > meter {
 	background: lightgray;
 	background: var(--notice-pending-low);
 	transition: all 0.5s ease-out;
+	-webkit-print-color-adjust: exact;
 }
 table.tornado tr > td > meter::-webkit-meter-bar {
 	background: lightgray;
 	background: var(--notice-pending-low);
 	transition: all 0.5s ease-out;
+	-webkit-print-color-adjust: exact;
 }
 table.tornado tr > td > meter::-webkit-meter-optimum-value{
 	background: darkgray;
@@ -210,6 +212,7 @@ table.tornado tr > td > meter::-webkit-meter-optimum-value{
 	border-top-right-radius: 0.5em;
 	border-bottom-right-radius: 0.5em;
 	transition: all 0.5s ease-out;
+	-webkit-print-color-adjust: exact;
 }
 table.tornado tr > td > span {
 	position: absolute;
@@ -238,17 +241,20 @@ table.tornado tr.complete > td > meter {
 	background: lightsteelblue;
 	background: var(--notice-info-low);
 	transition: all 5s ease-out;
+	-webkit-print-color-adjust: exact;
 }
 table.tornado tr.complete > td > meter::-webkit-meter-bar {
 	background: lightsteelblue;
 	background: var(--notice-info-low);
 	transition: all 5s ease-out;
+	-webkit-print-color-adjust: exact;
 }
 table.tornado tr.complete > td > meter::-webkit-meter-optimum-value{
 	border: 0;
 	background: steelblue;
 	background: var(--notice-info-high);
 	transition: all 5s ease-out;
+	-webkit-print-color-adjust: exact;
 }
 table.tornado tr.complete > td:nth-of-type(1) {
 	border-right-color: steelblue;
@@ -260,17 +266,20 @@ table.tornado tr.significant > td > meter{
 	background: lightsalmon;
 	background: var(--notice-fail-low);
 	transition: all 5s ease-out;
+	-webkit-print-color-adjust: exact;
 }
 table.tornado tr.significant > td > meter::-webkit-meter-bar {
 	background: lightsalmon;
 	background: var(--notice-fail-low);
 	transition: all 5s ease-out;
+	-webkit-print-color-adjust: exact;
 }
 table.tornado tr.significant > td > meter::-webkit-meter-optimum-value{
 	border:0;
 	background: darkred;
 	background: var(--notice-fail-high);
 	transition: all 5s ease-out;
+	-webkit-print-color-adjust: exact;
 }
 table.tornado tr.significant > td:nth-of-type(1) {
 	border-right-color: darkred;
