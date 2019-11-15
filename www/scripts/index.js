@@ -87,20 +87,25 @@ class indexPage {
 			json = JSON.parse(json);
 			this.runner.Import(json);
 		});
-		print.addEventListener('click',()=>{
-			//let name = this.runner.Title + ".html";
+		print.addEventListener('click',async ()=>{
+			let name = this.runner.Title + ".html";
 			let html = new psStaticHtml();
 			html.MISS = this.runner;
 			html.charts['Force Directed'] = document.querySelector('#forcechart');
 			html.charts['Relationship Listing'] = document.querySelector('#tornadochart');
 			html.charts['Heatmap'] = document.querySelector('#matrixmap');
 			html.charts['Comparisons'] = document.querySelector('#simcompare');
-			html = html.BuildDoc();
+			html = await html.BuildDoc();
 			//html = new Blob([html],{type:'text/html'});
 			//window.saveAs(html,name);
 			let win = window.open('','missprint');
-			win.document.write(html);
-			//win.print();
+			if(win){
+				win.document.write(html);
+				//win.print();
+			}
+			else{
+				window.saveAs(html,name);
+			}
 		});
 		let epub = document.querySelector('#Epub');
 		epub.addEventListener('click',async ()=>{
@@ -125,7 +130,7 @@ class indexPage {
 				let simcompare = document.querySelector('#simcompare');
 				simcompare.result = e.detail;
 				let tabs = document.querySelector('ps-tabpanel');
-				tabs.activate('3,compare');
+				tabs.activate('compare');
 			});
 		});
 

@@ -104,13 +104,6 @@ export default class psSimilarityCompare extends HTMLElement{
 		this._.subSelector[1].dispatchEvent(new Event('change'));
 	}
 
-
-	get innerHTML(){
-		let html = this._.shadow.innerHTML;
-		//html = html.replace(/â–ˆ/g,this._.filler);
-		return html;
-	}
-
 	get Render(){
 		if(this._Render) return this._Render;
 
@@ -182,14 +175,24 @@ export default class psSimilarityCompare extends HTMLElement{
 	}
 
 	get innerHTML(){
+		return this.html();
+	}
+
+	async html(){
 		let results = Object.values(this.DeepDiff.report.results);
 		let mapper = new psSimilarityMap(this.DeepDiff);
 		let html = [];
+		let css = '';
 		for(let result of results){
 			mapper.result = result;
-			let h = mapper.innerHTML;
+			css = mapper.InitialCss;
+			let h = await mapper.html();
+			h = h.replace(css,'');
+			let title = mapper.title;
+			html.push(`<h3>${title}</h3>`);
 			html.push(h);
 		}
+		html.push(`<style>${css}</style>`);
 		html = html.join('\n');
 		return html;
 	}

@@ -193,9 +193,21 @@ export default class psSimilarityMap extends HTMLElement {
 		return this.html;
 	}
 
-	get html(){
+	async html(){
+		await this.Render();
 		let html = this.shadowRoot.innerHTML;
 		return html;
+	}
+
+	get title(){
+		let title = this.result.submissions.map((d)=>{
+			return d.name;
+		});
+		if(this.flip){
+			title.reverse();
+		}
+		title = title.join(' &#8227; ');
+		return title;
 	}
 
 	get Template(){

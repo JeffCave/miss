@@ -40,14 +40,24 @@ export default class psStaticHtml extends EventTarget{
 		return this._.charts;
 	}
 
-	BuildDoc(){
+	async BuildDoc(){
 		let vis = Object
 			.entries(this.charts)
-			.map((d)=>{
-				let html = "<h2>" + d[0] + "</h2>\n" + d[1].innerHTML;
+			//.filter(d=>{return d[0] === 'Comparisons';})
+			.map(async (d)=>{
+				let html = ''
+				if(d[1].html){
+					html = await d[1].html();
+				}
+				else{
+					html = d[1].innerHTML;
+				}
+				html = "<h2>" + d[0] + "</h2>\n" + html;
 				return html;
 			})
-			.join('\n')
+			;
+		vis = await Promise.all(vis);
+		vis = vis.join('\n')
 			;
 		let content = [
 			'<html>',
