@@ -67,7 +67,7 @@ class psSubmissionList extends HTMLElement {
 		this._.DeepDiff.addEventListener('load',this.changeHandler);
 
 		this.pouchdb = value.db;
-		this.Render();
+		//this.Render();
 	}
 
 	add(submission){
