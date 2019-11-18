@@ -9,7 +9,7 @@
   },
   "main": "Gruntfile.js",
   "devDependencies": {
-    "chai": "*",
+    "chai": "latest",
     "chai-as-promised": "*",
     "follow": "latest",
     "grunt": "latest",
@@ -28,12 +28,11 @@
     "mocha": "latest",
     "mocha-jshint": "latest",
     "node-netstat": "latest",
-    "slimerjs": "*",
     "request": "*",
     "request-promise-native": "*",
+    "selenium-webdriver": "latest",
+    "slimerjs": "latest",
     "sync-request": "latest",
     "webdriverjs": "latest"
   }
 }
-
-
