@@ -40,6 +40,7 @@ class Browsers {
 			.setChromeOptions(this.chromeOpts)
 			.build()
 			;
+		await browser.get('http://lvh.me:3030');
 		return browser;
 	}
 

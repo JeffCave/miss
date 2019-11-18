@@ -24,15 +24,12 @@ describe('Self Test', function() {
 	});
 
 	it('can load a browser', Browser.use(async (browser)=>{
-		await browser.get('http://lvh.me:3030');
 		let title = await browser.getTitle();
 		assert.notEmpty(title);
 	}));
 
 	it('page being served', Browser.use(async (browser)=>{
-		await browser.get('http://lvh.me:3030');
 		let title = await browser.getTitle();
 		assert.isTrue(title.startsWith('MISS'),'Invalid start page');
-
 	}));
 });
