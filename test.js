@@ -46,13 +46,22 @@ for(let driver in allDrivers){
 async function test(){
 	let mocha = new Mocha();
 	mocha.addFile('./test/selftest.js');
+	mocha.addFile('./test/initialize.js');
 	mocha.reporter('spec');
 	mocha.timeout(5000);
-	mocha.run();
+	let runner = mocha.run();
+	await new Promise((resolve)=>{
+		runner.addListener('end',(e)=>{
+			resolve();
+		})
+	});
 }
 
 async function main(){
 	let server = child.spawn('node',['./server.js']);
+	await new Promise((resolve)=>{
+		setTimeout(resolve,10);
+	});
 	try{
 		await test();
 	}

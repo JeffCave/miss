@@ -21,6 +21,9 @@ class Browsers {
 
 	constructor(poolsize){
 		this.poolsize = poolsize || 10;
+		this.pool = [];
+		this.avail = [];
+		this.locked = [];
 
 		let chromeOpts = new chrome.Options();
 		//chromeOpts.headless = true;
@@ -34,13 +37,19 @@ class Browsers {
 	}
 
 	async take(){
-		let browser = await new webdriver.Builder()
+		let browser = null;
+		browser = await new webdriver.Builder()
 			.forBrowser('chrome')
 			.withCapabilities(webdriver.Capabilities.chrome())
 			.setChromeOptions(this.chromeOpts)
 			.build()
 			;
+		// get the default page
 		await browser.get('http://lvh.me:3030');
+		// wait for it to load
+		let el = await browser.findElement(this.driver.By.css('main'));
+		await browser.wait(this.driver.until.elementIsVisible(el),1000);
+		// send it
 		return browser;
 	}
 
@@ -74,6 +83,13 @@ class Browsers {
 					postprocess: ['untar -xzf']
 			}
 		};
+	}
+
+	static get driver(){
+		return webdriver;
+	}
+	get driver(){
+		return Browsers.driver;
 	}
 }
 
