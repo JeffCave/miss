@@ -1,4 +1,5 @@
 const child = require('child_process');
+const glob = require('glob');
 
 const webdriver = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
@@ -44,11 +45,20 @@ for(let driver in allDrivers){
 
 
 async function test(){
+	// setup Mocha
 	let mocha = new Mocha();
-	mocha.addFile('./test/selftest.js');
-	mocha.addFile('./test/initialize.js');
 	mocha.reporter('spec');
 	mocha.timeout(5000);
+
+	// look up all the files
+	let files = await new Promise(resolve=>{
+		glob('./test/**/*.test.js',(err,files)=>{ resolve(files); });
+	});
+	for(let file of files){
+		mocha.addFile(file);
+	}
+
+	// execute the suite
 	let runner = mocha.run();
 	await new Promise((resolve)=>{
 		runner.addListener('end',(e)=>{
@@ -66,7 +76,10 @@ async function main(){
 		await test();
 	}
 	finally{
-		process.kill(server.pid);
+		try{
+			process.kill(server.pid);
+		}
+		catch(e){}
 	}
 }
 

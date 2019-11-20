@@ -1,11 +1,7 @@
-const child = require('child_process');
-
 const webdriver = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
-const firefox = require('selenium-webdriver/firefox');
+//const firefox = require('selenium-webdriver/firefox');
 
-const https = require('https');
-const fs = require('fs');
 const root = process.cwd();
 
 

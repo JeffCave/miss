@@ -6,8 +6,8 @@ var serveStatic = require('serve-static');
 var serve = serveStatic("./www/");
 
 var server = http.createServer(function(req, res) {
-  var done = finalhandler(req, res);
-  serve(req, res, done);
+	var done = finalhandler(req, res);
+	serve(req, res, done);
 });
 
 server.listen(3030);
