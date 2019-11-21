@@ -1,6 +1,10 @@
+default:
+  image: node:12.13.0-alpine3.10
+
 test:
   stage: test
   script:
+  - npm install
   - node test.js
   only:
   - 31-implement-test-framework
