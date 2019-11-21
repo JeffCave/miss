@@ -1,8 +1,24 @@
-cache:
-  paths:
-  - public
+test:
+  stage: test
+  script:
+  - node test.js
+  only:
+  - 31-implement-test-framework
+  - staging
+  - master
 
-pages:
+staging:
+  stage: deploy
+  script:
+  - cp www public/staging
+  artifacts:
+    paths:
+    - public
+  only:
+  - 31-implement-test-framework
+  - staging
+
+prod:
   stage: deploy
   script:
   - mv www public
