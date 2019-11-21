@@ -24,11 +24,15 @@ describe('Self Test', function() {
 	});
 
 	it('can load a browser', Browser.use(async (browser)=>{
+		let wait = Browser.until.titleMatches(/.*/);
+		await browser.wait(wait, 1000);
 		let title = await browser.getTitle();
-		assert.notEmpty(title);
+		assert.isNotEmpty(title);
 	}));
 
 	it('page being served', Browser.use(async (browser)=>{
+		let wait = Browser.until.titleMatches(/^MISS/);
+		await browser.wait(wait, 1000);
 		let title = await browser.getTitle();
 		assert.isTrue(title.startsWith('MISS'),'Invalid start page');
 	}));

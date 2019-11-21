@@ -1,10 +1,8 @@
 const child = require('child_process');
 const glob = require('glob');
 
-const webdriver = require('selenium-webdriver');
-const chrome = require('selenium-webdriver/chrome');
-const firefox = require('selenium-webdriver/firefox');
 const Mocha = require('mocha');
+const browser = require('./test/utils/browsers').pool;
 
 const https = require('https');
 const fs = require('fs');
@@ -73,9 +71,11 @@ async function main(){
 		setTimeout(resolve,10);
 	});
 	try{
+		browser.chromeOpts.headless();
 		await test();
 	}
 	finally{
+		await browser.dispose();
 		try{
 			process.kill(server.pid);
 		}

@@ -21,5 +21,5 @@ describe('First Run', function() {
 			return (l.level.value >= 1000);
 		});
 		assert.equal(0,errs.length,'No error messages');
-	})).timeout(120000);
+	}));
 });
