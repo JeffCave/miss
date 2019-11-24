@@ -8,7 +8,7 @@ describe('First Run', function() {
 		//2. Open Browser Debug Window (F12)
 		//3. NAV: Application > Storage
 		//4. Delete all the databases
-		await browser.executeScript('await indexedDB.databases().then(dbs=>{let dels = dbs.map(d=>{return indexedDB.deleteDatabase(d.name);}); Promise.all(dels);});');
+		await browser.executeScript('await indexedDB.databases().then(dbs=>{let dels = dbs.map(d=>{return indexedDB.deleteDatabase(d.name);}); return Promise.all(dels);});');
 		//5. Refresh the page
 		await browser.navigate().refresh();
 
@@ -21,5 +21,5 @@ describe('First Run', function() {
 			return (l.level.value >= 1000);
 		});
 		assert.equal(0,errs.length,'No error messages');
-	}));
+	})).timeout(50000);
 });

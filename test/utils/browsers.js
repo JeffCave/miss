@@ -26,9 +26,10 @@ class Browsers {
 
 		let chromeOpts = new chrome.Options();
 		chromeOpts.addArguments('start-maximized');
-		chromeOpts.addArguments('--no-sandbox');
-		chromeOpts.addArguments('--remote-debugging-port=9222');
-		chromeOpts.setChromeBinaryPath('/usr/bin/google-chrome');
+		//chromeOpts.addArguments('--no-sandbox');
+		//chromeOpts.addArguments('--remote-debugging-port=9222');
+		chromeOpts.setChromeBinaryPath('/usr/bin/google-chrome-stable');
+		//chromeOpts.setChromeBinaryPath('/usr/lib/chromium-browser/chromium-browser');
 		//chromeOpts.headless();
 
 		this.chromeOpts = chromeOpts;
@@ -54,16 +55,39 @@ class Browsers {
 				browser:browser
 			});
 		}
+		else{
+			console.error("Browser pool exceeded");
+			throw new Error('Browser pool size exceeded');
+		}
 		let pool = this.pool.get(browser);
 		pool.used++;
-		pool.timeout = setTimeout(()=>{ this.dispose(browser); },this.timeout);
+		pool.timeout = setTimeout(()=>{
+			this.dispose(browser);
+		},this.timeout);
 		// get the default page
-		await browser.get('http://lvh.me:3030');
+		await pool.browser.get('http://lvh.me:3030');
 		// wait for it to load
-		let el = await browser.findElement(this.driver.By.css('main'));
-		await browser.wait(this.driver.until.elementIsVisible(el),1000);
+		await new Promise((resolve,reject)=>{
+			let fail = setTimeout(()=>{
+				clearTimeout(success);
+				reject('Timed out');
+			},1000);
+
+			let success = null;
+			async function check(){
+				let complete = await pool.browser.executeScript('return document.readyState;');
+				if(complete === 'complete'){
+					clearTimeout(fail);
+					resolve();
+				}
+				else{
+					success = setTimeout(check,64);
+				}
+			}
+			check();
+		});
 		// send it
-		return browser;
+		return pool.browser;
 	}
 
 	async checkin(browser){
@@ -92,25 +116,32 @@ class Browsers {
 			browser = Array.from(browser);
 		}
 		if(Array.isArray(browser)){
-			browser.forEach(b=>{
-				this.dispose(b);
+			return browser.every(b=>{
+				return this.dispose(b);
 			});
 		}
 		if(!(browser instanceof webdriver.WebDriver)){
 			return false;
 		}
 
-		let pool = this.pool.get(browser);
-		this.pool.delete(pool.browser);
+		if(this.pool.has(browser)){
+			this.pool.delete(browser);
+		}
 		let avail = this.avail.indexOf(browser);
 		if(avail >= 0){
 			this.avail.splice(avail,1);
 		}
-		await pool.browser.close();
-		await pool.browser.quit();
+
+		try{
+			await browser.close();
+			await browser.quit();
+		}
+		catch(e){
+			console.debug('Releasing a browser');
+		}
 	}
 
-	use(func){
+	use(func=(()=>{})){
 		let usable = async ()=>{
 			let browser = await this.checkout();
 			try {

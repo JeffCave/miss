@@ -1,8 +1,7 @@
 // globals
 global.assert = require('chai').assert;
-global.Browser = require('./utils/browsers.js').pool;
-
-global.Browser.use(()=>{});
+global.Browser = require('./utils/browsers.js');
+global.Browser = global.Browser.pool;
 
 
 function before(){
