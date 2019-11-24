@@ -98,7 +98,7 @@ async function main(){
 		setTimeout(resolve,10);
 	});
 	try{
-		//browser.chromeOpts.headless();
+		browser.chromeOpts.headless();
 		await browser.use();
 		await test();
 	}
