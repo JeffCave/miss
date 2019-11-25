@@ -6,7 +6,7 @@ test:
   before_script:
   - apt-get update -qq
   - apt-get install -qq -y chromium iceweasel
-  - /usr/bin/chromium --version
+  #- /usr/bin/chromium --version
   - pushd .
   - mkdir -p ./test/bin && cd ./test/bin
   - wget "https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-linux64.tar.gz" 2>&1 1>/dev/null
@@ -24,24 +24,17 @@ test:
   - staging
   - master
 
-staging:
+pages:
   stage: deploy
   script:
-  - mkdir -p public/staging
-  - cp -r www public/staging
+  - subdir="$CI_COMMIT_REF_SLUG"
+  - if [ "$CI_COMMIT_REF_SLUG" == "$CI_DEFAULT_BRANCH" ]; then; subdir=""; fi;
+  - mkdir -p public/$subdir
+  - cp -r www public/$subdir
   artifacts:
     paths:
     - public
   only:
   - 31-implement-test-framework
   - staging
-
-prod:
-  stage: deploy
-  script:
-  - mv www public
-  artifacts:
-    paths:
-    - public
-  only:
   - master
