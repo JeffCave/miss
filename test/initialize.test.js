@@ -8,7 +8,7 @@ describe('First Run', function() {
 		//2. Open Browser Debug Window (F12)
 		//3. NAV: Application > Storage
 		//4. Delete all the databases
-		await browser.executeScript('await indexedDB.databases().then(dbs=>{let dels = dbs.map(d=>{return indexedDB.deleteDatabase(d.name);}); return Promise.all(dels);});');
+		await browser.executeScript('indexedDB.databases().then(dbs=>{let dels = dbs.map(d=>{return indexedDB.deleteDatabase(d.name);}); return Promise.all(dels);});');
 		//5. Refresh the page
 		await browser.navigate().refresh();
 

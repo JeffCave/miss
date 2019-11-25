@@ -25,11 +25,12 @@ class Browsers {
 		this.maxuse = 10;
 
 		let chromeOpts = new chrome.Options();
-		chromeOpts.addArguments('start-maximized');
+		//chromeOpts.addArguments('start-maximized');
 		chromeOpts.addArguments('--no-sandbox');
-		chromeOpts.addArguments('--remote-debugging-port=9222');
+		chromeOpts.setChromeBinaryPath('/usr/bin/chromium');
+		//chromeOpts.setChromeBinaryPath('/usr/bin/chromium-browser');
+		//chromeOpts.setChromeBinaryPath('/usr/lib/chromium-browser/chromium-browser')
 		//chromeOpts.setChromeBinaryPath('/usr/bin/google-chrome-stable');
-		chromeOpts.setChromeBinaryPath('/usr/lib/chromium-browser/chromium-browser');
 		//chromeOpts.headless();
 
 		this.chromeOpts = chromeOpts;

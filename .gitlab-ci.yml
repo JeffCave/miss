@@ -4,15 +4,18 @@ default:
 test:
   stage: test
   before_script:
-  - sudo apt-get update -qq && apt-get install -y -qq chromium-browser firefox
-  - sudo ln -s /usr/lib/chromium-browser/chromium-browser /usr/bin/google-chrome
-  - cd ./test/bin
-  - wget "https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-linux64.tar.gz"
+  - apt-get update -qq
+  - apt-get install -qq -y chromium iceweasel
+  - /usr/bin/chromium --version
+  - pushd .
+  - mkdir -p ./test/bin && cd ./test/bin
+  - wget "https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-linux64.tar.gz" 2>&1 1>/dev/null
+  #- wget "https://chromedriver.storage.googleapis.com/78.0.3904.70/chromedriver_linux64.zip" 2>&1 1>/dev/null
+  - wget "https://chromedriver.storage.googleapis.com/73.0.3683.68/chromedriver_linux64.zip" 2>&1 1>/dev/null
   - tar -xvf *.tar.gz
-  - mv gecko* ./test/bin/
-  - wget "https://chromedriver.storage.googleapis.com/78.0.3904.70/chromedriver_linux64.zip"
   - unzip *.zip
-  - mv chrome* ./test/bin/
+  - popd
+  - su node
   script:
   - npm install
   - node test.js
@@ -24,7 +27,8 @@ test:
 staging:
   stage: deploy
   script:
-  - cp www public/staging
+  - mkdir -p public/staging
+  - cp -r www public/staging
   artifacts:
     paths:
     - public

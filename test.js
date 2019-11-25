@@ -71,7 +71,7 @@ async function loadbrowsers(){
 async function test(){
 	// setup Mocha
 	let mocha = new Mocha();
-	mocha.reporter('nyan');
+	mocha.reporter('spec');
 	mocha.timeout(5000);
 
 	// look up all the files
@@ -84,23 +84,28 @@ async function test(){
 
 	// execute the suite
 	let runner = mocha.run();
-	await new Promise((resolve)=>{
-		runner.addListener('end',(e)=>{
-			resolve();
+	let results = await new Promise((resolve)=>{
+		runner.addListener('end',()=>{
+			let stats = runner.stats;
+			resolve(stats);
 		})
 	});
+	return results;
 }
 
 async function main(){
 	await loadbrowsers();
 	let server = child.spawn('node',['./server.js']);
+	let results = {};
 	await new Promise((resolve)=>{
 		setTimeout(resolve,10);
 	});
 	try{
+		//browser.chromeOpts.addArguments('--no-sandbox');
+		//browser.chromeOpts.addArguments('--remote-debugging-port=9222');
 		browser.chromeOpts.headless();
 		await browser.use();
-		await test();
+		results = await test();
 	}
 	finally{
 		browser.dispose();
@@ -109,6 +114,7 @@ async function main(){
 		}
 		catch(e){}
 	}
+	process.exit(results.failures || 0);
 }
 
 main();
