@@ -28,7 +28,7 @@ pages:
   stage: deploy
   script:
   - subdir="$CI_COMMIT_REF_SLUG"
-  - if [ "$CI_COMMIT_REF_SLUG" == "$CI_DEFAULT_BRANCH" ]; then; subdir=""; fi;
+  - if [ "$CI_COMMIT_REF_SLUG" == "$CI_DEFAULT_BRANCH" ]; then subdir=""; fi;
   - mkdir -p public/$subdir
   - cp -r www public/$subdir
   artifacts:
