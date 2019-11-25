@@ -1,13 +1,46 @@
+default:
+  image: node:latest
+
 cache:
   paths:
   - public
 
+test:
+  stage: test
+  before_script:
+  - apt-get update -qq
+  - apt-get install -qq -y chromium iceweasel
+  #- /usr/bin/chromium --version
+  - pushd .
+  - mkdir -p ./test/bin && cd ./test/bin
+  - wget "https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-linux64.tar.gz" 2>&1 1>/dev/null
+  #- wget "https://chromedriver.storage.googleapis.com/78.0.3904.70/chromedriver_linux64.zip" 2>&1 1>/dev/null
+  - wget "https://chromedriver.storage.googleapis.com/73.0.3683.68/chromedriver_linux64.zip" 2>&1 1>/dev/null
+  - tar -xvf *.tar.gz
+  - unzip *.zip
+  - popd
+  - su node
+  script:
+  - npm install
+  - node test.js
+  only:
+  - 31-implement-test-framework
+  - staging
+  - master
+
 pages:
   stage: deploy
   script:
-  - mv www public
+  - dir="$CI_COMMIT_REF_SLUG"
+  - if [ "$CI_COMMIT_REF_SLUG" == "$CI_DEFAULT_BRANCH" ]; then dir=""; fi;
+  - dir="public/$dir"
+  - echo "Deploying to $dir"
+  - mkdir -p $dir
+  - cp -r www $dir
   artifacts:
     paths:
     - public
   only:
+  - 31-implement-test-framework
+  - staging
   - master

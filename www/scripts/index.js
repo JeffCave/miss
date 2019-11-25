@@ -287,6 +287,7 @@ Alternately, you can <a href='?CompatCheck=wimp'>just proceed</a> &hellip; nothi
 
 let nexterrorreport = Date.now();
 async function reporterror(event){
+	console.error(event);
 	let errormsg = '';
 	try{
 		errormsg = new URL(event.filename);
