@@ -1,3 +1,7 @@
+cache:
+  paths:
+  - public
+
 pages:
   stage: deploy
   script:
