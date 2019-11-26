@@ -24,7 +24,6 @@ test:
   - npm install
   - node test.js
   only:
-  - 31-implement-test-framework
   - staging
   - master
 
@@ -36,11 +35,10 @@ pages:
   - dir="public/$dir"
   - echo "Deploying to $dir"
   - mkdir -p $dir
-  - cp -r www $dir
+  - cp -r www/* $dir
   artifacts:
     paths:
     - public
   only:
-  - 31-implement-test-framework
   - staging
   - master
