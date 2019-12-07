@@ -101,9 +101,13 @@ async function main(){
 		setTimeout(resolve,10);
 	});
 	try{
-		//browser.chromeOpts.addArguments('--no-sandbox');
-		//browser.chromeOpts.addArguments('--remote-debugging-port=9222');
 		browser.chromeOpts.headless();
+		browser.ffOpts.headless();
+		let i = process.argv.indexOf('--browser');
+		if(i > 0){
+			let btype = process.argv[i+1];
+			browser.default = btype;
+		}
 		await browser.use();
 		results = await test();
 	}

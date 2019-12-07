@@ -1,6 +1,6 @@
 const webdriver = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
-//const firefox = require('selenium-webdriver/firefox');
+const firefox = require('selenium-webdriver/firefox');
 
 const root = process.cwd();
 let POOL = null;
@@ -16,40 +16,34 @@ let POOL = null;
 
 class Browsers {
 
-	constructor(poolsize){
+	constructor(poolsize=10, defaulttype='chrome'){
 		this.poolsize = poolsize || 10;
 		this.pool = new Map();
-		this.avail = [];
-		this.locked = [];
-		this.timeout = 60000;
+		this.avail = new Map();
+		this.timeout = 600000;
 		this.maxuse = 10;
 
+		this.default = defaulttype;
+
 		let chromeOpts = new chrome.Options();
-		//chromeOpts.addArguments('start-maximized');
+		chromeOpts.addArguments('start-maximized');
 		chromeOpts.addArguments('--no-sandbox');
 		chromeOpts.setChromeBinaryPath('/usr/bin/chromium');
-		//chromeOpts.setChromeBinaryPath('/usr/bin/chromium-browser');
-		//chromeOpts.setChromeBinaryPath('/usr/lib/chromium-browser/chromium-browser')
-		//chromeOpts.setChromeBinaryPath('/usr/bin/google-chrome-stable');
-		//chromeOpts.headless();
-
 		this.chromeOpts = chromeOpts;
 
-		//this.checkin(this.checkout());
+		let ffOpts = new firefox.Options();
+		this.ffOpts = ffOpts;
 	}
 
-	async checkout(){
+	async checkout(browsertype = this.default){
 		let browser = null;
-		if(this.avail.length > 0){
-			browser = this.avail.pop();
+		if(this.avail.has(browsertype) && this.avail.get(browsertype).size > 0){
+			let avail = this.avail.get(browsertype);
+			browser = avail.values().next().value;
+			avail.delete(browser);
 		}
 		else if(this.pool.size < this.poolsize){
-			browser = await new webdriver.Builder()
-				.forBrowser('chrome')
-				.withCapabilities(webdriver.Capabilities.chrome())
-				.setChromeOptions(this.chromeOpts)
-				.build()
-				;
+			browser = await this.allDrivers[browsertype].build();
 			this.pool.set(browser,{
 				used:0,
 				timeout:null,
@@ -97,10 +91,13 @@ class Browsers {
 			clearTimeout(pool.timeout);
 			pool.timeout = null;
 		}
-		if(pool.used < this.maxuse){
-			this.avail.push(browser);
+
+		if(!this.avail.has(browser.type)){
+			this.avail.set(browser.type,new Set());
 		}
-		else{
+		this.avail.get(browser.type).add(browser);
+
+		if(pool.used > this.maxuse){
 			this.dispose(browser);
 		}
 	}
@@ -128,9 +125,8 @@ class Browsers {
 		if(this.pool.has(browser)){
 			this.pool.delete(browser);
 		}
-		let avail = this.avail.indexOf(browser);
-		if(avail >= 0){
-			this.avail.splice(avail,1);
+		for(let avail of this.avail.values()){
+			avail.delete(browser);
 		}
 
 		try{
@@ -142,30 +138,62 @@ class Browsers {
 		}
 	}
 
-	use(func=(()=>{})){
-		let usable = async ()=>{
-			let browser = await this.checkout();
-			try {
-				await func(browser);
-			}
-			finally {
-				this.checkin(browser);
-			}
+	use(browsers=null,func=(()=>{})){
+		if(typeof browsers === 'function'){
+			func = browsers;
+			browsers = [this.default];
 		}
+		if(!Array.isArray(browsers)){
+			browsers = [browsers];
+		}
+		let usable = async ()=>{
+			let allBrowsers = Object.keys(this.allDrivers);
+			for(let browser of browsers){
+				if(!allBrowsers.includes(browser)){
+					throw new Error(`Unknown Browser: ${browser}`);
+				}
+				browser = await this.checkout(browser);
+				try {
+					await func(browser);
+				}
+				finally {
+					this.checkin(browser);
+				}
+			}
+		};
 		return usable;
 	}
 
 	get allDrivers(){
 		return {
 			'chrome':{
-					url:'https://chromedriver.storage.googleapis.com/78.0.3904.70/chromedriver_linux64.zip',
-					name:'chromedriver',
-					postprocess: ['unzip']
+				url:'https://chromedriver.storage.googleapis.com/78.0.3904.70/chromedriver_linux64.zip',
+				name:'chromedriver',
+				postprocess: ['unzip'],
+				build: async ()=>{
+					let browser = await new webdriver.Builder()
+						.forBrowser('chrome')
+						.withCapabilities(webdriver.Capabilities.chrome())
+						.setChromeOptions(this.chromeOpts)
+						.build()
+						;
+					browser.type = 'chrome';
+					return browser;
+				}
 			},
 			'firefox':{
 				url:'https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-linux64.tar.gz',
 				name:'geckodriver',
-				postprocess: ['untar -xzf']
+				postprocess: ['untar -xzf'],
+				build: async ()=>{
+					let browser = await new webdriver.Builder()
+						.forBrowser('firefox')
+						.setFirefoxOptions(this.ffOpts)
+						.build()
+						;
+					browser.type = 'firefox';
+					return browser;
+				}
 			}
 		};
 	}
@@ -187,12 +215,14 @@ class Browsers {
 	}
 
 	static get pool(){
-		if (!POOL) POOL = new Browsers(10);
+		if (!POOL) POOL = new Browsers();
 		return POOL;
 	}
 }
 
-
+(function(){
+//	Browsers.pool.use();
+})();
 
 module.exports.Browsers = Browsers;
 module.exports.pool = Browsers.pool;
