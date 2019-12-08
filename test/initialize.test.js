@@ -27,5 +27,5 @@ describe('First Run', function() {
 			assert.equal(0,errs.length,'No error messages');
 		})
 		await test();
-	}).timeout(50000);
+	});
 });

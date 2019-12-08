@@ -60,7 +60,7 @@ class Browsers {
 			this.dispose(browser);
 		},this.timeout);
 		// get the default page
-		await pool.browser.get('http://lvh.me:3030');
+		await pool.browser.get('http://lvh.me:3030/?CompatCheck=wimp');
 		// wait for it to load
 		await new Promise((resolve,reject)=>{
 			let fail = setTimeout(()=>{
