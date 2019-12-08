@@ -67,7 +67,7 @@ class DeepdiffOpts extends HTMLFormElement{
 		}
 
 
-		let algos = ['No Algorithms found'];
+		let algos = [['No Algorithms found',{availabe:false}]];
 		let algo = algos[0];
 		if(this.ddInstance){
 			algos = this.ddInstance.AlgorithmRegistry;
@@ -77,14 +77,17 @@ class DeepdiffOpts extends HTMLFormElement{
 					return a[1] === algo;
 				})[0][0]
 				;
-			algos = Object.keys(algos).filter(a=>{return a!=='linecompare';}).sort();
+			algos = Object.entries(algos).filter(a=>{return a[0]!=='linecompare';}).sort();
 		}
 
 		dlAlgos.innerHTML = "";
 		algos.map((algo)=>{
 				let opt = document.createElement('option');
-				opt.value = algo;
-				opt.innerText = algo;
+				opt.value = algo[0];
+				opt.innerText = algo[0];
+				if(!algo[1].available){
+					opt.setAttribute('disabled','');
+				}
 				return opt;
 			})
 			.forEach((algo)=>{
@@ -134,4 +137,3 @@ try{
 	}
 }
 catch(err){}
-

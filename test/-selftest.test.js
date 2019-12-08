@@ -3,6 +3,8 @@ if(!global.Browser){
 }
 
 describe('Self Test', function() {
+	this.timeout(30000);
+
 	before(function() {
 		// runs before all tests in this block
 	});

@@ -5,16 +5,14 @@ cache:
   paths:
   - public
 
-test:
+.test:
   stage: test
   before_script:
   - apt-get update -qq
   - apt-get install -qq -y chromium iceweasel
-  #- /usr/bin/chromium --version
   - pushd .
   - mkdir -p ./test/bin && cd ./test/bin
   - wget "https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-linux64.tar.gz" 2>&1 1>/dev/null
-  #- wget "https://chromedriver.storage.googleapis.com/78.0.3904.70/chromedriver_linux64.zip" 2>&1 1>/dev/null
   - wget "https://chromedriver.storage.googleapis.com/73.0.3683.68/chromedriver_linux64.zip" 2>&1 1>/dev/null
   - tar -xvf *.tar.gz
   - unzip *.zip
@@ -26,6 +24,18 @@ test:
   only:
   - staging
   - master
+
+test-chrome:
+  extends: .test
+  script:
+  - npm install
+  - node test.js --browser chrome
+
+test-firefox:
+  extends: .test
+  script:
+  - npm install
+  - node test.js --browser firefox
 
 pages:
   stage: deploy
