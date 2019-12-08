@@ -5,7 +5,7 @@ if(!global.Browser){
 describe('First Run', function() {
 	it('Database initialized', async function(){
 		let self = this;
-		let test = Browser.use(async (browser)=>{
+		return Browser.run(async (browser)=>{
 			if(browser.type === 'firefox') self.skip('Firefox not supported');
 
 			//1. Open page
@@ -26,6 +26,5 @@ describe('First Run', function() {
 			});
 			assert.equal(0,errs.length,'No error messages');
 		})
-		await test();
 	});
 });

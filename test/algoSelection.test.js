@@ -42,5 +42,14 @@ describe('Algorithm Selection', function() {
 		assert.equal(text,'smithwaterman-swAlgoCell','Selecting general algorithm results in CPU');
 	}));
 
-	it('GPU blocked on Firefox');
+	it('GPU disabled on Firefox', async function(){
+		let self = this;
+		return Browser.run(async (browser)=>{
+			if(browser.type !== 'firefox') return self.skip('Firefox not supported');
+			let select = await browser.findElement(Browser.By.css('form select[name="algorithm"]'));
+			let opt = await select.findElement(Browser.By.css('option[value="smithwaterman-swAlgoGpu"]'));
+			let attr = await opt.getAttribute('enabled');
+			assert.isNotNull(attr,'Enabled has been set');
+		});
+	});
 });

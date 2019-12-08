@@ -16,7 +16,7 @@ let POOL = null;
 
 class Browsers {
 
-	constructor(poolsize=10, defaulttype='chrome'){
+	constructor(poolsize=10, defaulttype='firefox'){
 		this.poolsize = poolsize || 10;
 		this.pool = new Map();
 		this.avail = new Map();
@@ -136,6 +136,11 @@ class Browsers {
 		catch(e){
 			console.debug('Releasing a browser');
 		}
+	}
+
+	async run(browsers=null,func=(()=>{})){
+		let test = this.use(browsers,func);
+		await test();
 	}
 
 	use(browsers=null,func=(()=>{})){
