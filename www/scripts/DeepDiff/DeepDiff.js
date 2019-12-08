@@ -654,7 +654,7 @@ export default class DeepDiff extends EventTarget{
 			pair.submissions[0].finalList = tokens[0];
 			pair.submissions[1].finalList = tokens[1];
 		}
-		let algo = this.Algorithm;
+		let algo = this.Algorithm.proc;
 		console.log("Performing comparison on " + pair.name );
 		let timer = performance.now();
 		let result = await algo(pair,async (comparer)=>{

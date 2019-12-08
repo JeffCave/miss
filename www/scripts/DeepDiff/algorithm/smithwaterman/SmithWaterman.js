@@ -20,17 +20,21 @@ import {swAlgoWebWorker} from './swAlgoWebWorker.js';
 	// come up with a unique name
 	let name = 'smithwaterman-'+AlgoVariant;
 	// Add a function to the registry
-	AlgorithmRegistry.processors[name] = (req, progHandler)=>{
-		// apply the variation settings
-		req.AlgoVariant = AlgoVariant;
-		// call the base function (see below)
-		return ProcSW(req,progHandler);
+	AlgorithmRegistry.processors[name] = {
+		proc: (req, progHandler)=>{
+			// apply the variation settings
+			req.AlgoVariant = AlgoVariant;
+			// call the base function (see below)
+			return ProcSW(req,progHandler);
+		},
+		available: true,
 	};
 });
 // also register a default one
 AlgorithmRegistry.processors['smithwaterman'] = AlgorithmRegistry.processors['smithwaterman-swAlgoCell'];
 
-
+// test to ensure the software is capable of running
+AlgorithmRegistry.processors['smithwaterman-swAlgoGpu'].available = (typeof window.OffscreenCanvas !== 'undefined');
 
 
 const threads = {};

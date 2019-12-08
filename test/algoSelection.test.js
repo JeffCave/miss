@@ -48,7 +48,7 @@ describe('Algorithm Selection', function() {
 			if(browser.type !== 'firefox') return self.skip('Firefox not supported');
 			let select = await browser.findElement(Browser.By.css('form select[name="algorithm"]'));
 			let opt = await select.findElement(Browser.By.css('option[value="smithwaterman-swAlgoGpu"]'));
-			let attr = await opt.getAttribute('enabled');
+			let attr = await opt.getAttribute('disabled');
 			assert.isNotNull(attr,'Enabled has been set');
 		});
 	});
