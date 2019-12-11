@@ -26,7 +26,6 @@ import './widgets/psSimilarityCompare.js';
 import './widgets/psSubmissions.js';
 import './widgets/psTabbedPanelElement.js';
 import './widgets/psTornadoChart.js';
-import psSimilarityCompare from './widgets/psSimilarityCompare.js';
 
 /*
 global File
@@ -277,7 +276,7 @@ Alternately, you can <a href='?CompatCheck=wimp'>just proceed</a> &hellip; nothi
 		`;
 		window.alert(message,'info');
 	}
-	new indexPage();
+	window.index = new indexPage();
 
 	// everything is loaded. make it visible;
 	let style = document.createElement('style');

@@ -77,6 +77,20 @@
     <select name='algorithm' list='algorithms'>
      <option value='test'>Test</option>
     </select>
+
+    <label>Scoring Values</label>
+    <div style='columns:3;'>
+     <label>Match</label>
+     <input name='score.match'       type='number' value='0' min='-100' max='100' />
+     <label>Mismatch</label>
+     <input name='score.mismatch'    type='number' value='0' min='-100' max='100' />
+     <label>Skip</label>
+     <input name='score.skip'        type='number' value='0' min='-100' max='100' />
+     <label>Terminus</label>
+     <input name='score.terminus'    type='number' value='0' min='-100' max='100' />
+     <label>Significant</label>
+     <input name='score.significant' type='number' value='0' min='-100' max='100' />
+    </div>
    </form>
   </ps-panel>
   <ps-panel icon='collections' can-maximize='false'>
