@@ -11,8 +11,9 @@ describe('File Add/Remove', function() {
 		files = await browser.executeScript('return arguments[0].shadowRoot;',files);
 		files = await files.findElement(Browser.By.css('input'));
 		let path = Path.resolve('./www/samples/sampleassignment.zip');
+		await browser.sleep(1000);
 		await files.sendKeys(path);
-		await browser.sleep(5000);
+		await browser.sleep(4000);
 	}
 
 	it('Add Files', async function(){
@@ -25,16 +26,36 @@ describe('File Add/Remove', function() {
 			subs = await subs.findElements(Browser.By.css('ps-submission'));
 			assert.isNotEmpty(subs,'Submissions extracted');
 		});
-	}).timeout(600000);
+	});
 
-	it.skip('Remove Files', async function(){
+	it('Remove Files', async function(){
 		let self = this;
 		return Browser.run(async (browser)=>{
-			assert.fail('Not Implemented');
+			await addFiles(browser);
+
+			let subs = await browser.findElement(Browser.By.css('ps-submission-list'));
+			subs = await browser.executeScript('return arguments[0].shadowRoot;',subs);
+			subs = await subs.findElements(Browser.By.css('ps-submission'));
+			subs = Array.from(subs);
+			assert.isNotEmpty(subs,'Submissions extracted');
+
+			while(subs.length){
+				let sub = subs.pop();
+				let rem = await browser.executeScript('return arguments[0].shadowRoot;',sub);
+				rem = await rem.findElement(Browser.By.css('button[name="remove"]'));
+				await rem.click();
+			}
+
+			await browser.sleep(500);
+			subs = await browser.findElement(Browser.By.css('ps-submission-list'));
+			subs = await browser.executeScript('return arguments[0].shadowRoot;',subs);
+			subs = await subs.findElements(Browser.By.css('ps-submission'));
+			subs = Array.from(subs);
+			assert.isEmpty(subs,'Submissions have been removed');
 		});
 	});
 
-	it.skip('Remove All Files', async function(){
+	it.skip('Dump Database', async function(){
 		let self = this;
 		return Browser.run(async (browser)=>{
 			assert.fail('Not Implemented');

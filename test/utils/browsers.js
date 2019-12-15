@@ -16,7 +16,7 @@ let POOL = null;
 
 class Browsers {
 
-	constructor(poolsize=10, defaulttype='firefox'){
+	constructor(poolsize=10, defaulttype='chrome'){
 		this.poolsize = poolsize || 10;
 		this.pool = new Map();
 		this.avail = new Map();
@@ -160,6 +160,17 @@ class Browsers {
 				browser = await this.checkout(browser);
 				try {
 					await func(browser);
+					let errs = await browser.manage().logs().get('browser');
+					errs = errs
+						.filter(l=>{
+							return (l.level.value >= 1000);
+						})
+						.map(l=>{
+							return (l.message);
+						})
+						.join('\n');
+					assert.isEmpty(errs,'Browser did not generate error messages during test');
+
 				}
 				finally {
 					this.checkin(browser);

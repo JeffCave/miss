@@ -12,8 +12,6 @@ import './preprocessor/LowercasePreprocessor.js';
 import './preprocessor/WhitespaceDeduplicationPreprocessor.js';
 import {AlgorithmRegistry} from './algorithm/AlgorithmRegistry.js';
 import * as AlgorithmResults from './algorithm/AlgorithmResults.js';
-import {CommonCodeLineRemovalPreprocessor} from './preprocessor/CommonCodeLineRemovalPreprocessor.js';
-import {ContentHandlers} from './submission/ContentHandlers.js';
 import {Submission} from './submission/Submission.js';
 
 import * as utils from './util/misc.js';
