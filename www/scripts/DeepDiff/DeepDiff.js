@@ -46,9 +46,11 @@ export default class DeepDiff extends EventTarget{
 
 		this._.emit = {
 			load : ()=>{
+				this.isReady = true;
 				this.dispatchEvent(new Event('load'));
 			}
 		};
+		this.isReady = false;
 
 		this.dbLoad();
 
@@ -365,6 +367,7 @@ export default class DeepDiff extends EventTarget{
 	}
 
 	async Clear(){
+		this.isReady = false;
 		console.log('Deleting database...');
 		await this.db.destroy();
 		this._.db = null;

@@ -277,7 +277,7 @@ Alternately, you can <a href='?CompatCheck=wimp'>just proceed</a> &hellip; nothi
 		`;
 		window.alert(message,'info');
 	}
-	new indexPage();
+	window.app = new indexPage();
 
 	// everything is loaded. make it visible;
 	let style = document.createElement('style');

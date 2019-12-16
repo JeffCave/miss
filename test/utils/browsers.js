@@ -61,26 +61,30 @@ class Browsers {
 		},this.timeout);
 		// get the default page
 		await pool.browser.get('http://lvh.me:3030/?CompatCheck=wimp');
-		// wait for it to load
-		await new Promise((resolve,reject)=>{
-			let fail = setTimeout(()=>{
-				clearTimeout(success);
-				reject('Timed out');
-			},1000);
-
-			let success = null;
-			async function check(){
-				let complete = await pool.browser.executeScript('return document.readyState;');
-				if(complete === 'complete'){
-					clearTimeout(fail);
+		// wait for the page to finish loading
+		await pool.browser.executeAsyncScript(function(resolve){
+			if(document.readyState === 'complete') resolve();
+			window.app.addEventListener('load',function(){
+				resolve();
+			});
+		});
+		// wait for the runner to be available
+		await pool.browser.executeAsyncScript(function(resolve){
+			let interval = setInterval(function(){
+				if(window.app && window.app.runner && window.app.runner.isReady){
+					clearInterval(interval);
 					resolve();
 				}
-				else{
-					success = setTimeout(check,64);
-				}
-			}
-			check();
+			},64);
 		});
+		// try clearing the database, but wait for it to finish
+		await pool.browser.executeAsyncScript(function(resolve){
+			window.app.runner.addEventListener('load',function(){
+				resolve();
+			});
+			window.app.runner.Clear();
+		});
+
 		// send it
 		return pool.browser;
 	}
