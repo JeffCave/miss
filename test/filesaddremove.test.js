@@ -55,10 +55,27 @@ describe('File Add/Remove', function() {
 		});
 	});
 
-	it.skip('Dump Database', async function(){
+	it('Dump Database', async function(){
 		let self = this;
 		return Browser.run(async (browser)=>{
-			assert.fail('Not Implemented');
+			await addFiles(browser);
+
+			let del = await browser.findElement(Browser.By.css('#DeleteAll'));
+			await del.click();
+			await browser.executeAsyncScript(function(resolve){
+				let interval = setInterval(function(){
+					if(window.app && window.app.runner && window.app.runner.isReady){
+						clearInterval(interval);
+						resolve();
+					}
+				},64);
+			});
+
+			subs = await browser.findElement(Browser.By.css('ps-submission-list'));
+			subs = await browser.executeScript('return arguments[0].shadowRoot;',subs);
+			subs = await subs.findElements(Browser.By.css('ps-submission'));
+			subs = Array.from(subs);
+			assert.isEmpty(subs,'Submissions have been removed');
 		});
 	});
 });
