@@ -46,7 +46,7 @@ describe('File Add/Remove', function() {
 				await rem.click();
 			}
 
-			await browser.sleep(500);
+			await browser.sleep(1500);
 			subs = await browser.findElement(Browser.By.css('ps-submission-list'));
 			subs = await browser.executeScript('return arguments[0].shadowRoot;',subs);
 			subs = await subs.findElements(Browser.By.css('ps-submission'));

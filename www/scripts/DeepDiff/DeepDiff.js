@@ -168,7 +168,7 @@ export default class DeepDiff extends EventTarget{
 				id.shift();
 				id = id.join('.');
 				delete this.report.results[id];
-				this.Algorithm({name:id,action:'stop'});
+				this.Algorithm.proc({name:id,action:'stop'});
 				console.log("removed result: " + e.detail.id);
 			}
 			else{
@@ -646,7 +646,7 @@ export default class DeepDiff extends EventTarget{
 				});
 
 			if(tokens.length < 2){
-				let result = await AlgorithmResults.Create(pair.submissions[0], pair.submissions[1], [], [], {error:'Invalid Token Length'});
+				let result = await AlgorithmResults.Create(pair.submissions[0], pair.submissions[1], [], [], [], {error:'Invalid Token Length'});
 				result.totalTokens = 0;
 				this.addResults(result);
 				return result;
