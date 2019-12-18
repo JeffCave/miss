@@ -780,6 +780,9 @@ export default class DeepDiff extends EventTarget{
 		//}
 		// Try #3
 		let result = await this.Compare(results.pop());
+		if(!result){
+			result = {name:'failed to get name'};
+		}
 		console.log('Finished ' + result.name);
 
 		this.runAllComparesIsRunning = false;
