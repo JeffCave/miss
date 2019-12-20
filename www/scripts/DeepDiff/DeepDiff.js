@@ -34,7 +34,10 @@ export default class DeepDiff extends EventTarget{
 		super();
 
 		this._ = {
-			config:{}
+			config:{},
+			ready:false,
+			clearer:null,
+			listenerClearers:[]
 		};
 
 		this.numThreads = 1;
@@ -45,98 +48,111 @@ export default class DeepDiff extends EventTarget{
 		};
 
 		this._.emit = {
-			load : ()=>{
-				this.isReady = true;
+			load : async ()=>{
 				this.dispatchEvent(new Event('load'));
+			},
+			halt : async ()=>{
+				this.dispatchEvent(new Event('halt'));
 			}
 		};
-		this.isReady = false;
 
 		this.dbLoad();
-
 	}
 
-
 	get db(){
-		if(this._.db){
-			return this._.db;
-		}
-		this._.db = new PouchDB('DeepDiff');
-		return this._.db;
+		return this.dbLoad();
+	}
+
+	get isReady(){
+		return this._.ready && !this._.clearer && this._.db;
 	}
 
 	async dbLoad(){
-		await this.dbInit();
-		this._.config = await this.db
-			.get('config')
-			.catch((e)=>{
-				if(e.status !== 404){
-					console.error('ERROR loading DeepDiff configuration.');
+		if(this._.db === false){
+			await new Promise((resolve,reject)=>{
+				let timeout = setTimeout(()=>{
+					clearTimeout(timeout);
+					clearInterval(interval);
+					reject(this._.db);
+				},500);
+				let interval = setInterval(()=>{
+					if(this._.db!==false){
+						clearTimeout(timeout);
+						clearInterval(interval);
+						resolve(this._.db);
+					}
+				},64);
+			});
+			return this.dbLoad();
+		}
+		if(!this._.db){
+			this._.db = await (async ()=>{
+				let db = new PouchDB('DeepDiff');
+				await this.dbInit(db);
+				this._.config = await db
+					.get('config')
+					.catch((e)=>{
+						if(e.status !== 404){
+							console.error('ERROR loading DeepDiff configuration.');
+						}
+						return {};
+					})
+					;
+				return db;
+			})();
+			this._.ready = true;
+			this._.emit.load();
+			if(!this._.clearer){
+				try{
+					let submissions = await this.Submissions;
+					this.report.submissions = submissions;
 				}
-				return {};
-			})
-			;
-		let submissions = await this.Submissions;
-		this.report.submissions = submissions;
-		let results = await this.Results;
-		this.report.results = results.reduce((a,d)=>{
-			a[d.name] = d;
-			return a;
-		},{});
-		this._.emit.load();
+				catch(e){
+					let ignore = e.message.includes('database connection is closing');
+					if(!ignore){
+						throw e;
+					}
+					else{
+						console.warn('Database Connection is closing');
+					}
+				}
+				try{
+					let results = await this.Results;
+					this.report.results = results.reduce((a,d)=>{
+						a[d.name] = d;
+						return a;
+					},{});
+
+				}
+				catch(e){
+					console.log('Database Connection is closing');
+					let ignore = e.message.includes('database connection is closing');
+					if(!ignore){
+						throw e;
+					}
+				}
+				this.runAllCompares()
+					.catch((e)=>{
+						if(e.status !== 404){
+							console.error('ERROR loading DeepDiff configuration.');
+						}
+						return {};
+					});
+			}
+		}
+		return this._.db;
 	}
 
-	async dbInit(){
-		let designdoc = this.db.upsert('_design/checksims',(doc)=>{
-			let designDoc = {
-				views:{
-					submissions:{
-						map: function(doc){
-							if(doc._id.startsWith('submission.')){
-								let key = doc._id.split('.');
-								let val = doc.hash;
-								emit(key,val);
-							}
-						}.toString()
-					},
-					results:{
-						map: function(doc){
-							if(doc._id.startsWith('result.')){
-								let key = doc._id.split('.');
-								let val = doc.hash;
-								emit(key,val);
-							}
-						}.toString()
-					}
-				},
-				filters: {
-					submissions: function (doc,req) {
-						let isSub = doc._id.startsWith('submission.');
-						return isSub;
-					}.toString(),
-					results: function (doc,req) {
-						let isResult = doc._id.startsWith('result.');
-						return isResult;
-					}.toString()
-				},
-				validate_doc_update:function (newDoc, oldDoc){
-					if(utils.docsEqual(newDoc,oldDoc)){
-						throw({
-							code:304,
-							forbidden:'Document has not significantly changed'
-						});
-					}
-				}.toString()
-			};
-			if(utils.docsEqual(doc,designDoc)){
+	async dbInit(db){
+		let designdoc = db.upsert('_design/checksims',(doc)=>{
+			if(utils.docsEqual(doc,DESIGNDOC)){
 				console.log('DB version: no change');
 				return false;
 			}
 			console.log('DB version: updating');
-			return designDoc;
+			return DESIGNDOC;
 		});
 		designdoc = await designdoc;
-		this.runAllCompares();
 		//let events =
 		['submissions','results'].map(async (eventType)=>{
 			let opts = ['checksims',eventType].join('/');
@@ -146,22 +162,21 @@ export default class DeepDiff extends EventTarget{
 				live:true,
 				include_docs:true,
 			};
-			this.db
-				.changes(opts)
+			db.changes(opts)
 				.on('change', (e)=>{
 					//if(e.deleted) return;
 					console.log(eventType + ' change');
 					this.dispatchEvent(new CustomEvent(eventType,{ detail: e }));
 					this.dispatchEvent(new CustomEvent('change',{ detail: e }));
 					if(e.seq % 1000 === 0){
-						this.db.compact();
+						db.compact();
 					}
 				})
 				;
 		});
 		//events = await Promise.all(events);
 
-		this.addEventListener('results',async (e)=>{
+		let listener = async (e)=>{
 			this._significantSimilarity = null;
 			if(e.detail.deleted){
 				let id = e.detail.id.split('.');
@@ -178,18 +193,31 @@ export default class DeepDiff extends EventTarget{
 				});
 				this.report.results[e.detail.doc.name] = summary;
 
-				this.runAllCompares();
+				this.runAllCompares().catch(e=>{
+					let ignore = e.message.includes('database connection is closing');
+					if(!ignore){
+						throw e;
+					}
+					else{
+						console.warn('Database Connection is closing');
+					}
+				});
 			}
+		};
+		this.addEventListener('results',listener);
+		this._.listenerClearers.push(()=>{
+			this.removeEventListener('results',listener);
 		});
 
-		this.addEventListener('submissions',async (e)=>{
+		listener = async (e)=>{
 			if(e.detail.deleted){
 				let id = e.detail.id.split('.');
 				id.shift();
 				id = id.join('.');
 				delete this.report.submissions[id];
 
-				let results = await this.db.allDocs({startkey:'result.',endkey:'result.\ufff0',include_docs:true});
+				let db = await this.db;
+				let results = await db.allDocs({startkey:'result.',endkey:'result.\ufff0',include_docs:true});
 				let deletes = results.rows
 					.map((d)=>{
 						let match = d.doc.submissions.some((s)=>{
@@ -198,13 +226,19 @@ export default class DeepDiff extends EventTarget{
 						if(!match){
 							return false;
 						}
-						return this.db.upsert(d.id,()=>({_deleted:true}));
+						return db.upsert(d.id,()=>({_deleted:true}));
 					})
 					.filter(d=>{
 						return d !== false;
 					})
 					;
-				deletes = await Promise.all(deletes);
+				deletes = await Promise.all(deletes).catch(e=>{
+					console.log('Database Connection is closing');
+					let ignore = e.message.includes('database connection is closing');
+					if(!ignore){
+						throw e;
+					}
+				});
 				return deletes;
 			}
 			else{
@@ -213,7 +247,7 @@ export default class DeepDiff extends EventTarget{
 				this.report.submissions[e.detail.doc.name] = summary;
 
 				//let results = await self.Submissions;
-				let results = await this.db.allDocs({startkey:'submission.',endkey:'submission.\ufff0', include_docs:true});
+				let results = await db.allDocs({startkey:'submission.',endkey:'submission.\ufff0', include_docs:true});
 				results = results.rows
 					.filter((d)=>{
 						let isMatch = (d.id === e.detail.id);
@@ -225,9 +259,21 @@ export default class DeepDiff extends EventTarget{
 						})
 					})
 					;
-				results = await Promise.all(results);
+				results = await Promise
+					.all(results)
+					.catch(e=>{
+						console.log('Database Connection is closing');
+						let ignore = e.message.includes('database connection is closing');
+						if(!ignore){
+							throw e;
+						}
+					});
 				return results;
 			}
+		};
+		this.addEventListener('submissions',listener);
+		this._.listenerClearers.push(()=>{
+			this.removeEventListener('submissions',listener);
 		});
 	}
 
@@ -295,19 +341,29 @@ export default class DeepDiff extends EventTarget{
 	 * @return Set of submissions to run on
 	 */
 	get Submissions() {
-		let subs = this.db.query('checksims/submissions',{
+		let subs = async ()=>{
+			let db = await this.db;
+			let results = await db.query('checksims/submissions',{
 				include_docs: true
-			})
-			.then(function(results){
-				let rows = results.rows.map(async (d)=>{
-					let sub = d.doc;
-					sub = await Submission.fromJSON(sub);
-					return sub;
-				});
-				rows = Promise.all(rows);
-				return rows;
-			})
-			;
+			});
+			let rows = results.rows.map(async (d)=>{
+				let sub = d.doc;
+				sub = Submission.fromJSON(sub);
+				return sub;
+			});
+			rows = Promise.all(rows);
+			return rows;
+		};
+		try{
+			subs = subs();
+		}
+		catch(e){
+			console.log('Database Connection is closing');
+			let ignore = e.message.includes('database connection is closing');
+			if(!ignore){
+				throw e;
+			}
+		}
 		return subs;
 	}
 
@@ -315,21 +371,32 @@ export default class DeepDiff extends EventTarget{
 	 * @return Set of submissions to run on
 	 */
 	get Results() {
-		return this.db.query('checksims/results',{
+
+		let results = async ()=>{
+			let db = await this.db;
+			let results = await db.query('checksims/results',{
 				include_docs: true
+			});
+			let rows = results.rows.map(d=>{
+				let sub = d.doc;
+				return sub;
 			})
-			.then(function(results){
-				let rows = results.rows.map(d=>{
-					let sub = d.doc;
-					return sub;
-				})
-				.filter(d=>{
-					let valid = (!d) === false;
-					return valid;
-				});
-				return rows;
-			})
-			;
+			.filter(d=>{
+				let valid = (!d) === false;
+				return valid;
+			});
+			return rows;
+		};
+		try{
+			results = results();
+		}
+		catch(e){
+			let ignore = e.message.includes('database connection is closing');
+			if(!ignore){
+				throw e;
+			}
+		}
+		return results;
 	}
 
 	async Refresh(key,force=false){
@@ -347,10 +414,11 @@ export default class DeepDiff extends EventTarget{
 			results = [key];
 		}
 		let newResults = [];
+		let db = await this.db;
 		for(let result of results){
 			result = await AlgorithmResults.Create(result.submissions[0],result.submissions[1]);
 			let newDoc = AlgorithmResults.toJSON(result);
-			let upsert = await this.db.upsert('result.'+result.name,(oldDoc)=>{
+			let upsert = db.upsert('result.'+result.name,(oldDoc)=>{
 				if(force){
 					return newDoc;
 				}
@@ -367,13 +435,27 @@ export default class DeepDiff extends EventTarget{
 	}
 
 	async Clear(){
-		this.isReady = false;
-		console.log('Deleting database...');
-		await this.db.destroy();
-		this._.db = null;
-		console.log('Database deleted.');
-		await this.dbLoad();
-		this._.emit.load();
+		if(!this._.clearer) this._.clearer = Promise.resolve().then(async ()=>{
+			let db = await this._.db;
+			console.log('Deleting database...');
+			this._.db = false;
+			this._.ready = false;
+			this._.listenerClearers.forEach(c=>{c();});
+			await db.destroy();
+			console.log('Database deleted.');
+			this._.db = null;
+			await this.dbLoad();
+			console.log('Database reloaded.');
+		}).catch(e=>{
+			console.log('Database Connection is closing');
+			let ignore = e.message.includes('database connection is closing');
+			if(!ignore){
+				throw e;
+			}
+		}).finally(()=>{
+			this._.clearer = null;
+		});
+		return this._.clearer;
 	}
 
 	async Save(){
@@ -381,7 +463,8 @@ export default class DeepDiff extends EventTarget{
 		return this.Export();
 	}
 	async Export(){
-		let docs = await this.db.allDocs({
+		let db = await this.db;
+		let docs = db.allDocs({
 			startkey: '_\ufff0',
 			endkey: '\ufff0',
 			include_docs: true
@@ -401,7 +484,8 @@ export default class DeepDiff extends EventTarget{
 	}
 	async Import(json){
 		await this.Clear();
-		await this.db.bulkDocs(json);
+		let db = await this.db;
+		await db.bulkDocs(json);
 		await this.dbLoad();
 		console.log('Loaded from file');
 	}
@@ -419,10 +503,11 @@ export default class DeepDiff extends EventTarget{
 			newSubmissions = Submission.submissionsFromFiles(newSubmissions, this.Filter);
 		}
 		let puts = [];
+		let db = await this.db;
 		for(let d=0; d<newSubmissions.length; d++){
 			let newSub = newSubmissions[d];
 			let newDoc = newSub.toJSON();
-			let put = this.db.upsert('submission.'+newSub.name,function(oldDoc){
+			let put = db.upsert('submission.'+newSub.name,function(oldDoc){
 				if(utils.docsEqual(newDoc,oldDoc)){
 					return false;
 				}
@@ -439,9 +524,13 @@ export default class DeepDiff extends EventTarget{
 			id = id.name;
 		}
 		id = ['submission',id].join('.');
-		this.db.upsert(id,function(){
-			return {_deleted:true};
-		});
+		let remover = async ()=>{
+			let db = await this.db;
+			db.upsert(id,function(){
+				return {_deleted:true};
+			});
+		}
+		remover();
 	}
 
 
@@ -457,17 +546,30 @@ export default class DeepDiff extends EventTarget{
 			newResult = [newResult];
 		}
 
-		newResult.forEach((result)=>{
-			this.db.upsert('result.'+result.name,function(oldDoc){
-				if(oldDoc.complete === oldDoc.totalTokens){
-					return false;
-				}
-				if(utils.docsEqual(result,oldDoc)){
-					return false;
-				}
-				return result;
+		let db = this.db;
+		let upserts = newResult.map((result)=>{
+			return db.then(db=>{
+				return db.upsert('result.'+result.name,function(oldDoc){
+					if(oldDoc.complete === oldDoc.totalTokens){
+						return false;
+					}
+					if(utils.docsEqual(result,oldDoc)){
+						return false;
+					}
+					return result;
+				});
 			});
 		});
+		upserts = Promise
+			.all(upserts)
+			.catch(e=>{
+				console.log('Database Connection is closing');
+				let ignore = e.message.includes('database connection is closing');
+				if(!ignore){
+					throw e;
+				}
+			});
+		return upserts;
 	}
 
 
@@ -608,7 +710,8 @@ export default class DeepDiff extends EventTarget{
 		}
 
 		let configsaver = async ()=>{
-			let save = this.db.upsert('config',(oldDoc)=>{
+			let db = await this.db;
+			let save = db.upsert('config',(oldDoc)=>{
 				let newDoc = this._.config;
 				if(utils.docsEqual(oldDoc,newDoc)){
 					return false;
@@ -633,7 +736,8 @@ export default class DeepDiff extends EventTarget{
 			let tokens = pair.submissions.map(function(submission){
 				return 'submission.'+submission.submission;
 			});
-			let subs = await this.db.allDocs({keys:tokens,include_docs:true});
+			let db = await this.db;
+			let subs = db.allDocs({keys:tokens,include_docs:true});
 			tokens = subs.rows
 				.filter(s=>{
 					return s.doc;
@@ -727,6 +831,7 @@ export default class DeepDiff extends EventTarget{
 	 */
 	async runAllCompares(){
 		if(this.runAllComparesIsRunning) return;
+		await this.db;
 
 		this.runAllComparesIsRunning = true;
 		let allPairs = await this.Results;
@@ -786,12 +891,61 @@ export default class DeepDiff extends EventTarget{
 		console.log('Finished ' + result.name);
 
 		this.runAllComparesIsRunning = false;
-		setTimeout(()=>{this.runAllCompares();});
+		setTimeout(()=>{
+			this.runAllCompares()
+				.catch((e)=>{
+					if(e.status !== 404){
+						console.error('ERROR loading DeepDiff configuration.');
+					}
+					return {};
+				});
+		});
 	}
 
 	get ga(){
 		return window.ga || (()=>{});
 	}
 
-
 }
+
+
+const DESIGNDOC = {
+	views:{
+		submissions:{
+			map: function(doc){
+				if(doc._id.startsWith('submission.')){
+					let key = doc._id.split('.');
+					let val = doc.hash;
+					emit(key,val);
+				}
+			}.toString()
+		},
+		results:{
+			map: function(doc){
+				if(doc._id.startsWith('result.')){
+					let key = doc._id.split('.');
+					let val = doc.hash;
+					emit(key,val);
+				}
+			}.toString()
+		}
+	},
+	filters: {
+		submissions: function (doc,req) {
+			let isSub = doc._id.startsWith('submission.');
+			return isSub;
+		}.toString(),
+		results: function (doc,req) {
+			let isResult = doc._id.startsWith('result.');
+			return isResult;
+		}.toString()
+	},
+	validate_doc_update:function (newDoc, oldDoc){
+		if(utils.docsEqual(newDoc,oldDoc)){
+			throw({
+				code:304,
+				forbidden:'Document has not significantly changed'
+			});
+		}
+	}.toString()
+};

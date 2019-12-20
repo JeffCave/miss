@@ -65,6 +65,7 @@ class Browsers {
 		await pool.browser.executeAsyncScript(function(resolve){
 			if(document.readyState === 'complete') resolve();
 			window.app.addEventListener('load',function(){
+				console.clear();
 				resolve();
 			});
 		});
@@ -79,11 +80,13 @@ class Browsers {
 		});
 		// try clearing the database, but wait for it to finish
 		await pool.browser.executeAsyncScript(function(resolve){
-			window.app.runner.addEventListener('load',function(){
+			(async ()=>{
+				await window.app.runner.Clear();
 				resolve();
-			});
-			window.app.runner.Clear();
+			})();
 		});
+		await pool.browser.get('http://lvh.me:3030/?CompatCheck=wimp');
+		await browser.manage().logs().get('browser');
 
 		// send it
 		return pool.browser;
@@ -165,16 +168,8 @@ class Browsers {
 				try {
 					await func(browser);
 					let errs = await browser.manage().logs().get('browser');
-					errs = errs
-						.filter(l=>{
-							return (l.level.value >= 1000);
-						})
-						.map(l=>{
-							return (l.message);
-						})
-						.join('\n');
+					errs = errs.filter(l=>{return (l.level.value >= 1000);}).map(l=>{return (l.message);});
 					assert.isEmpty(errs,'Browser did not generate error messages during test');
-
 				}
 				finally {
 					this.checkin(browser);

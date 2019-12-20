@@ -29,14 +29,25 @@ describe('First Run', function() {
 			//2. Open Browser Debug Window (F12)
 			//3. NAV: Application > Storage
 			//4. Delete all the databases
-			await browser.executeScript('indexedDB.databases().then(dbs=>{let dels = dbs.map(d=>{return indexedDB.deleteDatabase(d.name);}); return Promise.all(dels);});');
+			await browser.executeAsyncScript(function(resolve){
+				(async function(){
+					let dbs = await indexedDB.databases();
+					let dels = dbs.map(d=>{ return indexedDB.deleteDatabase(d.name); });
+					await Promise.all(dels);
+					resolve();
+				})();
+			});
 			//5. Refresh the page
 			await browser.navigate().refresh();
+			await browser.executeAsyncScript(function(resolve){
+				let interval = setInterval(function(){
+					if(window.app && window.app.runner && window.app.runner.isReady){
+						clearInterval(interval);
+						resolve();
+					}
+				},64);
+			});
 
-			el = await browser.findElement(Browser.driver.By.css('main'));
-			await browser.wait(Browser.driver.until.elementIsVisible(el),1000);
-
-			await browser.sleep(100);
 			let logs = await browser.manage().logs().get('browser');
 			let errs = logs.filter(l=>{
 				return (l.level.value >= 1000);
