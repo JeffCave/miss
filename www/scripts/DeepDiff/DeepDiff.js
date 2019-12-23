@@ -341,7 +341,7 @@ export default class DeepDiff extends EventTarget{
 			let results = await db.query('checksims/submissions',{
 				include_docs: true
 			});
-			let rows = results.rows.map(async (d)=>{
+			let rows = results.rows.filter(d=>d.doc).map((d)=>{
 				let sub = d.doc;
 				sub = Submission.fromJSON(sub);
 				return sub;
@@ -349,16 +349,13 @@ export default class DeepDiff extends EventTarget{
 			rows = Promise.all(rows);
 			return rows;
 		};
-		try{
-			subs = subs();
-		}
-		catch(e){
+		subs = subs().catch(e=>{
 			console.log('Database Connection is closing');
 			let ignore = e.message.includes('database connection is closing');
 			if(!ignore){
 				throw e;
 			}
-		}
+		});
 		return subs;
 	}
 
