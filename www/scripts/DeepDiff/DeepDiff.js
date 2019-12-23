@@ -133,10 +133,13 @@ export default class DeepDiff extends EventTarget{
 				}
 				this.runAllCompares()
 					.catch((e)=>{
-						if(e.status !== 404){
-							console.error('ERROR loading DeepDiff configuration.');
+						let ignore = e.message.includes('database connection is closing');
+						if(ignore){
+							console.log('Database Connection is closing');
 						}
-						return {};
+						else{
+							throw e;
+						}
 					});
 			}
 		}
@@ -193,15 +196,7 @@ export default class DeepDiff extends EventTarget{
 				});
 				this.report.results[e.detail.doc.name] = summary;
 
-				this.runAllCompares().catch(e=>{
-					let ignore = e.message.includes('database connection is closing');
-					if(!ignore){
-						throw e;
-					}
-					else{
-						console.warn('Database Connection is closing');
-					}
-				});
+				this.runAllCompares();
 			}
 		};
 		this.addEventListener('results',listener);
@@ -418,18 +413,32 @@ export default class DeepDiff extends EventTarget{
 		for(let result of results){
 			result = await AlgorithmResults.Create(result.submissions[0],result.submissions[1]);
 			let newDoc = AlgorithmResults.toJSON(result);
-			let upsert = db.upsert('result.'+result.name,(oldDoc)=>{
-				if(force){
+			try{
+				let upsert = await db.upsert('result.'+result.name,(oldDoc)=>{
+					if(force){
+						return newDoc;
+					}
+					if(oldDoc.hash === newDoc.hash){
+						return false;
+					}
 					return newDoc;
+				});
+				if(upsert.updated){
+					newResults.push(upsert.id);
 				}
-				if(oldDoc.hash === newDoc.hash){
-					return false;
-				}
-				return newDoc;
-			});
-			if(upsert.updated){
-				newResults.push(upsert.id);
 			}
+			catch(e){
+				let ignore = e.message.includes('database connection is closing');
+				if(!ignore){
+					throw e;
+				}
+				else{
+					console.warn('Database Connection is closing');
+				}
+			}
+		}
+		if(!newResults){
+			debugger;
 		}
 		return newResults;
 	}
@@ -710,16 +719,28 @@ export default class DeepDiff extends EventTarget{
 		}
 
 		let configsaver = async ()=>{
-			let db = await this.db;
-			let save = db.upsert('config',(oldDoc)=>{
-				let newDoc = this._.config;
-				if(utils.docsEqual(oldDoc,newDoc)){
-					return false;
+			try{
+				let db = await this.db;
+				let save = db.upsert('config',(oldDoc)=>{
+					let newDoc = this._.config;
+					if(utils.docsEqual(oldDoc,newDoc)){
+						return false;
+					}
+					return newDoc;
+				});
+				save = await save;
+				return save;
+			}
+			catch(e){
+				let ignore = e.message.includes('database connection is closing');
+				if(!ignore){
+					throw e;
 				}
-				return newDoc;
-			});
-			save = await save;
-			return save;
+				else{
+					console.warn('Database Connection is closing');
+				}
+				return {};
+			}
 		};
 		configsaver = _.debounce(configsaver,1000);
 
@@ -737,7 +758,7 @@ export default class DeepDiff extends EventTarget{
 				return 'submission.'+submission.submission;
 			});
 			let db = await this.db;
-			let subs = db.allDocs({keys:tokens,include_docs:true});
+			let subs = await db.allDocs({keys:tokens,include_docs:true});
 			tokens = subs.rows
 				.filter(s=>{
 					return s.doc;
@@ -884,21 +905,27 @@ export default class DeepDiff extends EventTarget{
 		//	console.log('Finished ' + result.name);
 		//}
 		// Try #3
-		let result = await this.Compare(results.pop());
-		if(!result){
-			result = {name:'failed to get name'};
+		try{
+			let result = await this.Compare(results.pop());
+			if(!result){
+				result = {name:'failed to get name'};
+			}
+			console.log('Finished ' + result.name);
 		}
-		console.log('Finished ' + result.name);
+		catch(e){
+			debugger;
+			let ignore = e.message.includes('database connection is closing');
+			if(!ignore){
+				throw e;
+			}
+			else{
+				console.warn('Database Connection is closing');
+			}
+		}
 
 		this.runAllComparesIsRunning = false;
 		setTimeout(()=>{
-			this.runAllCompares()
-				.catch((e)=>{
-					if(e.status !== 404){
-						console.error('ERROR loading DeepDiff configuration.');
-					}
-					return {};
-				});
+			this.runAllCompares();
 		});
 	}
 

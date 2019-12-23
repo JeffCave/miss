@@ -79,14 +79,22 @@ class Browsers {
 			},64);
 		});
 		// try clearing the database, but wait for it to finish
-		await pool.browser.executeAsyncScript(function(resolve){
-			(async ()=>{
-				await window.app.runner.Clear();
-				resolve();
-			})();
-		});
-		await pool.browser.get('http://lvh.me:3030/?CompatCheck=wimp');
-		await browser.manage().logs().get('browser');
+//		await pool.browser.executeAsyncScript(function(resolve){
+//			(async ()=>{
+//				await window.app.runner.Clear();
+//				resolve();
+//			})();
+//		});
+//		await browser.manage().logs().get('browser');
+//		await pool.browser.get('http://lvh.me:3030/?CompatCheck=wimp');
+//		await pool.browser.executeAsyncScript(function(resolve){
+//			let interval = setInterval(function(){
+//				if(window.app && window.app.runner && window.app.runner.isReady){
+//					clearInterval(interval);
+//					resolve();
+//				}
+//			},64);
+//		});
 
 		// send it
 		return pool.browser;
@@ -169,6 +177,9 @@ class Browsers {
 					await func(browser);
 					let errs = await browser.manage().logs().get('browser');
 					errs = errs.filter(l=>{return (l.level.value >= 1000);}).map(l=>{return (l.message);});
+					errs = errs.filter(l=>{
+						return l.message !== "Failed to execute 'transaction' on 'IDBDatabase': The database connection is closing.";
+					});
 					assert.isEmpty(errs,'Browser did not generate error messages during test');
 				}
 				finally {

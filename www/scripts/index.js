@@ -287,6 +287,9 @@ Alternately, you can <a href='?CompatCheck=wimp'>just proceed</a> &hellip; nothi
 
 let nexterrorreport = Date.now();
 async function reporterror(event){
+	if(typeof event === 'object'){
+		console.dir(event);
+	}
 	console.error(event.toString());
 	let errormsg = '';
 	try{
@@ -321,6 +324,11 @@ that experienced it.
 
 window.addEventListener('error',reporterror);
 window.addEventListener("unhandledrejection", function(promiseRejectionEvent) {
+	if(promiseRejectionEvent.reason && promiseRejectionEvent.reason.message === "Failed to execute 'transaction' on 'IDBDatabase': The database connection is closing."){
+		console.warn('IDB deleting error.');
+		return;
+	}
+
 	let msg = {
 		message: JSON.stringify(promiseRejectionEvent.reason),
 		colno: 0,
