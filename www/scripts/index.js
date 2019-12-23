@@ -277,7 +277,7 @@ Alternately, you can <a href='?CompatCheck=wimp'>just proceed</a> &hellip; nothi
 		`;
 		window.alert(message,'info');
 	}
-	new indexPage();
+	window.app = new indexPage();
 
 	// everything is loaded. make it visible;
 	let style = document.createElement('style');
@@ -287,7 +287,10 @@ Alternately, you can <a href='?CompatCheck=wimp'>just proceed</a> &hellip; nothi
 
 let nexterrorreport = Date.now();
 async function reporterror(event){
-	console.error(event);
+	if(typeof event === 'object'){
+		console.dir(event);
+	}
+	console.error(event.toString());
 	let errormsg = '';
 	try{
 		errormsg = new URL(event.filename);
@@ -321,6 +324,11 @@ that experienced it.
 
 window.addEventListener('error',reporterror);
 window.addEventListener("unhandledrejection", function(promiseRejectionEvent) {
+	if(promiseRejectionEvent.reason && promiseRejectionEvent.reason.message === "Failed to execute 'transaction' on 'IDBDatabase': The database connection is closing."){
+		console.warn('IDB deleting error.');
+		return;
+	}
+
 	let msg = {
 		message: JSON.stringify(promiseRejectionEvent.reason),
 		colno: 0,

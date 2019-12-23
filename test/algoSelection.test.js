@@ -26,19 +26,30 @@ describe('Algorithm Selection', function() {
 
 	it('algo default is CPU',Browser.use(async (browser)=>{
 		let select = await browser.findElement(Browser.By.css('form select[name="algorithm"]'));
+		browser.sleep(1000);
 		let text = await select.getAttribute('value');
+		browser.sleep(1000);
 		assert.equal(text,'smithwaterman-swAlgoCell','Default algorithm is CPU');
 
 		// Select By Visible Text
+		browser.sleep(1000);
 		let opts = await select.findElements(Browser.By.css('option'));
+		browser.sleep(1000);
 		for(let opt of opts){
+			browser.sleep(1000);
 			let text = await opt.getText();
+			browser.sleep(1000);
 			if(text === 'smithwaterman'){
+				browser.sleep(1000);
 				opt.click();
 				break;
 			}
 		}
+		browser.sleep(1000);
+		select = await browser.findElement(Browser.By.css('form select[name="algorithm"]'));
+		browser.sleep(1000);
 		text = await select.getAttribute('value');
+		browser.sleep(1000);
 		assert.equal(text,'smithwaterman-swAlgoCell','Selecting general algorithm results in CPU');
 	}));
 

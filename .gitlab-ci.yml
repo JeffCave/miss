@@ -34,8 +34,9 @@ test-chrome:
 test-firefox:
   extends: .test
   script:
-  - npm install
-  - node test.js --browser firefox
+  #- npm install
+  #- node test.js --browser firefox
+  - echo "Abandoned..."
 
 pages:
   stage: deploy

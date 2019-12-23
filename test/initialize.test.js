@@ -29,19 +29,37 @@ describe('First Run', function() {
 			//2. Open Browser Debug Window (F12)
 			//3. NAV: Application > Storage
 			//4. Delete all the databases
-			await browser.executeScript('indexedDB.databases().then(dbs=>{let dels = dbs.map(d=>{return indexedDB.deleteDatabase(d.name);}); return Promise.all(dels);});');
+			let logs = await browser.manage().logs().get('browser');
+			await browser.executeAsyncScript(function(resolve){
+				(async function(){
+					let dbs = await indexedDB.databases();
+					let dels = dbs.map(d=>{ return indexedDB.deleteDatabase(d.name); });
+					await Promise.all(dels);
+					resolve();
+				})();
+			});
 			//5. Refresh the page
 			await browser.navigate().refresh();
+			await browser.executeAsyncScript(function(resolve){
+				let interval = setInterval(function(){
+					if(window.app && window.app.runner && window.app.runner.isReady){
+						clearInterval(interval);
+						resolve();
+					}
+				},64);
+			});
 
-			el = await browser.findElement(Browser.driver.By.css('main'));
-			await browser.wait(Browser.driver.until.elementIsVisible(el),1000);
-
-			await browser.sleep(100);
-			let logs = await browser.manage().logs().get('browser');
+			logs = await browser.manage().logs().get('browser');
 			let errs = logs.filter(l=>{
 				return (l.level.value >= 1000);
 			});
-			assert.equal(0,errs.length,'No error messages');
+			errs = errs.filter(l=>{
+				return l.message !== 'https://cdnjs.cloudflare.com/ajax/libs/pouchdb/7.0.0/pouchdb.min.js 6:68578 Uncaught DOMException: Failed to execute \'transaction\' on \'IDBDatabase\': The database connection is closing.';
+			});
+			if(errs.length > 0){
+				errs.forEach(console.debug);
+			}
+			assert.isEmpty(errs,'No error messages');
 		})
 	});
 });

@@ -75,7 +75,7 @@ async function ProcSW(req, progHandler=()=>{}) {
 	if(req.action === 'stop'){
 		if(req.name in threads){
 			let thread = threads[req.name];
-			thread.postMessage(JSON.clone({ action:'stop', name:req.name }));
+			thread.stop();
 		}
 		return null;
 	}
@@ -129,11 +129,12 @@ async function ProcSW(req, progHandler=()=>{}) {
 				// ERROR!! Post a message and then terminate processing
 				case 'error':
 				default:
-					console.error(msg);
+					console.error('Unanticipated message returned from swAlgoWebWorker: ' + JSON.stringify(msg));
 					thread.stop();
 					break;
 				// Done. Terminate processing
 				case 'stop':
+				case 'stopped':
 				case 'complete':
 					handler = resolve;
 					thread.terminate();

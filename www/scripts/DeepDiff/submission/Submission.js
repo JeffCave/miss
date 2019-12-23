@@ -254,6 +254,7 @@ export default class Submission extends EventTarget{
 	 */
 	static fromJSON(json){
 		let content = {};
+		if(!json) debugger;
 		for(let key in json.content){
 			let val = json.content[key];
 			if(val instanceof Blob){
