@@ -31,9 +31,6 @@ export default class BrowserCheck{
 			'WebWorkers':()=>{
 				return (typeof window.Worker !== 'undefined');
 			},
-			'WebGL':()=>{
-				return (typeof window.OffscreenCanvas !== 'undefined');
-			},
 		};
 	}
 
