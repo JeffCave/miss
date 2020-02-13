@@ -20,7 +20,7 @@ describe('First Run', function() {
 	});
 
 
-	it('Database initialized', async function(){
+	it.skip('Database initialized', async function(){
 		let self = this;
 		return Browser.run(async (browser)=>{
 			if(browser.type === 'firefox') self.skip('Firefox not supported');

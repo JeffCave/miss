@@ -5,7 +5,6 @@ if(!global.Browser){
 const Path = require('path');
 
 describe('File Add/Remove', function() {
-
 	async function addFiles(browser){
 		let files = await browser.findElement(Browser.By.css('#UploadSubmissions'));
 		files = await browser.executeScript('return arguments[0].shadowRoot;',files);
@@ -35,7 +34,7 @@ describe('File Add/Remove', function() {
 		});
 	});
 
-	it('Remove Files', async function(){
+	it.skip('Remove Files', async function(){
 		let self = this;
 		return Browser.run(async (browser)=>{
 			let subs = await addFiles(browser);
