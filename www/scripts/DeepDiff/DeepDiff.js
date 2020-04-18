@@ -799,6 +799,8 @@ export default class DeepDiff extends EventTarget{
 				orig.percentMatched = completePct;
 			});
 			//this.addResults(pair);
+			completePct = (completePct * 1000).toFixed(1);
+			console.info(`Progress: ${completePct}‰ (${result.name})`);
 		});
 		timer = performance.now() - timer;
 		if(result){
