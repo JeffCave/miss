@@ -1,8 +1,3 @@
-'use strict';
-export {
-	DeepDiff
-};
-
 import "https://cdnjs.cloudflare.com/ajax/libs/pouchdb/7.0.0/pouchdb.min.js";
 import "./lib/pouchdb.upsert.min.js";
 import "https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.1/underscore-min.js";
@@ -16,19 +11,15 @@ import {Submission} from './submission/Submission.js';
 
 import * as utils from './util/misc.js';
 
-/*
-global _
-global CustomEvent
-global emit
-global Event
-global PouchDB
-global EventTarget
-*/
+export {
+	DeepDiff as default,
+	DeepDiff,
+};
 
 /**
  * CLI Entry point and main public API endpoint for DeepDiff.
  */
-export default class DeepDiff extends EventTarget{
+class DeepDiff extends EventTarget{
 
 	constructor() {
 		super();
@@ -251,7 +242,7 @@ export default class DeepDiff extends EventTarget{
 					.map(d=>{
 						AlgorithmResults.Create(e.detail.doc,d.doc).then(result=>{
 							this.Refresh(result);
-						})
+						});
 					})
 					;
 				results = await Promise
@@ -374,7 +365,7 @@ export default class DeepDiff extends EventTarget{
 				return sub;
 			})
 			.filter(d=>{
-				let valid = (!d) === false;
+				let valid = (d != false);
 				return valid;
 			});
 			return rows;
@@ -535,7 +526,7 @@ export default class DeepDiff extends EventTarget{
 			db.upsert(id,function(){
 				return {_deleted:true};
 			});
-		}
+		};
 		remover();
 	}
 
@@ -790,6 +781,7 @@ export default class DeepDiff extends EventTarget{
 			//result.percentMatched = result.identicalTokens / result.totalTokens;
 			let completePct = (comparer.totalSize - comparer.remaining) -1;
 			completePct = completePct / comparer.totalSize;
+			completePct = Math.max(0,completePct);
 			result.percentMatched = completePct;
 			result.submissions.forEach((orig,i)=>{
 				//let sub = comparer.submissions[i];
@@ -851,9 +843,10 @@ export default class DeepDiff extends EventTarget{
 	 */
 	async runAllCompares(){
 		if(this.runAllComparesIsRunning) return;
+		this.runAllComparesIsRunning = true;
+
 		await this.db;
 
-		this.runAllComparesIsRunning = true;
 		let allPairs = await this.Results;
 
 		let results = allPairs

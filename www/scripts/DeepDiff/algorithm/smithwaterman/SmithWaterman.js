@@ -1,9 +1,3 @@
-'use strict';
-
-/*
-global performance
-*/
-
 import {AlgorithmRegistry} from '../../algorithm/AlgorithmRegistry.js';
 import * as AlgorithmResults from '../../algorithm/AlgorithmResults.js';
 import {checkNotNull} from '../../util/misc.js';
@@ -12,6 +6,7 @@ import {swAlgoWebWorker} from './swAlgoWebWorker.js';
 
 (function(){
 
+'use strict';
 
 /**
  * Register each of our variants as a runnable algorithm
@@ -31,7 +26,7 @@ import {swAlgoWebWorker} from './swAlgoWebWorker.js';
 	};
 });
 // also register a default one
-AlgorithmRegistry.processors['smithwaterman'] = AlgorithmRegistry.processors['smithwaterman-swAlgoCell'];
+AlgorithmRegistry.processors.smithwaterman = AlgorithmRegistry.processors['smithwaterman-swAlgoCell'];
 
 // test to ensure the software is capable of running
 AlgorithmRegistry.processors['smithwaterman-swAlgoGpu'].available = (typeof window.OffscreenCanvas !== 'undefined');
