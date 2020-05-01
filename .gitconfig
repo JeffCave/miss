@@ -1,0 +1,3 @@
+[filter "AuthorDate"]
+    clean = sed -r "s/\\\$AuthorDate: .*?\\\$/\\\$AuthorDate\\\$/g"
+    smudge = sed -r "s/\\\$AuthorDate\\\$/\\\$AuthorDate: $(git log --pretty=fuller -n 1 | grep '^AuthorDate' | sed 's/AuthorDate: //\')\\\$/g"
